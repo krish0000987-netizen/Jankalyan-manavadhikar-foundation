@@ -314,7 +314,7 @@ export const Home = () => {
                 <img 
                   src="/assets/about_mission.jpg" 
                   alt="Students engaged in learning"
-                  style={{ width: '100%', height: '440px', objectFit: 'cover' }}
+                  className="mission-img" style={{ width: '100%', objectFit: 'cover' }}
                 />
               </div>
 
