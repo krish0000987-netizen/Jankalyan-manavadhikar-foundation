@@ -55,16 +55,30 @@ export const Header = () => {
 
   const activeAnnouncement = cms.announcements?.[announcementIndex] || cms.announcements?.[0];
 
+  // Clean, perfectly proportioned links for desktop horizontal header bar
   const navLinks = [
+    { label: t.navHome, route: '/' },
+    { label: lang === 'hi' ? 'हमारे बारे में' : 'About', route: '/about' },
+    { label: lang === 'hi' ? 'छात्रवृत्ति' : 'Scholarship', route: '/scholarship' },
+    { label: lang === 'hi' ? 'आवेदन ट्रैक' : 'Track Status', route: '/track' },
+    { label: lang === 'hi' ? 'दस्तावेज़' : 'Documents', route: '/documents' },
+    { label: lang === 'hi' ? 'डाउनलोड' : 'Downloads', route: '/downloads' },
+    { label: lang === 'hi' ? 'शिकायत' : 'Grievance', route: '/grievance' },
+    { label: 'FAQ', route: '/faq' },
+    { label: lang === 'hi' ? 'संपर्क' : 'Contact', route: '/contact' }
+  ];
+
+  // Full detailed links for mobile slide-out drawer
+  const mobileNavLinks = [
     { label: t.navHome, route: '/' },
     { label: t.navAbout, route: '/about' },
     { label: t.navScholarship, route: '/scholarship' },
-    { label: lang === 'hi' ? 'आवेदन ट्रैक' : t.navTrack, route: '/track' },
+    { label: t.navTrack, route: '/track' },
     { label: t.navDocuments, route: '/documents' },
     { label: t.navDownloads, route: '/downloads' },
-    { label: lang === 'hi' ? 'शिकायत' : t.navGrievance, route: '/grievance' },
-    { label: lang === 'hi' ? 'FAQ' : t.navFaq, route: '/faq' },
-    { label: lang === 'hi' ? 'संपर्क' : t.navContact, route: '/contact' }
+    { label: t.navGrievance, route: '/grievance' },
+    { label: t.navFaq, route: '/faq' },
+    { label: t.navContact, route: '/contact' }
   ];
 
   const roles = [
@@ -98,41 +112,44 @@ export const Header = () => {
             
             {/* Left: Announcement Ticker */}
             <div className="announcement-ticker">
-              <span className="badge badge-yellow" style={{ fontSize: '0.68rem', padding: '0.15rem 0.55rem', flexShrink: 0 }}>
+              <span className="badge badge-yellow ticker-badge">
                 <Volume2 size={11} />
-                {t.announcementLabel}
+                <span className="ticker-label-text">{t.announcementLabel}</span>
               </span>
-              <span style={{ fontSize: '0.825rem', color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="ticker-text">
                 {lang === 'hi' ? activeAnnouncement?.hi : activeAnnouncement?.en}
               </span>
             </div>
 
             {/* Right: Helpline Contacts + Language Switcher + Role Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexShrink: 0 }} className="hide-mobile">
-              <a 
-                href={`tel:${cms.officialMobile}`} 
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#CBD5E1', fontSize: '0.78rem' }}
-                title="Helpline Mobile"
-              >
-                <Phone size={12} color="#FEF08A" />
-                <span>{cms.officialMobile}</span>
-              </a>
+            <div className="announcement-actions">
+              <div className="announcement-contacts hide-tablet-down">
+                <a 
+                  href={`tel:${cms.officialMobile}`} 
+                  className="announcement-link"
+                  title="Helpline Mobile"
+                >
+                  <Phone size={12} color="#FEF08A" />
+                  <span>{cms.officialMobile}</span>
+                </a>
 
-              <a 
-                href={`mailto:${cms.officialEmail}`} 
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#CBD5E1', fontSize: '0.78rem' }}
-                title="Official Email"
-              >
-                <Mail size={12} color="#FEF08A" />
-                <span>{cms.officialEmail}</span>
-              </a>
+                <a 
+                  href={`mailto:${cms.officialEmail}`} 
+                  className="announcement-link"
+                  title="Official Email"
+                >
+                  <Mail size={12} color="#FEF08A" />
+                  <span>{cms.officialEmail}</span>
+                </a>
+              </div>
 
-              {/* Language Switcher in Top Bar */}
+              {/* Language Switcher in Top Bar (Always available on Desktop & Mobile) */}
               <div className="lang-switcher">
                 <button
                   className={`lang-btn ${lang === 'hi' ? 'active' : ''}`}
                   onClick={() => setSpecificLanguage('hi')}
                   title="हिंदी भाषा चुनें"
+                  aria-label="Switch to Hindi"
                 >
                   हिंदी
                 </button>
@@ -140,13 +157,14 @@ export const Header = () => {
                   className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
                   onClick={() => setSpecificLanguage('en')}
                   title="Switch to English"
+                  aria-label="Switch to English"
                 >
                   English
                 </button>
               </div>
 
               {/* Role Switcher Gateway Dropdown in Top Bar */}
-              <div style={{ position: 'relative' }} ref={dropdownRef}>
+              <div style={{ position: 'relative' }} ref={dropdownRef} className="hide-tablet-down">
                 <button 
                   className="btn btn-outline-white btn-sm"
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
@@ -217,7 +235,7 @@ export const Header = () => {
         <div className="container-wide">
           <div className="header-inner">
             
-            {/* Left: Official Foundation Logo & Full Undistorted Title */}
+            {/* Left: Official Foundation Logo & Responsive Brand Heading */}
             <div 
               className="brand-identity" 
               onClick={() => navigate('/')}
@@ -229,13 +247,13 @@ export const Header = () => {
                 className="brand-logo-img"
               />
               <div className="brand-text">
-                <h1>{t.brandName}</h1>
-                <p>{t.brandSubtitle}</p>
+                <h1 className="brand-heading">{t.brandName}</h1>
+                <p className="brand-subheading">{t.brandSubtitle}</p>
               </div>
             </div>
 
-            {/* Center: Clean Navigation Menu (Desktop) */}
-            <nav className="hide-mobile">
+            {/* Center: Clean Navigation Menu (Desktop >= 1160px) */}
+            <nav className="desktop-nav">
               <ul className="nav-menu">
                 {navLinks.map((item) => (
                   <li key={item.route}>
@@ -251,11 +269,11 @@ export const Header = () => {
             </nav>
 
             {/* Right: Student Login + Apply Now Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexShrink: 0 }}>
+            <div className="header-actions">
               
-              {/* Student Login or Admin button */}
+              {/* Student Login or Admin button (Desktop >= 1160px) */}
               <button
-                className="btn btn-secondary btn-sm hide-mobile"
+                className="btn btn-secondary btn-sm header-student-btn"
                 onClick={() => {
                   if (authRole === 'admin') {
                     navigate('/admin');
@@ -270,27 +288,21 @@ export const Header = () => {
 
               {/* Apply Now Primary CTA Button */}
               <button
-                className="btn btn-primary btn-sm"
+                className="btn btn-primary btn-sm header-apply-btn"
                 onClick={() => navigate('/apply')}
                 id="header-apply-btn"
               >
                 <Sparkles size={14} />
-                <span>{t.navApplyNow}</span>
+                <span className="apply-btn-label">{t.navApplyNow}</span>
               </button>
 
-              {/* Mobile Hamburger Menu Toggle */}
+              {/* Mobile & Tablet Hamburger Menu Toggle */}
               <button
-                className="show-mobile-btn"
+                className="mobile-menu-toggle"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                style={{
-                  padding: '0.5rem',
-                  display: 'none',
-                  color: '#1E293B',
-                  backgroundColor: 'transparent'
-                }}
                 aria-label="Toggle navigation menu"
               >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
 
             </div>
@@ -299,13 +311,8 @@ export const Header = () => {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            borderBottom: '2px solid #E2E8F0',
-            padding: '1.25rem 1.5rem',
-            boxShadow: '0 20px 30px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid #F1F5F9', marginBottom: '1rem' }}>
+          <div className="mobile-drawer animate-fade-in">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.85rem', borderBottom: '1px solid #F1F5F9', marginBottom: '1rem' }}>
               <div className="lang-switcher">
                 <button
                   className={`lang-btn ${lang === 'hi' ? 'active' : ''}`}
@@ -326,8 +333,8 @@ export const Header = () => {
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              {navLinks.map((item) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.25rem' }}>
+              {mobileNavLinks.map((item) => (
                 <button
                   key={item.route}
                   onClick={() => {
@@ -338,13 +345,14 @@ export const Header = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.75rem',
+                    padding: '0.7rem 0.85rem',
                     textAlign: 'left',
-                    fontSize: '0.95rem',
+                    fontSize: '0.925rem',
                     fontWeight: 600,
                     borderRadius: '8px',
                     color: currentRoute === item.route ? '#DC2626' : '#1E293B',
-                    backgroundColor: currentRoute === item.route ? '#FEE2E2' : 'transparent'
+                    backgroundColor: currentRoute === item.route ? '#FEE2E2' : 'transparent',
+                    transition: 'background-color 0.15s ease'
                   }}
                 >
                   <span>{item.label}</span>
@@ -353,29 +361,55 @@ export const Header = () => {
               ))}
             </div>
 
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               <button
-                className="btn btn-secondary"
-                style={{ width: '100%' }}
+                className="btn btn-primary"
+                style={{ width: '100%', justifyContent: 'center', padding: '0.8rem' }}
                 onClick={() => {
-                  navigate('/student-dashboard');
+                  navigate('/apply');
                   setMobileMenuOpen(false);
                 }}
               >
-                <User size={16} />
-                <span>{t.navStudentLogin}</span>
+                <Sparkles size={16} />
+                <span>{t.navApplyNow}</span>
               </button>
-              <button
-                className="btn btn-outline"
-                style={{ width: '100%' }}
-                onClick={() => {
-                  navigate('/admin');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <Shield size={16} />
-                <span>{t.navAdmin}</span>
-              </button>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => {
+                    navigate('/student-dashboard');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <User size={15} />
+                  <span>{t.navStudentLogin}</span>
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => {
+                    navigate('/admin');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <Shield size={15} />
+                  <span>{t.navAdmin}</span>
+                </button>
+              </div>
+
+              {/* Mobile Helpline & Support Direct Links */}
+              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #F1F5F9', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8rem', color: '#64748B' }}>
+                <a href={`tel:${cms.officialMobile}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1E293B', fontWeight: 600 }}>
+                  <Phone size={14} color="#DC2626" />
+                  <span>{cms.officialMobile}</span>
+                </a>
+                <a href={`mailto:${cms.officialEmail}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1E293B', fontWeight: 500 }}>
+                  <Mail size={14} color="#DC2626" />
+                  <span>{cms.officialEmail}</span>
+                </a>
+              </div>
             </div>
           </div>
         )}
