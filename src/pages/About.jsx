@@ -43,7 +43,7 @@ export const About = () => {
       {/* Section 1 & 2: Introduction & Purpose */}
       <section className="section-py" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+          <div className="grid-2" style={{ alignItems: 'center' }}>
             <div>
               <span className="badge badge-blue" style={{ marginBottom: '1rem' }}>
                 {lang === 'hi' ? '1. संस्था का परिचय' : '1. Foundation Introduction'}
@@ -90,7 +90,7 @@ export const About = () => {
       {/* Section 3 & 4: Mission & Vision */}
       <section className="section-py" style={{ backgroundColor: '#F8FAFC', borderTop: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
+          <div className="grid-2">
             
             <div className="card" style={{ padding: '2.5rem', borderTop: '5px solid #1E40AF' }}>
               <div style={{ width: '56px', height: '56px', borderRadius: '14px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
@@ -133,7 +133,7 @@ export const About = () => {
       {/* Section 5 & 6: Educational & Scholarship Initiatives */}
       <section className="section-py" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: '4rem', alignItems: 'center' }}>
+          <div className="grid-editorial" style={{ alignItems: 'center' }}>
             <div>
               <img 
                 src="/assets/hero_slide_2.jpg" 
@@ -199,7 +199,7 @@ export const About = () => {
             </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+          <div className="grid-4">
             
             <div className="card">
               <div style={{ color: '#1E40AF', marginBottom: '1rem' }}><Lock size={26} /></div>
@@ -260,7 +260,7 @@ export const About = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+          <div className="grid-3">
             {cms.teamMembers.map((member) => (
               <div key={member.id} className="card" style={{ textAlign: 'center', padding: '2.5rem 1.5rem' }}>
                 <div style={{ 
@@ -295,7 +295,7 @@ export const About = () => {
       {/* Section 9 & 10: Transparency & Future Vision */}
       <section className="section-py" style={{ backgroundColor: '#1B2A4E', color: '#FFFFFF' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3.5rem', alignItems: 'center' }}>
+          <div className="grid-2" style={{ alignItems: 'center' }}>
             <div>
               <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FEF08A', marginBottom: '1rem' }}>
                 {lang === 'hi' ? '9. संस्थागत पारदर्शिता' : '9. Institutional Transparency'}

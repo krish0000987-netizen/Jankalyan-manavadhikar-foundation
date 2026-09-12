@@ -184,7 +184,7 @@ export const Documents = () => {
         </div>
 
         {/* Documents Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+        <div className="grid-2">
           {docList.map((doc) => (
             <div 
               key={doc.id} 

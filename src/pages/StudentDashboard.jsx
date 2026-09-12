@@ -52,7 +52,7 @@ export const StudentDashboard = () => {
         </div>
 
         {/* Dashboard Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2rem' }}>
+        <div className="grid-editorial" style={{ gap: '2rem' }}>
           
           {/* Left Column: Application Details & Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -73,7 +73,7 @@ export const StudentDashboard = () => {
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              <div className="grid-2" style={{ gap: '0.75rem', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                 <div><strong>Class / Course:</strong> {student.course}</div>
                 <div><strong>Institution:</strong> {student.institution}</div>
                 <div><strong>District:</strong> {student.district}</div>
@@ -103,7 +103,7 @@ export const StudentDashboard = () => {
                 </h3>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', marginBottom: '1.25rem' }}>
+              <div className="grid-3" style={{ gap: '1rem', marginBottom: '1.25rem' }}>
                 <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px' }}>
                   <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Scholarship Amount</div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#16A34A', margin: '0.25rem 0' }}>

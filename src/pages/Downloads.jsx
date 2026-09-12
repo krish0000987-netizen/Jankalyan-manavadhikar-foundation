@@ -36,7 +36,7 @@ export const Downloads = () => {
         </div>
 
         {/* Downloads Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', maxWidth: '960px', margin: '0 auto 3.5rem' }}>
+        <div className="grid-2" style={{ maxWidth: '960px', margin: '0 auto 3.5rem' }}>
           {cms.downloads.map((item) => (
             <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>

@@ -336,7 +336,7 @@ export const Apply = () => {
               <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.4rem' }}>
                 Applicant Summary
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem', fontSize: '0.9rem' }}>
+              <div className="grid-2" style={{ gap: '0.85rem', fontSize: '0.9rem' }}>
                 <div><strong>Student Name:</strong> {submittedRecord.studentName}</div>
                 <div><strong>Father's Name:</strong> {submittedRecord.fatherName}</div>
                 <div><strong>Registered Mobile:</strong> {submittedRecord.mobile}</div>
@@ -383,7 +383,7 @@ export const Apply = () => {
           /* ====================================================================
              8-STEP APPLICATION WIZARD
              ==================================================================== */
-          <div className="card" style={{ maxWidth: '920px', margin: '0 auto', padding: '2.5rem' }}>
+          <div className="card wizard-card">
             
             {/* Progress Bar & Steps Count */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -474,7 +474,7 @@ export const Apply = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldPassword}</label>
                     <input 
@@ -521,7 +521,7 @@ export const Apply = () => {
                   {errors.fullName && <div className="form-error">{errors.fullName}</div>}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldFatherName}</label>
                     <input 
@@ -544,7 +544,7 @@ export const Apply = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldDob}</label>
                     <input 
@@ -581,7 +581,7 @@ export const Apply = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                <div className="form-row-3">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldDistrict}</label>
                     <input 
@@ -636,7 +636,7 @@ export const Apply = () => {
                   {errors.institutionName && <div className="form-error">{errors.institutionName}</div>}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldClassCourse}</label>
                     <input 
@@ -660,7 +660,7 @@ export const Apply = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label">{t.fieldBoardUni}</label>
                     <input 
@@ -683,7 +683,7 @@ export const Apply = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label">{t.fieldPrevExam}</label>
                     <input 
@@ -771,7 +771,7 @@ export const Apply = () => {
                   {errors.accountHolder && <div className="form-error">{errors.accountHolder}</div>}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldBankName}</label>
                     <input 
@@ -795,7 +795,7 @@ export const Apply = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldAccountNumber}</label>
                     <input 
@@ -875,7 +875,7 @@ export const Apply = () => {
                   {t.allowedFilesHint}
                 </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                <div className="grid-2" style={{ gap: '1.25rem' }}>
                   
                   <div className="upload-dropzone">
                     <Upload size={24} color="#1E40AF" style={{ marginBottom: '0.5rem' }} />
@@ -935,7 +935,7 @@ export const Apply = () => {
 
                 {/* Preview Card */}
                 <div style={{ backgroundColor: '#F8FAFC', padding: '1.5rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                  <div className="grid-2" style={{ gap: '0.75rem' }}>
                     <div><strong>Name:</strong> {formData.fullName || '-'}</div>
                     <div><strong>Father:</strong> {formData.fatherName || '-'}</div>
                     <div><strong>Mobile:</strong> {formData.mobile || '-'}</div>

@@ -77,7 +77,7 @@ export const Grievance = () => {
         </div>
 
         {/* 2-Column Grid: Form & Tracker */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2.5rem', maxWidth: '1080px', margin: '0 auto 3.5rem' }}>
+        <div className="grid-editorial" style={{ maxWidth: '1080px', margin: '0 auto 3.5rem' }}>
           
           {/* Form Box */}
           <div className="card" style={{ padding: '2.5rem' }}>
@@ -104,7 +104,7 @@ export const Grievance = () => {
             )}
 
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label required">Student / Parent Name</label>
                   <input 
@@ -129,7 +129,7 @@ export const Grievance = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Email Address (Optional)</label>
                   <input 

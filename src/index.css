@@ -320,6 +320,12 @@ input, select, textarea {
   box-shadow: var(--shadow-card);
 }
 
+.wizard-card {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2.5rem;
+}
+
 /* Editable Placeholder Badge / Style */
 .editable-field {
   display: inline-flex;
@@ -1082,7 +1088,91 @@ input, select, textarea {
   animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Responsive Breakpoints */
+/* ==========================================================================
+   RESPONSIVE GRID SYSTEM (Eliminates mobile horizontal overflow)
+   ========================================================================== */
+.grid-editorial {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 3.5rem;
+  align-items: center;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
+}
+
+.grid-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.cta-banner-box {
+  background: linear-gradient(135deg, #1B2A4E 0%, #0F172A 100%);
+  border-radius: 24px;
+  padding: 3.5rem;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2rem;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+}
+
+.floating-trust-badge {
+  position: absolute;
+  bottom: -1.5rem;
+  left: -1.5rem;
+  background-color: #1B2A4E;
+  color: #FFFFFF;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  z-index: 10;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS (Desktop -> Tablet -> Mobile)
+   ========================================================================== */
 @media (max-width: 1160px) {
   .desktop-nav {
     display: none !important;
@@ -1099,6 +1189,19 @@ input, select, textarea {
 }
 
 @media (max-width: 1024px) {
+  .grid-editorial {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  .grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .grid-4, .grid-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .overview-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1112,45 +1215,113 @@ input, select, textarea {
 }
 
 @media (max-width: 768px) {
-  .hide-mobile {
-    display: none !important;
-  }
-  .show-mobile-btn {
-    display: flex !important;
-  }
-  .mobile-bottom-nav {
-    display: flex !important;
-  }
-  body {
-    padding-bottom: 64px; /* space for mobile bottom bar */
+  /* Enforce Strict Zero-Horizontal-Overflow */
+  html, body, #root {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
   }
 
+  .container, .container-narrow, .container-wide {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .section-py {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+
+  .section-py-sm {
+    padding-top: 1.75rem !important;
+    padding-bottom: 1.75rem !important;
+  }
+
+  /* All Grids Stack to Single Column on Mobile */
+  .grid-editorial,
+  .grid-2,
+  .grid-3,
+  .grid-4,
+  .grid-5,
+  .form-row-2,
+  .form-row-3 {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+
+  .card, .card-static, .wizard-card {
+    padding: 1.25rem !important;
+  }
+
+  .grid-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .cta-banner-box {
+    padding: 2rem 1.25rem !important;
+    border-radius: 18px !important;
+  }
+
+  /* Prevent Floating Badges from Pushing Viewport */
+  .floating-trust-badge {
+    position: static !important;
+    margin-top: 1rem !important;
+    width: 100% !important;
+    left: 0 !important;
+    bottom: 0 !important;
+  }
+
+  /* Mobile Top Announcement Bar */
+  .announcement-bar {
+    padding: 0.35rem 0 !important;
+  }
+
+  .announcement-content {
+    gap: 0.75rem !important;
+  }
+
+  .ticker-badge {
+    padding: 0.12rem 0.45rem !important;
+    font-size: 0.65rem !important;
+  }
+
+  .ticker-text {
+    font-size: 0.75rem !important;
+  }
+
+  .lang-btn {
+    padding: 0.2rem 0.5rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* Mobile Header */
   .header-inner {
-    min-height: 64px;
-    padding: 0.35rem 0;
-    gap: 0.5rem;
+    min-height: 60px !important;
+    padding: 0.35rem 0 !important;
+    gap: 0.5rem !important;
   }
 
   .brand-logo-img {
-    width: 42px;
-    height: 42px;
+    width: 42px !important;
+    height: 42px !important;
   }
 
   .brand-identity {
-    gap: 0.55rem;
-    max-width: calc(100% - 142px);
+    gap: 0.5rem !important;
+    max-width: calc(100% - 150px) !important;
   }
 
   .brand-text {
-    max-width: 100%;
+    max-width: 100% !important;
   }
 
   .brand-heading {
-    font-size: clamp(0.72rem, 3.2vw, 0.88rem);
-    white-space: normal;
-    word-break: normal;
-    overflow-wrap: break-word;
-    line-height: 1.18;
+    font-size: 0.825rem !important;
+    white-space: normal !important;
+    line-height: 1.18 !important;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -1158,97 +1329,156 @@ input, select, textarea {
   }
 
   .brand-subheading {
-    font-size: 0.62rem;
-    margin-top: 1px;
-    line-height: 1.15;
+    font-size: 0.65rem !important;
+    margin-top: 1px !important;
+    line-height: 1.15 !important;
   }
 
   .header-actions {
-    gap: 0.35rem;
+    gap: 0.4rem !important;
   }
 
   .header-apply-btn {
-    padding: 0.35rem 0.62rem;
-    font-size: 0.75rem;
-    border-radius: 6px;
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 6px !important;
   }
 
   .mobile-menu-toggle {
-    width: 36px;
-    height: 36px;
+    width: 36px !important;
+    height: 36px !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    background-color: #FFFFFF !important;
+    display: flex !important;
   }
 
-  .ticker-badge {
-    padding: 0.12rem 0.45rem !important;
-    font-size: 0.62rem !important;
-  }
-
-  .ticker-text {
-    font-size: 0.74rem;
-  }
-
-  .lang-btn {
-    padding: 0.18rem 0.48rem;
-    font-size: 0.7rem;
-  }
-
-  .overview-grid {
-    grid-template-columns: 1fr;
-    margin-top: -1.5rem;
-  }
-  .footer-grid {
-    grid-template-columns: 1fr;
-  }
+  /* Hero Section Mobile Formatting */
   .hero-slider-container {
-    height: 520px;
+    height: 520px !important;
   }
+
+  .hero-content {
+    max-width: 100% !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.72rem !important;
+    padding: 0.3rem 0.75rem !important;
+    margin-bottom: 0.85rem !important;
+  }
+
   .hero-title {
-    font-size: 2rem;
+    font-size: 1.85rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 0.85rem !important;
   }
+
+  .hero-description {
+    font-size: 0.925rem !important;
+    line-height: 1.55 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .hero-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.75rem !important;
+  }
+
+  .hero-actions .btn {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .slider-arrow {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .slider-arrow.prev { left: 0.5rem !important; }
+  .slider-arrow.next { right: 0.5rem !important; }
+
+  /* Overview Cards Mobile Formatting */
+  .overview-grid {
+    grid-template-columns: 1fr !important;
+    margin-top: -2rem !important;
+    gap: 1rem !important;
+    padding: 0 !important;
+  }
+
+  /* Mobile Bottom Bar Space */
+  body {
+    padding-bottom: 60px !important;
+  }
+
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 56px !important;
+    background-color: #FFFFFF !important;
+    border-top: 1px solid #E2E8F0 !important;
+    z-index: 150 !important;
+    box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+  .show-mobile-btn {
+    display: flex !important;
+  }
+
+  /* Timeline & Stepper on Mobile */
   .timeline-stepper {
-    flex-direction: column;
-    gap: 1.5rem;
-    align-items: flex-start;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    align-items: flex-start !important;
   }
   .timeline-stepper::before {
-    top: 24px;
-    bottom: 24px;
-    left: 24px;
-    width: 3px;
-    height: auto;
+    top: 24px !important;
+    bottom: 24px !important;
+    left: 24px !important;
+    width: 3px !important;
+    height: auto !important;
   }
   .timeline-step {
-    flex-direction: row;
-    width: 100%;
-    text-align: left;
-    gap: 1rem;
+    flex-direction: row !important;
+    width: 100% !important;
+    text-align: left !important;
+    gap: 1rem !important;
   }
-  .nav-menu {
-    display: none;
+
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
   }
 }
 
 @media (max-width: 400px) {
   .brand-logo-img {
-    width: 36px;
-    height: 36px;
+    width: 38px !important;
+    height: 38px !important;
   }
 
   .brand-heading {
-    font-size: 0.72rem;
+    font-size: 0.75rem !important;
   }
 
   .brand-subheading {
-    font-size: 0.58rem;
+    font-size: 0.6rem !important;
   }
 
   .header-apply-btn {
-    padding: 0.32rem 0.5rem;
-    font-size: 0.72rem;
+    padding: 0.32rem 0.55rem !important;
+    font-size: 0.72rem !important;
   }
 
   .ticker-label-text {
-    display: none;
+    display: none !important;
   }
 
   .mobile-drawer {

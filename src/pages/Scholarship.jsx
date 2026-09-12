@@ -24,7 +24,7 @@ export const Scholarship = () => {
       {/* 1. Scholarship Hero */}
       <section style={{ backgroundColor: '#1B2A4E', color: '#FFFFFF', padding: '5rem 0', position: 'relative', overflow: 'hidden' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '3rem', alignItems: 'center' }}>
+          <div className="grid-editorial" style={{ alignItems: 'center' }}>
             <div>
               <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FEF08A', marginBottom: '1rem' }}>
                 {lang === 'hi' ? 'आधिकारिक छात्रवृत्ति योजना 2026-27' : 'OFFICIAL SCHOLARSHIP YOJNA 2026-27'}
@@ -88,7 +88,7 @@ export const Scholarship = () => {
       {/* 2 & 3. Objective & Amount Details */}
       <section className="section-py" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3.5rem', alignItems: 'center' }}>
+          <div className="grid-2" style={{ alignItems: 'center' }}>
             <div>
               <span className="badge badge-blue" style={{ marginBottom: '1rem' }}>
                 {t.objBadge}
@@ -148,7 +148,7 @@ export const Scholarship = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.75rem' }}>
+          <div className="grid-3">
             
             <div className="card">
               <GraduationCap size={28} color="#1E40AF" style={{ marginBottom: '1rem' }} />
@@ -205,7 +205,7 @@ export const Scholarship = () => {
       {/* 7 & 8. Important Dates & Required Documents */}
       <section className="section-py" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: '3.5rem', alignItems: 'center' }}>
+          <div className="grid-editorial" style={{ alignItems: 'center' }}>
             <div>
               <span className="badge badge-red" style={{ marginBottom: '1rem' }}>
                 {lang === 'hi' ? 'महत्वपूर्ण तिथियां' : 'IMPORTANT DATES'}
@@ -250,7 +250,7 @@ export const Scholarship = () => {
                 {t.docTitle}
               </h2>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid-2" style={{ gap: '0.75rem' }}>
                 <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0F172A' }}>{t.doc1}</div>
                   <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{t.doc1Sub}</div>
@@ -293,7 +293,7 @@ export const Scholarship = () => {
             </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+          <div className="grid-3">
             
             <div className="card" style={{ padding: '2rem' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1E40AF', marginBottom: '0.75rem' }}>

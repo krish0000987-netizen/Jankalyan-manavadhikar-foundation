@@ -268,7 +268,7 @@ export const Track = () => {
                   </h3>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
+                <div className="grid-4" style={{ gap: '1rem' }}>
                   <div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.disbursedAmountLabel}</div>
                     <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#166534' }}>{searchResult.disbursedAmount}</div>

@@ -183,7 +183,7 @@ export const Admin = () => {
           <div className="animate-fade-in">
             
             {/* KPI Metrics Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.25rem', marginBottom: '2rem' }}>
+            <div className="grid-5" style={{ marginBottom: '2rem' }}>
               
               <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #1E40AF' }}>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.kpiTotalApps}</div>
@@ -384,7 +384,7 @@ export const Admin = () => {
 
             <form onSubmit={handleSaveCMS}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div className="grid-2" style={{ marginBottom: '2rem' }}>
                 
                 <div className="form-group">
                   <label className="form-label required">Scholarship Amount (Display / Grant Value)</label>
@@ -454,7 +454,7 @@ export const Admin = () => {
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', marginBottom: '1rem' }}>
                   Commission Rates Management (Configurable Per Role)
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                <div className="grid-4" style={{ gap: '1rem' }}>
                   <div>
                     <label className="form-label">District Coordinator</label>
                     <input 
@@ -511,7 +511,7 @@ export const Admin = () => {
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', marginBottom: '1rem' }}>
                   Top Announcement Ticker Item 1
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-row-2">
                   <div>
                     <label className="form-label">English Text</label>
                     <input 
@@ -555,7 +555,7 @@ export const Admin = () => {
             ==================================================================== */}
         {activeTab === 'analytics' && (
           <div className="animate-fade-in">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+            <div className="grid-2" style={{ marginBottom: '2rem' }}>
               
               {/* Chart 1: Applications by District (SVG Bar Chart) */}
               <div className="card" style={{ padding: '2rem' }}>
@@ -658,7 +658,7 @@ export const Admin = () => {
               </div>
 
               {/* Applicant Info Summary */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', fontSize: '0.875rem', backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
+              <div className="grid-2" style={{ gap: '0.75rem', fontSize: '0.875rem', backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
                 <div><strong>Father:</strong> {activeModalApp.fatherName}</div>
                 <div><strong>Mobile:</strong> {activeModalApp.mobile}</div>
                 <div><strong>Institution:</strong> {activeModalApp.institution}</div>

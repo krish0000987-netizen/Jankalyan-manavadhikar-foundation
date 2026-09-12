@@ -261,7 +261,7 @@ export const Home = () => {
           ==================================================================== */}
       <section className="section-py" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr', gap: '3.5rem', alignItems: 'center' }}>
+          <div className="grid-editorial">
             <div>
               <span className="badge badge-blue" style={{ marginBottom: '1rem' }}>
                 {t.objBadge}
@@ -276,7 +276,7 @@ export const Home = () => {
                 {t.objP2}
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div className="form-row-2" style={{ marginBottom: '2rem' }}>
                 <div style={{ padding: '1.25rem', backgroundColor: '#F8FAFC', borderRadius: '12px', borderLeft: '4px solid #1E40AF' }}>
                   <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: '0.35rem', fontSize: '0.95rem' }}>
                     {t.objFeature1}
@@ -319,20 +319,7 @@ export const Home = () => {
               </div>
 
               {/* Floating Trust Emblem */}
-              <div style={{
-                position: 'absolute',
-                bottom: '-1.5rem',
-                left: '-1.5rem',
-                backgroundColor: '#1B2A4E',
-                color: '#FFFFFF',
-                padding: '1.25rem 1.5rem',
-                borderRadius: '16px',
-                boxShadow: '0 12px 28px rgba(0,0,0,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                border: '1px solid rgba(255,255,255,0.1)'
-              }}>
+              <div className="floating-trust-badge">
                 <Award size={32} color="#F59E0B" />
                 <div>
                   <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 600 }}>
@@ -366,7 +353,7 @@ export const Home = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+          <div className="grid-4">
             
             <div className="card">
               <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
@@ -450,7 +437,7 @@ export const Home = () => {
             </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.25rem' }}>
+          <div className="grid-5">
             
             <div style={{ padding: '1.5rem', backgroundColor: '#F8FAFC', borderRadius: '14px', border: '1px solid #E2E8F0', position: 'relative' }}>
               <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1E40AF', opacity: 0.2, position: 'absolute', top: '1rem', right: '1.25rem' }}>
@@ -543,7 +530,7 @@ export const Home = () => {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+          <div className="grid-3">
             {cms.notices.map((n) => (
               <div key={n.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -641,7 +628,7 @@ export const Home = () => {
             </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.75rem' }}>
+          <div className="grid-3">
             
             <div className="card">
               <div style={{ color: '#1E40AF', marginBottom: '1rem' }}>
@@ -736,7 +723,7 @@ export const Home = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
+          <div className="grid-4">
             
             <div className="card" style={{ padding: '1.25rem' }}>
               <div style={{ color: '#1E40AF', marginBottom: '0.75rem' }}><FileText size={22} /></div>
@@ -817,7 +804,7 @@ export const Home = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', textAlign: 'center' }}>
+          <div className="grid-stats">
             
             <div style={{ padding: '2rem 1rem', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#FFFFFF', marginBottom: '0.5rem' }}>
@@ -930,18 +917,7 @@ export const Home = () => {
           ==================================================================== */}
       <section style={{ backgroundColor: '#F8FAFC', paddingBottom: '5rem' }}>
         <div className="container">
-          <div style={{
-            background: 'linear-gradient(135deg, #1B2A4E 0%, #0F172A 100%)',
-            borderRadius: '24px',
-            padding: '3.5rem',
-            color: '#FFFFFF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '2rem',
-            boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)'
-          }}>
+          <div className="cta-banner-box">
             <div style={{ maxWidth: '640px' }}>
               <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FEF08A', marginBottom: '1rem' }}>
                 {lang === 'hi' ? 'समर्पित सहायता' : 'Dedicated Support'}
@@ -954,7 +930,7 @@ export const Home = () => {
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '240px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '340px' }}>
               <a 
                 href={`tel:${cms.officialMobile}`} 
                 className="btn btn-primary"
