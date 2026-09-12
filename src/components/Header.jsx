@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Phone, 
@@ -22,14 +22,26 @@ export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
+  const dropdownRef = useRef(null);
 
   // Compact header on scroll
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 30);
+      setIsScrolled(window.scrollY > 25);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close dropdown if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setRoleDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Cycle announcements every 5s
@@ -47,12 +59,12 @@ export const Header = () => {
     { label: t.navHome, route: '/' },
     { label: t.navAbout, route: '/about' },
     { label: t.navScholarship, route: '/scholarship' },
-    { label: t.navTrack, route: '/track' },
+    { label: lang === 'hi' ? 'आवेदन ट्रैक' : t.navTrack, route: '/track' },
     { label: t.navDocuments, route: '/documents' },
     { label: t.navDownloads, route: '/downloads' },
-    { label: t.navGrievance, route: '/grievance' },
-    { label: t.navFaq, route: '/faq' },
-    { label: t.navContact, route: '/contact' }
+    { label: lang === 'hi' ? 'शिकायत' : t.navGrievance, route: '/grievance' },
+    { label: lang === 'hi' ? 'FAQ' : t.navFaq, route: '/faq' },
+    { label: lang === 'hi' ? 'संपर्क' : t.navContact, route: '/contact' }
   ];
 
   const roles = [
@@ -79,35 +91,122 @@ export const Header = () => {
 
   return (
     <>
-      {/* Top Announcement Bar */}
+      {/* Top Announcement & Utility Bar */}
       <div className="announcement-bar no-print">
-        <div className="container">
+        <div className="container-wide">
           <div className="announcement-content">
+            
+            {/* Left: Announcement Ticker */}
             <div className="announcement-ticker">
-              <span className="badge badge-yellow" style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem' }}>
-                <Volume2 size={12} />
+              <span className="badge badge-yellow" style={{ fontSize: '0.68rem', padding: '0.15rem 0.55rem', flexShrink: 0 }}>
+                <Volume2 size={11} />
                 {t.announcementLabel}
               </span>
-              <span style={{ fontSize: '0.85rem', color: '#E2E8F0' }}>
+              <span style={{ fontSize: '0.825rem', color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {lang === 'hi' ? activeAnnouncement?.hi : activeAnnouncement?.en}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }} className="hide-mobile">
+            {/* Right: Helpline Contacts + Language Switcher + Role Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexShrink: 0 }} className="hide-mobile">
               <a 
                 href={`tel:${cms.officialMobile}`} 
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#CBD5E1', fontSize: '0.8rem' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#CBD5E1', fontSize: '0.78rem' }}
+                title="Helpline Mobile"
               >
-                <Phone size={13} color="#FEF08A" />
+                <Phone size={12} color="#FEF08A" />
                 <span>{cms.officialMobile}</span>
               </a>
+
               <a 
                 href={`mailto:${cms.officialEmail}`} 
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#CBD5E1', fontSize: '0.8rem' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#CBD5E1', fontSize: '0.78rem' }}
+                title="Official Email"
               >
-                <Mail size={13} color="#FEF08A" />
+                <Mail size={12} color="#FEF08A" />
                 <span>{cms.officialEmail}</span>
               </a>
+
+              {/* Language Switcher in Top Bar */}
+              <div className="lang-switcher">
+                <button
+                  className={`lang-btn ${lang === 'hi' ? 'active' : ''}`}
+                  onClick={() => setSpecificLanguage('hi')}
+                  title="हिंदी भाषा चुनें"
+                >
+                  हिंदी
+                </button>
+                <button
+                  className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
+                  onClick={() => setSpecificLanguage('en')}
+                  title="Switch to English"
+                >
+                  English
+                </button>
+              </div>
+
+              {/* Role Switcher Gateway Dropdown in Top Bar */}
+              <div style={{ position: 'relative' }} ref={dropdownRef}>
+                <button 
+                  className="btn btn-outline-white btn-sm"
+                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                  style={{ 
+                    padding: '0.2rem 0.6rem', 
+                    fontSize: '0.75rem', 
+                    gap: '0.3rem', 
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    borderColor: 'rgba(255,255,255,0.25)' 
+                  }}
+                >
+                  <Shield size={12} color="#FEF08A" />
+                  <span>
+                    {roles.find(r => r.id === authRole)?.[lang === 'hi' ? 'labelHi' : 'labelEn'] || 'Portal'}
+                  </span>
+                  <ChevronDown size={12} />
+                </button>
+
+                {roleDropdownOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '120%',
+                    right: 0,
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    boxShadow: '0 12px 30px rgba(0,0,0,0.2)',
+                    border: '1px solid #E2E8F0',
+                    width: '230px',
+                    padding: '0.5rem',
+                    zIndex: 300
+                  }}>
+                    <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.72rem', fontWeight: 700, color: '#64748B', borderBottom: '1px solid #F1F5F9' }}>
+                      {lang === 'hi' ? 'भूमिका चयन (पोर्टल गेटवे)' : 'SELECT PORTAL / ROLE'}
+                    </div>
+                    {roles.map(r => (
+                      <button
+                        key={r.id}
+                        onClick={() => handleRoleSelect(r.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          padding: '0.55rem 0.75rem',
+                          fontSize: '0.825rem',
+                          textAlign: 'left',
+                          borderRadius: '6px',
+                          color: authRole === r.id ? '#1E40AF' : '#1E293B',
+                          backgroundColor: authRole === r.id ? '#EFF6FF' : 'transparent',
+                          fontWeight: authRole === r.id ? 700 : 500
+                        }}
+                      >
+                        <span>{lang === 'hi' ? r.labelHi : r.labelEn}</span>
+                        {authRole === r.id && <CheckCircle size={14} color="#2563EB" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         </div>
@@ -118,11 +217,11 @@ export const Header = () => {
         <div className="container-wide">
           <div className="header-inner">
             
-            {/* Left: Official Foundation Logo & Title */}
+            {/* Left: Official Foundation Logo & Full Undistorted Title */}
             <div 
               className="brand-identity" 
               onClick={() => navigate('/')}
-              style={{ cursor: 'pointer' }}
+              title="Jankalyan Manavadhikar Foundation"
             >
               <img 
                 src="/assets/logo.png" 
@@ -135,7 +234,7 @@ export const Header = () => {
               </div>
             </div>
 
-            {/* Center Navigation Links (Desktop) */}
+            {/* Center: Clean Navigation Menu (Desktop) */}
             <nav className="hide-mobile">
               <ul className="nav-menu">
                 {navLinks.map((item) => (
@@ -151,84 +250,10 @@ export const Header = () => {
               </ul>
             </nav>
 
-            {/* Right Actions: Language Switcher & Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Right: Student Login + Apply Now Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexShrink: 0 }}>
               
-              {/* Language Switcher */}
-              <div className="lang-switcher">
-                <button
-                  className={`lang-btn ${lang === 'hi' ? 'active' : ''}`}
-                  onClick={() => setSpecificLanguage('hi')}
-                  title="हिंदी में बदलें"
-                >
-                  हिंदी
-                </button>
-                <button
-                  className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
-                  onClick={() => setSpecificLanguage('en')}
-                  title="Switch to English"
-                >
-                  English
-                </button>
-              </div>
-
-              {/* Role Switcher Gateway Dropdown */}
-              <div style={{ position: 'relative' }} className="hide-mobile">
-                <button 
-                  className="btn btn-outline btn-sm"
-                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  style={{ gap: '0.35rem' }}
-                >
-                  <Shield size={14} color="#1E40AF" />
-                  <span>
-                    {roles.find(r => r.id === authRole)?.[lang === 'hi' ? 'labelHi' : 'labelEn'] || 'Portal'}
-                  </span>
-                  <ChevronDown size={14} />
-                </button>
-
-                {roleDropdownOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '110%',
-                    right: 0,
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-                    border: '1px solid #E2E8F0',
-                    width: '230px',
-                    padding: '0.5rem',
-                    zIndex: 200
-                  }}>
-                    <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748B', borderBottom: '1px solid #F1F5F9' }}>
-                      {lang === 'hi' ? 'भूमिका चयन (पोर्टल गेटवे)' : 'SELECT PORTAL / ROLE'}
-                    </div>
-                    {roles.map(r => (
-                      <button
-                        key={r.id}
-                        onClick={() => handleRoleSelect(r.id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                          padding: '0.6rem 0.8rem',
-                          fontSize: '0.85rem',
-                          textAlign: 'left',
-                          borderRadius: '8px',
-                          color: authRole === r.id ? '#1E40AF' : '#1E293B',
-                          backgroundColor: authRole === r.id ? '#EFF6FF' : 'transparent',
-                          fontWeight: authRole === r.id ? 600 : 500
-                        }}
-                      >
-                        <span>{lang === 'hi' ? r.labelHi : r.labelEn}</span>
-                        {authRole === r.id && <CheckCircle size={14} color="#2563EB" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Student Login or Dashboard button */}
+              {/* Student Login or Admin button */}
               <button
                 className="btn btn-secondary btn-sm hide-mobile"
                 onClick={() => {
@@ -239,27 +264,29 @@ export const Header = () => {
                   }
                 }}
               >
-                <User size={15} />
+                <User size={14} />
                 <span>{authRole === 'admin' ? t.navAdmin : t.navStudentLogin}</span>
               </button>
 
-              {/* Apply Now Primary CTA */}
+              {/* Apply Now Primary CTA Button */}
               <button
                 className="btn btn-primary btn-sm"
                 onClick={() => navigate('/apply')}
+                id="header-apply-btn"
               >
-                <Sparkles size={15} />
+                <Sparkles size={14} />
                 <span>{t.navApplyNow}</span>
               </button>
 
-              {/* Mobile Hamburger Toggle */}
+              {/* Mobile Hamburger Menu Toggle */}
               <button
                 className="show-mobile-btn"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 style={{
                   padding: '0.5rem',
                   display: 'none',
-                  color: '#1E293B'
+                  color: '#1E293B',
+                  backgroundColor: 'transparent'
                 }}
                 aria-label="Toggle navigation menu"
               >
@@ -278,7 +305,28 @@ export const Header = () => {
             padding: '1.25rem 1.5rem',
             boxShadow: '0 20px 30px rgba(0,0,0,0.1)'
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid #F1F5F9', marginBottom: '1rem' }}>
+              <div className="lang-switcher">
+                <button
+                  className={`lang-btn ${lang === 'hi' ? 'active' : ''}`}
+                  onClick={() => setSpecificLanguage('hi')}
+                >
+                  हिंदी
+                </button>
+                <button
+                  className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
+                  onClick={() => setSpecificLanguage('en')}
+                >
+                  English
+                </button>
+              </div>
+
+              <span className="badge badge-blue">
+                {roles.find(r => r.id === authRole)?.[lang === 'hi' ? 'labelHi' : 'labelEn']}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
               {navLinks.map((item) => (
                 <button
                   key={item.route}
@@ -292,7 +340,7 @@ export const Header = () => {
                     justifyContent: 'space-between',
                     padding: '0.75rem',
                     textAlign: 'left',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontWeight: 600,
                     borderRadius: '8px',
                     color: currentRoute === item.route ? '#DC2626' : '#1E293B',
