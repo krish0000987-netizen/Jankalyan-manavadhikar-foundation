@@ -5,9 +5,14 @@ import { Download, FileText, CheckCircle, FileCheck2, ArrowRight } from 'lucide-
 export const Downloads = () => {
   const { lang, t, navigate, cms } = useApp();
 
-  const handleDownload = (title) => {
-    // Generate simulated download
-    const blob = new Blob([`Jankalyan Manavadhikar Foundation - Official Document\nDocument: ${title}\nAcademic Session: 2026-27\nOfficial Contact: ${cms.officialMobile} | ${cms.officialEmail}`], { type: 'text/plain;charset=utf-8' });
+  const handleDownload = (item) => {
+    const fileUrl = item.file_url || item.fileUrl;
+    if (fileUrl) {
+      window.open(fileUrl, '_blank');
+      return;
+    }
+    const title = (lang === 'hi' ? (item.title_hi || item.titleHi) : (item.title_en || item.titleEn)) || 'Document';
+    const blob = new Blob([`Jankalyan Manavadhikar Foundation - Official Document\nDocument: ${title}\nAcademic Session: 2026-27\nOfficial Contact: ${cms.officialMobile || '+91 761 2400123'} | ${cms.officialEmail || 'info@jankalyan.org'}`], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -15,6 +20,8 @@ export const Downloads = () => {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  const downloadsList = cms.downloads || [];
 
   return (
     <div className="section-py" style={{ backgroundColor: '#F8FAFC', minHeight: '80vh' }}>
@@ -37,31 +44,38 @@ export const Downloads = () => {
 
         {/* Downloads Grid */}
         <div className="grid-2" style={{ maxWidth: '960px', margin: '0 auto 3.5rem' }}>
-          {cms.downloads.map((item) => (
-            <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#EFF6FF', color: '#1E40AF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <FileText size={24} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.25rem' }}>
-                    {lang === 'hi' ? item.titleHi : item.titleEn}
-                  </h3>
-                  <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                    Category: <strong>{lang === 'hi' ? item.categoryHi : item.categoryEn}</strong> • {item.format} ({item.size})
+          {downloadsList.map((item) => {
+            const title = lang === 'hi' ? (item.title_hi || item.titleHi) : (item.title_en || item.titleEn);
+            const category = lang === 'hi' ? (item.category_hi || item.categoryHi) : (item.category_en || item.categoryEn);
+            const format = item.file_format || item.format || 'PDF';
+            const size = item.file_size || item.size || '1.2 MB';
+
+            return (
+              <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#EFF6FF', color: '#1E40AF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.25rem' }}>
+                      {title}
+                    </h3>
+                    <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                      Category: <strong>{category}</strong> • {format} ({size})
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button 
-                className="btn btn-primary btn-sm"
-                onClick={() => handleDownload(lang === 'hi' ? item.titleHi : item.titleEn)}
-              >
-                <Download size={14} />
-                <span>Download</span>
-              </button>
-            </div>
-          ))}
+                <button 
+                  className="btn btn-primary btn-sm"
+                  onClick={() => handleDownload(item)}
+                >
+                  <Download size={14} />
+                  <span>Download</span>
+                </button>
+              </div>
+            );
+          })}
         </div>
 
         {/* Bottom Banner */}

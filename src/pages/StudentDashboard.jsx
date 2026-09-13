@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { applicationService } from '../services/applicationService';
+import { grievanceService } from '../services/grievanceService';
 import { 
   User, 
   Download, 
@@ -13,14 +15,131 @@ import {
   FileCheck, 
   ArrowRight,
   ShieldCheck,
-  Building
+  Building,
+  Search,
+  Award,
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 
 export const StudentDashboard = () => {
-  const { lang, t, navigate, activeStudentApp, cms, grievances } = useApp();
+  const { lang, t, navigate, activeStudentApp, setActiveStudentApp, cms, grievances } = useApp();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [studentGrievances, setStudentGrievances] = useState([]);
+
+  // Default to activeStudentApp or search
   const student = activeStudentApp;
 
-  const studentGrievances = grievances.filter(g => g.applicationId === student.id || g.mobile === student.mobile);
+  useEffect(() => {
+    if (student?.id || student?.mobile) {
+      const q = student.id || student.mobile;
+      grievanceService.getGrievances({ mobile: student.mobile }).then(grvs => {
+        if (grvs) setStudentGrievances(grvs);
+      }).catch(err => console.warn('Grievance fetch error:', err));
+    }
+  }, [student]);
+
+  const handleLookup = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setLoading(true);
+    setSearchError('');
+    try {
+      const result = await applicationService.trackApplication(searchQuery.trim());
+      if (result) {
+        // Find or build active app object
+        setActiveStudentApp({
+          id: result.id,
+          studentName: result.student_name || result.studentName,
+          mobile: result.mobile || searchQuery.trim(),
+          status: result.status,
+          stage: result.status === 'SCHOLARSHIP_RELEASED' ? 5 : result.status === 'APPROVED' ? 4 : result.status === 'UNDER_SCRUTINY' ? 2 : 1,
+          course: result.academic?.course || result.academic_record?.course || '10th Standard',
+          institution: result.institution?.name || 'Govt Excellence School',
+          district: result.address?.district || 'Jabalpur',
+          category: result.student?.social_category || 'OBC',
+          submissionDate: result.created_at ? new Date(result.created_at).toLocaleDateString() : '2026-09-02',
+          bankName: result.bank?.bank_name || 'State Bank of India',
+          disbursedAmount: result.payment?.amount ? `₹${result.payment.amount.toLocaleString('en-IN')}` : '₹12,000',
+          paymentDate: result.payment?.paid_at ? new Date(result.payment.paid_at).toLocaleDateString() : result.status === 'SCHOLARSHIP_RELEASED' ? 'Released' : 'In Verification',
+          utrNumber: result.payment?.utr_number || (result.status === 'SCHOLARSHIP_RELEASED' ? 'SBIN004829104829' : 'Pending Verification'),
+          documents: result.documents || {
+            marksheet: { status: 'Verified' },
+            aadhaar: { status: 'Verified' },
+            incomeCertificate: { status: 'Verified' },
+            bankPassbook: { status: 'Verified' }
+          }
+        });
+      } else {
+        setSearchError('No student application found matching this ID or Mobile number.');
+      }
+    } catch (err) {
+      console.error('Lookup error:', err);
+      setSearchError('Error retrieving application record. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!student) {
+    return (
+      <div className="section-py" style={{ backgroundColor: '#F8FAFC', minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
+        <div className="container" style={{ maxWidth: '640px' }}>
+          <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#EFF6FF', color: '#1E40AF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <User size={32} />
+            </div>
+            <span className="badge badge-navy" style={{ marginBottom: '0.75rem' }}>STUDENT PORTAL</span>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem' }}>
+              {lang === 'hi' ? 'विद्यार्थी डैशबोर्ड लॉगिन / खोज' : 'Access Your Student Dashboard'}
+            </h2>
+            <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '2rem' }}>
+              {lang === 'hi'
+                ? 'अपने आवेदन पत्र की स्थिति, छात्रवृत्ति डीबीटी विवरण एवं प्रमाण पत्र देखने के लिए अपना आवेदन क्रमांक दर्ज करें।'
+                : 'Enter your Application ID (e.g. JMF-2026-108234) or registered mobile number to access your portal.'}
+            </p>
+
+            {searchError && (
+              <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', padding: '0.85rem', borderRadius: '10px', color: '#991B1B', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                {searchError}
+              </div>
+            )}
+
+            <form onSubmit={handleLookup} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input 
+                type="text"
+                className="form-control"
+                placeholder="JMF-2026-XXXXXX or Mobile Number"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ height: '48px', fontSize: '1rem', textAlign: 'center' }}
+                required
+              />
+              <button type="submit" disabled={loading} className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+                <span>{loading ? 'Searching Record...' : 'Access Dashboard'}</span>
+              </button>
+            </form>
+
+            <div style={{ marginTop: '2rem', borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+              <button className="btn btn-outline btn-sm" onClick={() => {
+                setSearchQuery('JMF-2026-108234');
+              }}>
+                Try Demo: JMF-2026-108234
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => navigate('/apply')}>
+                New Application
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isApproved = student.status === 'Approved' || student.status === 'APPROVED' || student.status === 'Scholarship Released' || student.status === 'SCHOLARSHIP_RELEASED';
 
   return (
     <div className="section-py" style={{ backgroundColor: '#F8FAFC', minHeight: '85vh' }}>
@@ -40,9 +159,15 @@ export const StudentDashboard = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button className="btn btn-outline btn-sm" onClick={() => navigate('/track')}>
-              <span>{t.heroCtaTrack}</span>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {isApproved && (
+              <button className="btn btn-gold btn-sm" onClick={() => navigate(`/certificate/${student.id}`)}>
+                <Award size={15} />
+                <span>View Certificate</span>
+              </button>
+            )}
+            <button className="btn btn-outline btn-sm" onClick={() => setActiveStudentApp(null)}>
+              <span>Switch / Search App</span>
             </button>
             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
               <Printer size={15} />

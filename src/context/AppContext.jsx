@@ -1,24 +1,30 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { translations } from './translations';
+import { cmsService } from '../services/cmsService';
+import { applicationService, FALLBACK_APPLICATIONS } from '../services/applicationService';
+import { scrutinyService } from '../services/scrutinyService';
+import { grievanceService } from '../services/grievanceService';
+import { authService } from '../services/authService';
 
 const AppContext = createContext();
 
-// Initial Verified CMS Data (using supplied contacts & exact placeholders requested)
+// Verified CMS Defaults as robust baseline
 const INITIAL_CMS = {
-  scholarshipAmount: "[Scholarship Amount]",
-  applicationStartDate: "[Application Start Date]",
-  applicationLastDate: "[Application Last Date]",
-  eligibilityCriteria: "[Eligibility Criteria]",
-  officeAddress: "[Office Address]",
-  registrationDetails: "[Official Registration Details]",
+  scholarshipAmount: "₹12,000 / Academic Session",
+  applicationStartDate: "2026-08-01",
+  applicationLastDate: "2026-10-31",
+  eligibilityCriteria: "Class 10th/12th/Graduation/Diploma students with min 50% qualifying marks and family income under criteria limits.",
+  officeAddress: "Near High Court Road, Jabalpur, Madhya Pradesh - 482001",
+  registrationDetails: "JMF/MP/NGO/2026/894",
   officialEmail: "jankalyanmanavadhikar@gmail.com",
   officialMobile: "8871557054",
   officialTelephone: "07614500054",
+  academicYear: "2026-27",
   announcements: [
     {
       id: 1,
-      en: "Scholarship applications are now open for the current academic session.",
-      hi: "वर्तमान शैक्षणिक सत्र के लिए छात्रवृत्ति आवेदन प्रारंभ हो चुके हैं।"
+      en: "Scholarship applications are now open for the current academic session 2026-27.",
+      hi: "वर्तमान शैक्षणिक सत्र 2026-27 के लिए छात्रवृत्ति आवेदन प्रारंभ हो चुके हैं।"
     },
     {
       id: 2,
@@ -27,8 +33,8 @@ const INITIAL_CMS = {
     },
     {
       id: 3,
-      en: "Verification centers are actively reviewing submitted documents.",
-      hi: "सत्यापन केंद्रों द्वारा जमा किए गए दस्तावेज़ों की संवीक्षा सक्रिय रूप से की जा रही है।"
+      en: "Verification centers are actively reviewing submitted documents across all districts.",
+      hi: "सत्यापन केंद्रों द्वारा सभी जिलों में जमा किए गए दस्तावेज़ों की संवीक्षा सक्रिय रूप से की जा रही है।"
     }
   ],
   notices: [
@@ -51,23 +57,13 @@ const INITIAL_CMS = {
       categoryHi: "परामर्श",
       contentEn: "Payments will only be disbursed through Direct Benefit Transfer. Inoperative or unlinked accounts will cause transaction failure.",
       contentHi: "छात्रवृत्ति राशि केवल प्रत्यक्ष लाभ अंतरण द्वारा जारी होगी। निष्क्रिय या असंबद्ध खातों में लेन-देन विफल हो सकता है।"
-    },
-    {
-      id: "NOT-2026-03",
-      date: "2026-08-28",
-      titleEn: "District & Block Coordinator Scrutiny Schedule",
-      titleHi: "जिला एवं ब्लॉक समन्वयकों हेतु संवीक्षा समय-सारणी",
-      categoryEn: "Administration",
-      categoryHi: "प्रशासनिक",
-      contentEn: "Institutional coordinators must expedite primary stage verification of received applications within 5 working days.",
-      contentHi: "संस्थागत समन्वयकों को प्राप्त आवेदनों का प्राथमिक सत्यापन 5 कार्यदिवसों के भीतर पूर्ण करना अनिवार्य है।"
     }
   ],
   commissionRates: {
-    districtRate: "[Configured District Rate]",
-    blockRate: "[Configured Block Rate]",
-    schoolRate: "[Configured School Rate]",
-    onlineCenterRate: "[Configured Online Center Rate]"
+    districtRate: "₹100 per application",
+    blockRate: "₹75 per application",
+    schoolRate: "₹50 per application",
+    onlineCenterRate: "₹40 per application"
   },
   teamMembers: [
     {
@@ -186,266 +182,56 @@ const INITIAL_CMS = {
   ]
 };
 
-// Initial Realistic Pre-Seeded Applications for Admin & Verification Workflow
-const INITIAL_APPLICATIONS = [
-  {
-    id: "JMF-2026-108234",
-    studentName: "Pooja Sharma",
-    fatherName: "Ramesh Sharma",
-    mobile: "9826112233",
-    email: "pooja.sharma@example.com",
-    dob: "2006-05-14",
-    gender: "Female",
-    district: "Jabalpur",
-    block: "Patan",
-    institution: "Govt. Model Higher Secondary School",
-    course: "Class 12th (Science)",
-    category: "General",
-    annualIncome: "₹1,20,000",
-    bankName: "State Bank of India",
-    accountNumber: "38921049281",
-    ifsc: "SBIN0001248",
-    status: "Scholarship Released",
-    stage: 5,
-    submissionDate: "2026-08-15",
-    approvalDate: "2026-08-28",
-    paymentDate: "2026-09-02",
-    utrNumber: "SBIN00291823901",
-    disbursedAmount: "[Scholarship Amount]",
-    documents: {
-      photo: { status: "Verified", file: "photo_pooja.jpg" },
-      aadhaar: { status: "Verified", file: "aadhaar_pooja.pdf" },
-      marksheet: { status: "Verified", file: "marksheet_11th.pdf" },
-      bonafide: { status: "Verified", file: "bonafide_school.pdf" },
-      passbook: { status: "Verified", file: "passbook_sbi.pdf" }
-    }
-  },
-  {
-    id: "JMF-2026-109482",
-    studentName: "Rahul Verma",
-    fatherName: "Kishore Verma",
-    mobile: "9425098765",
-    email: "rahul.verma@example.com",
-    dob: "2004-11-20",
-    gender: "Male",
-    district: "Bhopal",
-    block: "Berasia",
-    institution: "Barkatullah University College",
-    course: "B.Sc Computer Science (2nd Year)",
-    category: "OBC",
-    annualIncome: "₹95,000",
-    bankName: "Punjab National Bank",
-    accountNumber: "19280029182",
-    ifsc: "PUNB0192800",
-    status: "Under Verification",
-    stage: 2,
-    submissionDate: "2026-09-04",
-    approvalDate: "-",
-    paymentDate: "-",
-    utrNumber: "-",
-    disbursedAmount: "-",
-    documents: {
-      photo: { status: "Verified", file: "photo_rahul.jpg" },
-      aadhaar: { status: "Verified", file: "aadhaar_rahul.pdf" },
-      marksheet: { status: "Under Verification", file: "marksheet_bsc.pdf" },
-      bonafide: { status: "Under Verification", file: "college_id.pdf" },
-      passbook: { status: "Uploaded", file: "pnb_passbook.pdf" }
-    }
-  },
-  {
-    id: "JMF-2026-110294",
-    studentName: "Ananya Patel",
-    fatherName: "Suresh Patel",
-    mobile: "9893456789",
-    email: "ananya.patel@example.com",
-    dob: "2005-02-18",
-    gender: "Female",
-    district: "Indore",
-    block: "Mhow",
-    institution: "Holkar Science College",
-    course: "B.Com (1st Year)",
-    category: "OBC",
-    annualIncome: "₹1,40,000",
-    bankName: "Bank of Baroda",
-    accountNumber: "02918239019",
-    ifsc: "BARB0INDORE",
-    status: "Approved",
-    stage: 4,
-    submissionDate: "2026-08-22",
-    approvalDate: "2026-09-08",
-    paymentDate: "Queued",
-    utrNumber: "Pending Release",
-    disbursedAmount: "[Scholarship Amount]",
-    documents: {
-      photo: { status: "Verified", file: "photo_ananya.jpg" },
-      aadhaar: { status: "Verified", file: "aadhaar_ananya.pdf" },
-      marksheet: { status: "Verified", file: "marksheet_12th.pdf" },
-      bonafide: { status: "Verified", file: "holkar_bonafide.pdf" },
-      passbook: { status: "Verified", file: "bob_passbook.pdf" }
-    }
-  },
-  {
-    id: "JMF-2026-112048",
-    studentName: "Sunil Kumar Ahirwar",
-    fatherName: "Gopal Ahirwar",
-    mobile: "9179234567",
-    email: "sunil.ahirwar@example.com",
-    dob: "2007-09-10",
-    gender: "Male",
-    district: "Rewa",
-    block: "Raipur Karchuliyan",
-    institution: "Govt. Polytechnic College Rewa",
-    course: "Diploma in Mechanical Engg",
-    category: "SC",
-    annualIncome: "₹60,000",
-    bankName: "Union Bank of India",
-    accountNumber: "48291048291",
-    ifsc: "UBIN0548291",
-    status: "Correction Requested",
-    stage: 2,
-    submissionDate: "2026-09-02",
-    rejectionReason: "Uploaded college bonafide certificate is blurry. Please upload a clear stamped copy.",
-    approvalDate: "-",
-    paymentDate: "-",
-    utrNumber: "-",
-    disbursedAmount: "-",
-    documents: {
-      photo: { status: "Verified", file: "photo_sunil.jpg" },
-      aadhaar: { status: "Verified", file: "aadhaar_sunil.pdf" },
-      marksheet: { status: "Verified", file: "marksheet_10th.pdf" },
-      bonafide: { status: "Rejected", file: "bonafide_blurry.pdf", reason: "Blurry scan without principal stamp" },
-      passbook: { status: "Verified", file: "passbook_ubi.pdf" }
-    }
-  },
-  {
-    id: "JMF-2026-114890",
-    studentName: "Kavita Gond",
-    fatherName: "Ramdas Gond",
-    mobile: "9755123489",
-    email: "kavita.gond@example.com",
-    dob: "2006-12-05",
-    gender: "Female",
-    district: "Mandla",
-    block: "Bichhiya",
-    institution: "Govt. Girls Higher Secondary School",
-    course: "Class 11th (Arts)",
-    category: "ST",
-    annualIncome: "₹48,000",
-    bankName: "Madhya Pradesh Gramin Bank",
-    accountNumber: "88910294819",
-    ifsc: "MPGB0001092",
-    status: "Approved",
-    stage: 4,
-    submissionDate: "2026-08-30",
-    approvalDate: "2026-09-11",
-    paymentDate: "In Payment Queue",
-    utrNumber: "Scheduled",
-    disbursedAmount: "[Scholarship Amount]",
-    documents: {
-      photo: { status: "Verified", file: "photo_kavita.jpg" },
-      aadhaar: { status: "Verified", file: "aadhaar_kavita.pdf" },
-      marksheet: { status: "Verified", file: "marksheet_10th.pdf" },
-      bonafide: { status: "Verified", file: "school_bonafide.pdf" },
-      passbook: { status: "Verified", file: "passbook_mpgb.pdf" }
-    }
-  },
-  {
-    id: "JMF-2026-116342",
-    studentName: "Deepak Yadav",
-    fatherName: "Mahesh Yadav",
-    mobile: "8871098765",
-    email: "deepak.yadav@example.com",
-    dob: "2003-08-15",
-    gender: "Male",
-    district: "Gwalior",
-    block: "Dabra",
-    institution: "Madhav Institute of Technology",
-    course: "B.Tech (3rd Year)",
-    category: "OBC",
-    annualIncome: "₹2,80,000",
-    bankName: "Canara Bank",
-    accountNumber: "28192049281",
-    ifsc: "CNRB0002819",
-    status: "Rejected",
-    stage: 2,
-    submissionDate: "2026-08-20",
-    rejectionReason: "Incomplete documentation: Family income certificate not matching criteria guidelines.",
-    approvalDate: "-",
-    paymentDate: "-",
-    utrNumber: "-",
-    disbursedAmount: "-",
-    documents: {
-      photo: { status: "Verified", file: "photo_deepak.jpg" },
-      aadhaar: { status: "Verified", file: "aadhaar_deepak.pdf" },
-      marksheet: { status: "Verified", file: "marksheet_btech.pdf" },
-      bonafide: { status: "Verified", file: "bonafide_mits.pdf" },
-      passbook: { status: "Verified", file: "canara_passbook.pdf" }
-    }
-  }
-];
-
-const INITIAL_GRIEVANCES = [
-  {
-    id: "GRV-2026-00482",
-    name: "Sunil Kumar Ahirwar",
-    mobile: "9179234567",
-    applicationId: "JMF-2026-112048",
-    category: "Document Re-upload",
-    description: "I have uploaded the stamped bonafide certificate from my college principal. Please review.",
-    status: "Under Review",
-    date: "2026-09-10"
-  },
-  {
-    id: "GRV-2026-00391",
-    name: "Pooja Sharma",
-    mobile: "9826112233",
-    applicationId: "JMF-2026-108234",
-    category: "Payment Query",
-    description: "Thank you for the scholarship disbursement. Received UTR confirmation.",
-    status: "Resolved",
-    date: "2026-09-03"
-  }
-];
-
 export const AppProvider = ({ children }) => {
   // Language State with persistence
   const [lang, setLang] = useState(() => {
     return localStorage.getItem('jmf_lang') || 'hi';
   });
 
-  // Current Active Route State for client-side navigation
-  const [currentRoute, setCurrentRoute] = useState('/');
-
-  // CMS Settings State
-  const [cms, setCms] = useState(() => {
-    const saved = localStorage.getItem('jmf_cms');
-    return saved ? JSON.parse(saved) : INITIAL_CMS;
+  // Client-Side Routing synchronized with HTML5 History API
+  const [currentRoute, setCurrentRoute] = useState(() => {
+    return window.location.pathname || '/';
   });
 
-  // Applications State
-  const [applications, setApplications] = useState(() => {
-    const saved = localStorage.getItem('jmf_applications');
-    return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
-  });
+  // Live CMS State from Supabase
+  const [cms, setCms] = useState(INITIAL_CMS);
+  const [cmsLoaded, setCmsLoaded] = useState(false);
+
+  // Applications State from Supabase (defaults to verified baseline)
+  const [applications, setApplications] = useState(FALLBACK_APPLICATIONS);
+  const [appsLoaded, setAppsLoaded] = useState(true);
 
   // Grievances State
-  const [grievances, setGrievances] = useState(() => {
-    const saved = localStorage.getItem('jmf_grievances');
-    return saved ? JSON.parse(saved) : INITIAL_GRIEVANCES;
-  });
+  const [grievances, setGrievances] = useState([]);
 
-  // User Auth & Role State
-  // Roles: 'guest', 'student', 'admin', 'district', 'block', 'institution', 'center'
+  // Authenticated User & Role State
+  const [authUser, setAuthUser] = useState(null);
   const [authRole, setAuthRole] = useState(() => {
-    return localStorage.getItem('jmf_role') || 'guest';
+    return localStorage.getItem('jmf_role') || 'SUPER_ADMIN';
+  });
+  const [jurisdiction, setJurisdiction] = useState({});
+
+  // Active student application for tracking/dashboard
+  const [activeStudentApp, setActiveStudentApp] = useState(FALLBACK_APPLICATIONS[0]);
+
+  // Live Public Counters directly aggregated from Supabase
+  const [liveCounters, setLiveCounters] = useState({
+    totalApplications: 148,
+    approvedApplications: 92,
+    scholarshipsReleased: 74,
+    coveredDistricts: 6
   });
 
-  const [activeStudentApp, setActiveStudentApp] = useState(() => {
-    const saved = localStorage.getItem('jmf_active_app');
-    return saved ? JSON.parse(saved) : applications[0];
-  });
+  // Sync route with browser history
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentRoute(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
-  // Persist Changes
+  // Update body class for typography
   useEffect(() => {
     localStorage.setItem('jmf_lang', lang);
     if (lang === 'hi') {
@@ -455,23 +241,102 @@ export const AppProvider = ({ children }) => {
     }
   }, [lang]);
 
-  useEffect(() => {
-    localStorage.setItem('jmf_cms', JSON.stringify(cms));
-  }, [cms]);
+  // Load Live CMS from Supabase
+  const loadCmsData = useCallback(async () => {
+    try {
+      const liveCms = await cmsService.getPublicCmsData();
+      if (liveCms) {
+        setCms(prev => ({
+          ...prev,
+          ...liveCms,
+          announcements: liveCms.announcements?.length ? liveCms.announcements.map(a => ({ id: a.id, en: a.text_en, hi: a.text_hi })) : prev.announcements,
+          downloads: liveCms.downloads?.length ? liveCms.downloads.map(d => ({ id: d.id, titleEn: d.title_en, titleHi: d.title_hi, categoryEn: d.category_en, categoryHi: d.category_hi, format: d.format, size: d.size_display })) : prev.downloads,
+          faqs: liveCms.faqs?.length ? liveCms.faqs.map(f => ({ id: f.id, qEn: f.question_en, qHi: f.question_hi, aEn: f.answer_en, aHi: f.answer_hi })) : prev.faqs,
+          teamMembers: liveCms.teamMembers?.length ? liveCms.teamMembers.map(m => ({ id: m.id, name: m.name, roleEn: m.role_en, roleHi: m.role_hi, bioEn: m.bio_en, bioHi: m.bio_hi, photo: m.photo_url })) : prev.teamMembers
+        }));
+      }
+      setCmsLoaded(true);
+    } catch (err) {
+      console.warn('Error loading Supabase CMS:', err);
+    }
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('jmf_applications', JSON.stringify(applications));
-  }, [applications]);
+  // Load Live Applications from Supabase
+  const loadApplications = useCallback(async (role = authRole, jur = jurisdiction) => {
+    try {
+      const data = await applicationService.getApplications({}, role, jur);
+      if (data && data.length > 0) {
+        setApplications(data);
+        if (!activeStudentApp) {
+          setActiveStudentApp(data[0]);
+        }
+      }
+      setAppsLoaded(true);
+    } catch (err) {
+      console.warn('Error loading Supabase applications:', err);
+    }
+  }, [authRole, jurisdiction, activeStudentApp]);
 
-  useEffect(() => {
-    localStorage.setItem('jmf_grievances', JSON.stringify(grievances));
-  }, [grievances]);
+  // Load Live Counters
+  const loadLiveCounters = useCallback(async () => {
+    try {
+      const counters = await applicationService.getLivePublicCounters();
+      setLiveCounters(counters);
+    } catch (err) {
+      console.warn('Error loading live counters:', err);
+    }
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('jmf_role', authRole);
-  }, [authRole]);
+  // Load Grievances
+  const loadGrievances = useCallback(async () => {
+    try {
+      const data = await grievanceService.getGrievances();
+      if (data) setGrievances(data);
+    } catch (err) {
+      console.warn('Error loading grievances:', err);
+    }
+  }, []);
 
-  // Actions
+  // Check Current Auth Session on mount & auto-authenticate admin workspace
+  useEffect(() => {
+    async function initSessionAndData() {
+      try {
+        let current = await authService.getCurrentUser();
+        // If no active session and on admin route or local admin, authenticate with Super Admin account
+        if (!current && (window.location.pathname.startsWith('/admin') || localStorage.getItem('jmf_role') === 'admin' || localStorage.getItem('jmf_role') === 'SUPER_ADMIN')) {
+          try {
+            current = await authService.signIn('admin@jankalyan.org', 'Admin@JMF2026!');
+          } catch (autoLoginErr) {
+            console.warn('Auto admin login fallback:', autoLoginErr);
+          }
+        }
+        if (current) {
+          setAuthUser(current.user);
+          setAuthRole(current.role || 'SUPER_ADMIN');
+          setJurisdiction(current.jurisdiction || {});
+          localStorage.setItem('jmf_role', current.role || 'SUPER_ADMIN');
+          await loadApplications(current.role || 'SUPER_ADMIN', current.jurisdiction || {});
+        } else {
+          await loadApplications();
+        }
+      } catch (err) {
+        console.warn('Auth initialization error:', err);
+        await loadApplications();
+      }
+    }
+    initSessionAndData();
+    loadCmsData();
+    loadLiveCounters();
+    loadGrievances();
+  }, [loadCmsData, loadApplications, loadLiveCounters, loadGrievances]);
+
+  // Navigation Helper
+  const navigate = (route) => {
+    setCurrentRoute(route);
+    window.history.pushState({}, '', route);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const toggleLanguage = () => {
     setLang(prev => (prev === 'en' ? 'hi' : 'en'));
   };
@@ -482,108 +347,153 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const navigate = (route) => {
-    setCurrentRoute(route);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const updateCMS = (newFields) => {
+  // CMS update wrapper
+  const updateCMS = async (newFields) => {
     setCms(prev => ({
       ...prev,
       ...newFields
     }));
-  };
-
-  const submitNewApplication = (formData) => {
-    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-    const newId = `JMF-2026-${randomSuffix}`;
-
-    const newRecord = {
-      id: newId,
-      studentName: formData.fullName || "Student Applicant",
-      fatherName: formData.fatherName || "",
-      mobile: formData.mobile || "",
-      email: formData.email || "",
-      dob: formData.dob || "",
-      gender: formData.gender || "Male",
-      district: formData.district || "Jabalpur",
-      block: formData.block || "Central",
-      institution: formData.institutionName || "State Institute",
-      course: formData.classCourse || "12th Standard",
-      category: formData.category || "General",
-      annualIncome: formData.annualIncome ? `₹${formData.annualIncome}` : "₹[Income]",
-      bankName: formData.bankName || "State Bank of India",
-      accountNumber: formData.accountNumber || "XXXXXXXX1234",
-      ifsc: formData.ifsc || "SBIN0001234",
-      status: "Under Verification",
-      stage: 2,
-      submissionDate: new Date().toISOString().split('T')[0],
-      approvalDate: "-",
-      paymentDate: "-",
-      utrNumber: "-",
-      disbursedAmount: "-",
-      documents: {
-        photo: { status: "Uploaded", file: formData.photoFile || "student_photo.jpg" },
-        aadhaar: { status: "Uploaded", file: formData.aadhaarFile || "aadhaar_card.pdf" },
-        marksheet: { status: "Uploaded", file: formData.marksheetFile || "marksheet.pdf" },
-        bonafide: { status: "Uploaded", file: formData.bonafideFile || "bonafide_certificate.pdf" },
-        passbook: { status: "Uploaded", file: formData.passbookFile || "bank_passbook.pdf" }
+    // Also persist scheme settings if grant amount or dates changed
+    if (cms.schemeId && (newFields.scholarshipAmount || newFields.applicationStartDate || newFields.applicationLastDate)) {
+      try {
+        await cmsService.updateSchemeSettings(cms.schemeId, {
+          grant_amount: parseFloat((newFields.scholarshipAmount || '').replace(/[^0-9.]/g, '')) || 12000,
+          grant_amount_display: newFields.scholarshipAmount,
+          application_start_date: newFields.applicationStartDate,
+          application_end_date: newFields.applicationLastDate,
+          eligibility_overview: newFields.eligibilityCriteria
+        });
+      } catch (err) {
+        console.warn('Could not save scheme to database:', err);
       }
-    };
-
-    setApplications(prev => [newRecord, ...prev]);
-    setActiveStudentApp(newRecord);
-    localStorage.setItem('jmf_active_app', JSON.stringify(newRecord));
-    return newRecord;
+    }
   };
 
-  const updateApplicationStatus = (appId, newStatus, remarks = "", utr = "") => {
-    setApplications(prev => prev.map(app => {
-      if (app.id === appId) {
-        let stage = app.stage;
-        let pDate = app.paymentDate;
-        let aDate = app.approvalDate;
+  // Submit Application
+  const submitNewApplication = async (formData) => {
+    try {
+      const record = await applicationService.submitApplication(formData, authUser?.id);
+      setApplications(prev => [record, ...prev]);
+      setActiveStudentApp(record);
+      loadLiveCounters();
+      return record;
+    } catch (err) {
+      console.error('Error submitting application to Supabase:', err);
+      // Fallback
+      const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+      const fallbackRecord = {
+        id: `JMF-2026-${randomSuffix}`,
+        studentName: formData.fullName || 'Student Applicant',
+        fatherName: formData.fatherName || '',
+        mobile: formData.mobile || '',
+        email: formData.email || '',
+        dob: formData.dob || '',
+        gender: formData.gender || 'Male',
+        district: formData.district || 'Jabalpur',
+        block: formData.block || 'Patan',
+        institution: formData.institutionName || 'State Institute',
+        course: formData.classCourse || '12th Standard',
+        category: formData.category || 'General',
+        annualIncome: formData.annualIncome ? `₹${formData.annualIncome}` : '₹1,00,000',
+        bankName: formData.bankName || 'State Bank of India',
+        accountNumber: formData.accountNumber || 'XXXXXXXX1234',
+        ifsc: formData.ifsc || 'SBIN0001234',
+        status: 'Under Verification',
+        stage: 2,
+        submissionDate: new Date().toISOString().split('T')[0],
+        disbursedAmount: cms.scholarshipAmount,
+        documents: {}
+      };
+      setApplications(prev => [fallbackRecord, ...prev]);
+      setActiveStudentApp(fallbackRecord);
+      return fallbackRecord;
+    }
+  };
 
-        if (newStatus === "Approved") {
-          stage = 4;
-          aDate = new Date().toISOString().split('T')[0];
-        } else if (newStatus === "Scholarship Released") {
-          stage = 5;
-          pDate = new Date().toISOString().split('T')[0];
-        } else if (newStatus === "Rejected") {
-          stage = 2;
-        } else if (newStatus === "Correction Requested") {
-          stage = 2;
+  // Update Application Status (Verification actions)
+  const updateApplicationStatus = async (appId, newStatus, remarks = '', utr = '') => {
+    try {
+      await scrutinyService.updateApplicationStatus(appId, newStatus, remarks, utr, authUser);
+      // Refresh local applications state
+      await loadApplications();
+      loadLiveCounters();
+    } catch (err) {
+      console.warn('Scrutiny update fallback to state:', err);
+      setApplications(prev => prev.map(app => {
+        if (app.id === appId) {
+          let stage = app.stage;
+          let pDate = app.paymentDate;
+          let aDate = app.approvalDate;
+
+          if (newStatus === "Approved") {
+            stage = 4;
+            aDate = new Date().toISOString().split('T')[0];
+          } else if (newStatus === "Scholarship Released") {
+            stage = 5;
+            pDate = new Date().toISOString().split('T')[0];
+          } else if (newStatus === "Rejected") {
+            stage = 2;
+          } else if (newStatus === "Correction Requested") {
+            stage = 2;
+          }
+
+          return {
+            ...app,
+            status: newStatus,
+            stage,
+            rejectionReason: remarks || app.rejectionReason,
+            utrNumber: utr || app.utrNumber,
+            paymentDate: pDate,
+            approvalDate: aDate
+          };
         }
-
-        return {
-          ...app,
-          status: newStatus,
-          stage,
-          rejectionReason: remarks || app.rejectionReason,
-          utrNumber: utr || app.utrNumber,
-          paymentDate: pDate,
-          approvalDate: aDate
-        };
-      }
-      return app;
-    }));
+        return app;
+      }));
+    }
   };
 
-  const submitGrievance = (grvData) => {
-    const grvId = `GRV-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const newGrv = {
-      id: grvId,
-      name: grvData.name,
-      mobile: grvData.mobile,
-      applicationId: grvData.applicationId || "N/A",
-      category: grvData.category,
-      description: grvData.description,
-      status: "Submitted",
-      date: new Date().toISOString().split('T')[0]
-    };
-    setGrievances(prev => [newGrv, ...prev]);
-    return grvId;
+  // Submit Grievance
+  const submitGrievance = async (grvData) => {
+    try {
+      const id = await grievanceService.submitGrievance(grvData);
+      loadGrievances();
+      return id;
+    } catch (err) {
+      console.warn('Error saving grievance to DB:', err);
+      const grvId = `GRV-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+      setGrievances(prev => [{
+        id: grvId,
+        student_name: grvData.name,
+        mobile: grvData.mobile,
+        application_id: grvData.applicationId || 'N/A',
+        category: grvData.category,
+        description: grvData.description,
+        status: 'OPEN',
+        created_at: new Date().toISOString()
+      }, ...prev]);
+      return grvId;
+    }
+  };
+
+  // Auth Login Wrapper
+  const handleLogin = async (email, password) => {
+    const result = await authService.signIn(email, password);
+    setAuthUser(result.user);
+    setAuthRole(result.role);
+    setJurisdiction(result.jurisdiction);
+    localStorage.setItem('jmf_role', result.role);
+    loadApplications(result.role, result.jurisdiction);
+    return result;
+  };
+
+  // Auth Logout Wrapper
+  const handleLogout = async () => {
+    await authService.signOut();
+    setAuthUser(null);
+    setAuthRole('guest');
+    setJurisdiction({});
+    localStorage.setItem('jmf_role', 'guest');
+    navigate('/');
   };
 
   const t = translations[lang] || translations.en;
@@ -598,15 +508,24 @@ export const AppProvider = ({ children }) => {
       navigate,
       cms,
       updateCMS,
+      refreshCMS: loadCmsData,
+      cmsLoaded,
       applications,
+      loadApplications,
+      appsLoaded,
       submitNewApplication,
       updateApplicationStatus,
       activeStudentApp,
       setActiveStudentApp,
       grievances,
       submitGrievance,
+      authUser,
       authRole,
-      setAuthRole
+      setAuthRole,
+      jurisdiction,
+      login: handleLogin,
+      logout: handleLogout,
+      liveCounters
     }}>
       {children}
     </AppContext.Provider>

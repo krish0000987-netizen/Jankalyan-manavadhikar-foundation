@@ -7,12 +7,13 @@ export const Faq = () => {
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState(null);
 
-  const filteredFaqs = cms.faqs.filter(f => {
+  const faqsList = cms.faqs || [];
+  const filteredFaqs = faqsList.filter(f => {
     const q = search.toLowerCase();
-    const qEn = f.qEn.toLowerCase();
-    const qHi = f.qHi.toLowerCase();
-    const aEn = f.aEn.toLowerCase();
-    const aHi = f.aHi.toLowerCase();
+    const qEn = (f.question_en || f.qEn || '').toLowerCase();
+    const qHi = (f.question_hi || f.qHi || '').toLowerCase();
+    const aEn = (f.answer_en || f.aEn || '').toLowerCase();
+    const aHi = (f.answer_hi || f.aHi || '').toLowerCase();
     return qEn.includes(q) || qHi.includes(q) || aEn.includes(q) || aHi.includes(q);
   });
 
@@ -77,7 +78,7 @@ export const Faq = () => {
                   }}
                 >
                   <span style={{ paddingRight: '1rem' }}>
-                    {lang === 'hi' ? item.qHi : item.qEn}
+                    {lang === 'hi' ? (item.question_hi || item.qHi) : (item.question_en || item.qEn)}
                   </span>
                   <span style={{ fontSize: '1.5rem', color: '#1E40AF', lineHeight: 1 }}>
                     {isOpen ? '−' : '+'}
@@ -86,7 +87,7 @@ export const Faq = () => {
 
                 {isOpen && (
                   <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #F1F5F9', color: '#334155', fontSize: '0.975rem', lineHeight: 1.75 }}>
-                    {lang === 'hi' ? item.aHi : item.aEn}
+                    {lang === 'hi' ? (item.answer_hi || item.aHi) : (item.answer_en || item.aEn)}
                   </div>
                 )}
               </div>

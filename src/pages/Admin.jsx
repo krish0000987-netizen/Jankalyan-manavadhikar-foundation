@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { AdminSidebar } from '../components/admin/AdminSidebar';
+import { AdminTopNav } from '../components/admin/AdminTopNav';
+import { ApplicationScrutinyModal } from '../components/admin/ApplicationScrutinyModal';
+import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { 
-  Shield, 
   Users, 
-  CheckCircle, 
+  CheckCircle2, 
   XCircle, 
   Clock, 
   CreditCard, 
@@ -22,38 +25,133 @@ import {
   RefreshCw,
   Building,
   BarChart3,
-  PieChart
+  PieChart,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Shield,
+  HeartHandshake,
+  Award,
+  Bell,
+  HelpCircle,
+  ShieldAlert,
+  Printer
 } from 'lucide-react';
+import { paymentService } from '../services/paymentService';
+import { reportService } from '../services/reportService';
+import { commissionService } from '../services/commissionService';
+import { grievanceService } from '../services/grievanceService';
+import { meritService } from '../services/meritService';
+import { donorService } from '../services/donorService';
+import { certificateService } from '../services/certificateService';
+import { auditService } from '../services/auditService';
+import { cmsService } from '../services/cmsService';
+import { uploadFile } from '../api/storage';
+import { DistrictsManager } from '../components/admin/DistrictsManager';
+import { InstitutionsManager } from '../components/admin/InstitutionsManager';
+import { SchemesManager } from '../components/admin/SchemesManager';
+import { MeritManager } from '../components/admin/MeritManager';
+import { DonorsManager } from '../components/admin/DonorsManager';
+import { NotificationsManager } from '../components/admin/NotificationsManager';
+import { MediaManager } from '../components/admin/MediaManager';
+import { DownloadsManager } from '../components/admin/DownloadsManager';
+import { QrVerifyManager } from '../components/admin/QrVerifyManager';
+import { UsersManager } from '../components/admin/UsersManager';
+import { SettingsManager } from '../components/admin/SettingsManager';
 
 export const Admin = () => {
-  const { lang, t, navigate, applications, updateApplicationStatus, cms, updateCMS, authRole, setAuthRole } = useApp();
+  const { 
+    lang, 
+    t, 
+    navigate, 
+    applications, 
+    loadApplications, 
+    updateApplicationStatus, 
+    cms, 
+    updateCMS, 
+    authUser, 
+    authRole, 
+    setAuthRole,
+    logout,
+    grievances 
+  } = useApp();
 
-  // Active Admin Subtab: 'applications' | 'cms' | 'payments' | 'analytics'
-  const [activeTab, setActiveTab] = useState('applications');
+  // Active module tab
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
 
-  // Filters
+  // Application Filters
   const [selectedDistrict, setSelectedDistrict] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [tableSearch, setTableSearch] = useState('');
 
-  // Selected Application for Scrutiny Modal
+  // Scrutiny Modal
   const [activeModalApp, setActiveModalApp] = useState(null);
-  const [actionRemarks, setActionRemarks] = useState('');
+
+  // Live MIS Summary
+  const [misSummary, setMisSummary] = useState(null);
+
+  // Payments / DBT state
+  const [dbtBatches, setDbtBatches] = useState([]);
+  const [dbtPayments, setDbtPayments] = useState([]);
+  const [selectedForBatch, setSelectedForBatch] = useState([]);
+
+  // Commissions state
+  const [commissionRates, setCommissionRates] = useState([]);
+  const [commissionsList, setCommissionsList] = useState([]);
 
   // CMS Form State
   const [cmsForm, setCmsForm] = useState({ ...cms });
   const [cmsSaveAlert, setCmsSaveAlert] = useState(false);
+  const [heroSlides, setHeroSlides] = useState(cms.heroSlides || []);
+  const [noticesList, setNoticesList] = useState(cms.notices || []);
+  const [faqsList, setFaqsList] = useState(cms.faqs || []);
+  const [teamList, setTeamList] = useState(cms.teamMembers || []);
+  const [downloadsList, setDownloadsList] = useState(cms.downloads || []);
+
+  // Grievance / Audit / Certificates / Merit state
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [issuedCertificates, setIssuedCertificates] = useState([]);
+  const [meritLists, setMeritLists] = useState([]);
+  const [donorsList, setDonorsList] = useState([]);
+
+  // Load backend data on tab change
+  useEffect(() => {
+    loadApplications();
+    reportService.getDashboardSummary().then(setMisSummary);
+    paymentService.getPaymentBatches().then(setDbtBatches);
+    paymentService.getPayments().then(setDbtPayments);
+    commissionService.getCommissionRates().then(setCommissionRates);
+    commissionService.getCommissions().then(setCommissionsList);
+    auditService.getAuditLogs().then(setAuditLogs);
+    certificateService.getCertificates().then(setIssuedCertificates);
+    meritService.getMeritLists().then(setMeritLists);
+    donorService.getDonors().then(setDonorsList);
+    cmsService.getHeroSlides().then(setHeroSlides);
+    cmsService.getNotices().then(setNoticesList);
+    cmsService.getFaqs().then(setFaqsList);
+    cmsService.getTeamMembers().then(setTeamList);
+    cmsService.getDownloads().then(setDownloadsList);
+  }, [activeTab]);
+
+  // Keep cmsForm synced with cms context
+  useEffect(() => {
+    setCmsForm(prev => ({ ...prev, ...cms }));
+  }, [cms]);
 
   // Filtered Applications
   const filteredApplications = applications.filter(app => {
     const matchesDistrict = selectedDistrict === 'All' || app.district === selectedDistrict;
     const matchesCategory = selectedCategory === 'All' || app.category === selectedCategory;
     const matchesStatus = selectedStatus === 'All' || app.status === selectedStatus;
-    const matchesSearch = !tableSearch || 
-      app.id.toLowerCase().includes(tableSearch.toLowerCase()) || 
-      app.studentName.toLowerCase().includes(tableSearch.toLowerCase()) ||
-      app.institution.toLowerCase().includes(tableSearch.toLowerCase());
+    const searchTarget = (tableSearch || globalSearch).toLowerCase();
+    const matchesSearch = !searchTarget || 
+      app.id.toLowerCase().includes(searchTarget) || 
+      app.studentName.toLowerCase().includes(searchTarget) ||
+      app.institution.toLowerCase().includes(searchTarget) ||
+      app.mobile.includes(searchTarget);
     return matchesDistrict && matchesCategory && matchesStatus && matchesSearch;
   });
 
@@ -61,676 +159,1318 @@ export const Admin = () => {
   const totalCount = applications.length;
   const approvedCount = applications.filter(a => a.status === 'Approved').length;
   const releasedCount = applications.filter(a => a.status === 'Scholarship Released').length;
-  const underVerificationCount = applications.filter(a => a.status === 'Under Verification').length;
+  const underVerificationCount = applications.filter(a => a.status === 'Under Verification' || a.status === 'Re-Submitted').length;
   const rejectedCount = applications.filter(a => a.status === 'Rejected').length;
   const correctionCount = applications.filter(a => a.status === 'Correction Requested').length;
 
-  // Handle Application Verification Actions
-  const handleApprove = (appId) => {
-    updateApplicationStatus(appId, 'Approved', 'Approved by Institutional Verification Board');
-    setActiveModalApp(null);
-  };
-
-  const handleReleasePayment = (appId) => {
-    const utr = `JMF${Math.floor(100000000000 + Math.random() * 900000000000)}`;
-    updateApplicationStatus(appId, 'Scholarship Released', 'Direct Benefit Transfer completed', utr);
-    setActiveModalApp(null);
-  };
-
-  const handleReject = (appId) => {
-    if (!actionRemarks) {
-      alert('Please enter a rejection reason.');
-      return;
-    }
-    updateApplicationStatus(appId, 'Rejected', actionRemarks);
-    setActiveModalApp(null);
-    setActionRemarks('');
-  };
-
-  const handleRequestCorrection = (appId) => {
-    if (!actionRemarks) {
-      alert('Please specify the required correction.');
-      return;
-    }
-    updateApplicationStatus(appId, 'Correction Requested', actionRemarks);
-    setActiveModalApp(null);
-    setActionRemarks('');
-  };
-
-  // CMS Save
-  const handleSaveCMS = (e) => {
-    e.preventDefault();
-    updateCMS(cmsForm);
+  // Handle CMS Save
+  const handleSaveCMS = async (e) => {
+    e?.preventDefault();
+    await updateCMS(cmsForm);
     setCmsSaveAlert(true);
     setTimeout(() => setCmsSaveAlert(false), 3500);
   };
 
+  // Export Applications to CSV
+  const handleExportApplications = () => {
+    const rows = filteredApplications.map(app => ({
+      'Application ID': app.id,
+      'Student Name': app.studentName,
+      'Father Name': app.fatherName,
+      'Mobile': app.mobile,
+      'District': app.district,
+      'Block': app.block,
+      'Institution': app.institution,
+      'Course': app.course,
+      'Category': app.category,
+      'Status': app.status,
+      'Submission Date': app.submissionDate,
+      'Approval Date': app.approvalDate,
+      'Payment Date': app.paymentDate,
+      'UTR Number': app.utrNumber
+    }));
+    reportService.exportToCsv(`JMF_Applications_${new Date().toISOString().slice(0,10)}.csv`, rows);
+    auditService.log({
+      actorId: authUser?.id,
+      actorRole: authRole,
+      action: 'EXPORT_DATA',
+      entityType: 'application',
+      newData: { recordsExported: rows.length }
+    });
+  };
+
+  // Create Payment Batch for selected approved students
+  const handleCreateBatch = async () => {
+    const approvedIds = applications.filter(a => a.status === 'Approved').map(a => a.id);
+    if (approvedIds.length === 0) {
+      alert('No approved applications available to batch.');
+      return;
+    }
+    try {
+      const batch = await paymentService.createPaymentBatch(approvedIds, authUser?.id);
+      alert(`DBT Batch ${batch.batch_number} created successfully with ${batch.total_students} approved students!`);
+      const batches = await paymentService.getPaymentBatches();
+      setDbtBatches(batches);
+      setActiveTab('payments');
+    } catch (err) {
+      alert('Error creating batch: ' + err.message);
+    }
+  };
+
+  // Process Batch Disbursement
+  const handleDisburseBatch = async (batchId) => {
+    if (!confirm('Are you sure you want to release Direct Benefit Transfer for this batch? This will record official banking UTRs.')) {
+      return;
+    }
+    try {
+      await paymentService.processBatchDisbursement(batchId);
+      alert('Direct Benefit Transfer successfully disbursed and recorded in database!');
+      await loadApplications();
+      const batches = await paymentService.getPaymentBatches();
+      setDbtBatches(batches);
+      const pmts = await paymentService.getPayments();
+      setDbtPayments(pmts);
+    } catch (err) {
+      alert('Disbursement error: ' + err.message);
+    }
+  };
+
   return (
-    <div className="section-py" style={{ backgroundColor: '#F8FAFC', minHeight: '85vh' }}>
-      <div className="container-wide">
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8FAFC' }}>
+      
+      {/* Left Sidebar */}
+      <AdminSidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        role={authRole} 
+        sidebarOpen={sidebarOpen} 
+        setSidebarOpen={setSidebarOpen}
+        onLogout={logout}
+      />
+
+      {/* Main Admin Content Canvas */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         
-        {/* Top Portal Header & Role Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <Shield size={20} color="#1E40AF" />
-              <span className="badge badge-blue">
-                {authRole.toUpperCase()} PORTAL
-              </span>
-            </div>
-            <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0F172A' }}>
-              {t.adminPortalTitle}
-            </h1>
-            <p style={{ color: '#64748B', fontSize: '0.9rem' }}>
-              Role-Based Governance, Multi-Tier Scrutiny, and Real-Time Content Management System
-            </p>
-          </div>
+        {/* Top Navigation */}
+        <AdminTopNav 
+          user={authUser}
+          role={authRole}
+          setRole={setAuthRole}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          onExitPublic={() => navigate('/')}
+          onSearchChange={setGlobalSearch}
+          searchValue={globalSearch}
+        />
 
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <select 
-              className="form-control"
-              value={authRole}
-              onChange={(e) => setAuthRole(e.target.value)}
-              style={{ width: 'auto', fontWeight: 600 }}
-            >
-              <option value="admin">Super Admin</option>
-              <option value="district">District Coordinator</option>
-              <option value="block">Block Coordinator</option>
-              <option value="institution">School / College</option>
-              <option value="center">Online Center</option>
-            </select>
-
-            <button className="btn btn-outline btn-sm" onClick={() => navigate('/')}>
-              <span>Exit to Public Portal</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Admin Navigation Tabs */}
-        <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #E2E8F0', marginBottom: '2rem' }}>
-          <button 
-            className={`btn ${activeTab === 'applications' ? 'btn-secondary' : 'btn-outline'}`}
-            style={{ borderRadius: '8px 8px 0 0', borderBottom: 'none' }}
-            onClick={() => setActiveTab('applications')}
-          >
-            <Users size={16} />
-            <span>Applications & Verification ({totalCount})</span>
-          </button>
-
-          <button 
-            className={`btn ${activeTab === 'cms' ? 'btn-secondary' : 'btn-outline'}`}
-            style={{ borderRadius: '8px 8px 0 0', borderBottom: 'none' }}
-            onClick={() => setActiveTab('cms')}
-          >
-            <Settings size={16} />
-            <span>Live CMS & Policy Editor</span>
-          </button>
-
-          <button 
-            className={`btn ${activeTab === 'analytics' ? 'btn-secondary' : 'btn-outline'}`}
-            style={{ borderRadius: '8px 8px 0 0', borderBottom: 'none' }}
-            onClick={() => setActiveTab('analytics')}
-          >
-            <BarChart3 size={16} />
-            <span>Analytics & District Breakdown</span>
-          </button>
-        </div>
-
-        {/* ====================================================================
-            TAB 1: APPLICATIONS & VERIFICATION TABLE
-            ==================================================================== */}
-        {activeTab === 'applications' && (
-          <div className="animate-fade-in">
-            
-            {/* KPI Metrics Cards */}
-            <div className="grid-5" style={{ marginBottom: '2rem' }}>
+        {/* Content Body */}
+        <main style={{ flex: 1, padding: '2rem' }}>
+          
+          {/* ====================================================================
+              MODULE 1: DASHBOARD
+              ==================================================================== */}
+          {activeTab === 'dashboard' && (
+            <div className="animate-fade-in">
               
-              <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #1E40AF' }}>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.kpiTotalApps}</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', margin: '0.2rem 0' }}>{totalCount}</div>
-                <div style={{ fontSize: '0.7rem', color: '#1E40AF' }}>All Districts</div>
-              </div>
-
-              <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #D97706' }}>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.kpiUnderVerification}</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#D97706', margin: '0.2rem 0' }}>{underVerificationCount}</div>
-                <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Scrutiny Pending</div>
-              </div>
-
-              <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563EB' }}>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.kpiApproved}</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#2563EB', margin: '0.2rem 0' }}>{approvedCount}</div>
-                <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Ready for DBT</div>
-              </div>
-
-              <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16A34A' }}>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.kpiDisbursed}</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#16A34A', margin: '0.2rem 0' }}>{releasedCount}</div>
-                <div style={{ fontSize: '0.7rem', color: '#16A34A' }}>With Bank UTR</div>
-              </div>
-
-              <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #DC2626' }}>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.kpiRejected}</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#DC2626', margin: '0.2rem 0' }}>{rejectedCount}</div>
-                <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Ineligible</div>
-              </div>
-
-            </div>
-
-            {/* Filter Bar */}
-            <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', backgroundColor: '#FFFFFF' }}>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                
-                <div style={{ flex: 1, minWidth: '220px' }}>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    placeholder="Search by ID, student, institution..."
-                    value={tableSearch}
-                    onChange={(e) => setTableSearch(e.target.value)}
-                  />
+              {/* Top Banner */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <Shield size={18} color="#1E40AF" />
+                    <span className="badge badge-blue">
+                      {authRole.replace('_', ' ')} GOVERNANCE DASHBOARD
+                    </span>
+                  </div>
+                  <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0F172A' }}>
+                    Overview & Scrutiny Command Center
+                  </h1>
+                  <p style={{ color: '#64748B', fontSize: '0.9rem' }}>
+                    Multi-tier scrutiny, direct benefit transfer reconciliation, and real-time CMS governance
+                  </p>
                 </div>
 
-                <div style={{ minWidth: '150px' }}>
-                  <select 
-                    className="form-control"
-                    value={selectedDistrict}
-                    onChange={(e) => setSelectedDistrict(e.target.value)}
-                  >
-                    <option value="All">All Districts</option>
-                    <option value="Jabalpur">Jabalpur</option>
-                    <option value="Bhopal">Bhopal</option>
-                    <option value="Indore">Indore</option>
-                    <option value="Rewa">Rewa</option>
-                    <option value="Mandla">Mandla</option>
-                    <option value="Gwalior">Gwalior</option>
-                  </select>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('applications')}>
+                    <Users size={15} />
+                    <span>View Applications ({totalCount})</span>
+                  </button>
+
+                  <button className="btn btn-gold btn-sm" onClick={handleCreateBatch}>
+                    <CreditCard size={15} />
+                    <span>Create DBT Batch</span>
+                  </button>
+
+                  <button className="btn btn-outline btn-sm" onClick={handleExportApplications}>
+                    <Download size={15} />
+                    <span>Export MIS CSV</span>
+                  </button>
                 </div>
-
-                <div style={{ minWidth: '130px' }}>
-                  <select 
-                    className="form-control"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    <option value="All">All Categories</option>
-                    <option value="General">General</option>
-                    <option value="SC">SC</option>
-                    <option value="ST">ST</option>
-                    <option value="OBC">OBC</option>
-                  </select>
-                </div>
-
-                <div style={{ minWidth: '170px' }}>
-                  <select 
-                    className="form-control"
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                  >
-                    <option value="All">All Statuses</option>
-                    <option value="Under Verification">Under Verification</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Scholarship Released">Scholarship Released</option>
-                    <option value="Correction Requested">Correction Requested</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
-                </div>
-
-                <button 
-                  className="btn btn-outline btn-sm"
-                  onClick={() => { setSelectedDistrict('All'); setSelectedCategory('All'); setSelectedStatus('All'); setTableSearch(''); }}
-                >
-                  <RefreshCw size={14} />
-                  <span>Reset</span>
-                </button>
-
-              </div>
-            </div>
-
-            {/* Applications Table */}
-            <div className="data-table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Application ID</th>
-                    <th>Student Name</th>
-                    <th>District / Block</th>
-                    <th>Institution & Course</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredApplications.map((app) => (
-                    <tr key={app.id}>
-                      <td style={{ fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>
-                        {app.id}
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{app.studentName}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.mobile}</div>
-                      </td>
-                      <td>
-                        <div>{app.district}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.block}</div>
-                      </td>
-                      <td>
-                        <div style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{app.institution}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.course}</div>
-                      </td>
-                      <td>
-                        <span className="badge badge-navy">{app.category}</span>
-                      </td>
-                      <td>
-                        <span className={`badge ${
-                          app.status === 'Scholarship Released' ? 'badge-green' :
-                          app.status === 'Approved' ? 'badge-blue' :
-                          app.status === 'Rejected' ? 'badge-red' :
-                          app.status === 'Correction Requested' ? 'badge-yellow' : 'badge-navy'
-                        }`}>
-                          {app.status}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '0.8rem', color: '#64748B' }}>
-                        {app.submissionDate}
-                      </td>
-                      <td>
-                        <button 
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => { setActiveModalApp(app); setActionRemarks(''); }}
-                        >
-                          <Eye size={13} />
-                          <span>Scrutiny</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        )}
-
-        {/* ====================================================================
-            TAB 2: LIVE CMS & POLICY EDITOR (Zero Code Changes Required)
-            ==================================================================== */}
-        {activeTab === 'cms' && (
-          <div className="card animate-fade-in" style={{ padding: '2.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem' }}>
-              <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A' }}>
-                  {t.cmsTitle}
-                </h2>
-                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                  {t.cmsSub}
-                </p>
               </div>
 
-              <button className="btn btn-primary" onClick={handleSaveCMS}>
-                <Save size={16} />
-                <span>{t.cmsBtnSave}</span>
-              </button>
-            </div>
+              {/* KPI Cards Grid */}
+              <div className="grid-5" style={{ marginBottom: '2rem' }}>
+                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #1E40AF' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>TOTAL APPLICATIONS</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0F172A', margin: '0.2rem 0' }}>{totalCount}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#1E40AF' }}>All Registered Applicants</div>
+                </div>
 
-            {cmsSaveAlert && (
-              <div style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '1rem 1.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <CheckCircle size={20} />
-                <span style={{ fontWeight: 700 }}>{t.cmsSavedSuccess}</span>
+                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #D97706' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>UNDER SCRUTINY</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#D97706', margin: '0.2rem 0' }}>{underVerificationCount}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Pending Verification</div>
+                </div>
+
+                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563EB' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>APPROVED BY BOARD</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#2563EB', margin: '0.2rem 0' }}>{approvedCount}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Ready for DBT Release</div>
+                </div>
+
+                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16A34A' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>DBT RELEASED</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16A34A', margin: '0.2rem 0' }}>{releasedCount}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#16A34A' }}>₹{(releasedCount * 12000).toLocaleString('en-IN')} Disbursed</div>
+                </div>
+
+                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #DC2626' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>REJECTED / CORRECTION</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#DC2626', margin: '0.2rem 0' }}>{rejectedCount + correctionCount}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{correctionCount} Awaiting Re-upload</div>
+                </div>
               </div>
-            )}
 
-            <form onSubmit={handleSaveCMS}>
-              
+              {/* 2-Column Analytics Charts */}
               <div className="grid-2" style={{ marginBottom: '2rem' }}>
                 
-                <div className="form-group">
-                  <label className="form-label required">Scholarship Amount (Display / Grant Value)</label>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    value={cmsForm.scholarshipAmount}
-                    onChange={(e) => setCmsForm({ ...cmsForm, scholarshipAmount: e.target.value })}
-                  />
-                  <div className="form-hint">Editable placeholder or actual grant amount</div>
+                {/* Geographic Distribution */}
+                <div className="card" style={{ padding: '1.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>
+                      Geographic Application Distribution
+                    </h3>
+                    <span className="badge badge-navy">6 Active Districts</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    {[
+                      { district: 'Jabalpur', count: applications.filter(a => a.district === 'Jabalpur').length, color: '#1E40AF' },
+                      { district: 'Bhopal', count: applications.filter(a => a.district === 'Bhopal').length, color: '#2563EB' },
+                      { district: 'Indore', count: applications.filter(a => a.district === 'Indore').length, color: '#3B82F6' },
+                      { district: 'Rewa', count: applications.filter(a => a.district === 'Rewa').length, color: '#60A5FA' },
+                      { district: 'Mandla', count: applications.filter(a => a.district === 'Mandla').length, color: '#93C5FD' },
+                      { district: 'Gwalior', count: applications.filter(a => a.district === 'Gwalior').length, color: '#BFDBFE' }
+                    ].map(item => {
+                      const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+                      return (
+                        <div key={item.district}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                            <span>{item.district}</span>
+                            <span>{item.count} Candidates ({pct}%)</span>
+                          </div>
+                          <div style={{ height: '8px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, backgroundColor: item.color, borderRadius: '4px' }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label required">Eligibility Criteria Overview</label>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    value={cmsForm.eligibilityCriteria}
-                    onChange={(e) => setCmsForm({ ...cmsForm, eligibilityCriteria: e.target.value })}
-                  />
-                </div>
+                {/* Social Category Distribution */}
+                <div className="card" style={{ padding: '1.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>
+                      Social Category Participation
+                    </h3>
+                    <span className="badge badge-yellow">Equitable Allocation</span>
+                  </div>
 
-                <div className="form-group">
-                  <label className="form-label required">Application Start Date</label>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    value={cmsForm.applicationStartDate}
-                    onChange={(e) => setCmsForm({ ...cmsForm, applicationStartDate: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label required">Application Last Date</label>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    value={cmsForm.applicationLastDate}
-                    onChange={(e) => setCmsForm({ ...cmsForm, applicationLastDate: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label required">Office Address</label>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    value={cmsForm.officeAddress}
-                    onChange={(e) => setCmsForm({ ...cmsForm, officeAddress: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label required">Official Registration Details</label>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    value={cmsForm.registrationDetails}
-                    onChange={(e) => setCmsForm({ ...cmsForm, registrationDetails: e.target.value })}
-                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {[
+                      { cat: 'General Category', count: applications.filter(a => a.category === 'General').length, color: '#1E293B' },
+                      { cat: 'OBC (Other Backward Class)', count: applications.filter(a => a.category === 'OBC').length, color: '#D97706' },
+                      { cat: 'SC (Scheduled Caste)', count: applications.filter(a => a.category === 'SC').length, color: '#DC2626' },
+                      { cat: 'ST (Scheduled Tribe)', count: applications.filter(a => a.category === 'ST').length, color: '#16A34A' }
+                    ].map(item => {
+                      const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+                      return (
+                        <div key={item.cat}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                            <span>{item.cat}</span>
+                            <span>{item.count} Candidates ({pct}%)</span>
+                          </div>
+                          <div style={{ height: '8px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, backgroundColor: item.color, borderRadius: '4px' }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
               </div>
 
-              {/* Commission Rates Configurator */}
-              <div style={{ backgroundColor: '#F8FAFC', padding: '1.5rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', marginBottom: '1rem' }}>
-                  Commission Rates Management (Configurable Per Role)
-                </h3>
-                <div className="grid-4" style={{ gap: '1rem' }}>
-                  <div>
-                    <label className="form-label">District Coordinator</label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={cmsForm.commissionRates?.districtRate || ''}
-                      onChange={(e) => setCmsForm({
-                        ...cmsForm,
-                        commissionRates: { ...cmsForm.commissionRates, districtRate: e.target.value }
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Block Coordinator</label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={cmsForm.commissionRates?.blockRate || ''}
-                      onChange={(e) => setCmsForm({
-                        ...cmsForm,
-                        commissionRates: { ...cmsForm.commissionRates, blockRate: e.target.value }
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">School / College</label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={cmsForm.commissionRates?.schoolRate || ''}
-                      onChange={(e) => setCmsForm({
-                        ...cmsForm,
-                        commissionRates: { ...cmsForm.commissionRates, schoolRate: e.target.value }
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Online Center</label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={cmsForm.commissionRates?.onlineCenterRate || ''}
-                      onChange={(e) => setCmsForm({
-                        ...cmsForm,
-                        commissionRates: { ...cmsForm.commissionRates, onlineCenterRate: e.target.value }
-                      })}
-                    />
-                  </div>
+              {/* Recent Applications Table */}
+              <div className="card" style={{ padding: '1.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>
+                    Recent Applications Awaiting Scrutiny
+                  </h3>
+                  <button className="btn btn-outline btn-sm" onClick={() => setActiveTab('applications')}>
+                    <span>View All Applications</span>
+                  </button>
                 </div>
-              </div>
 
-              {/* Top Announcement Bar Editor */}
-              <div style={{ backgroundColor: '#F8FAFC', padding: '1.5rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', marginBottom: '1rem' }}>
-                  Top Announcement Ticker Item 1
-                </h3>
-                <div className="form-row-2">
-                  <div>
-                    <label className="form-label">English Text</label>
-                    <input 
-                      type="text"
-                      className="form-control"
-                      value={cmsForm.announcements?.[0]?.en || ''}
-                      onChange={(e) => {
-                        const arr = [...cmsForm.announcements];
-                        arr[0].en = e.target.value;
-                        setCmsForm({ ...cmsForm, announcements: arr });
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Hindi Text (हिंदी)</label>
-                    <input 
-                      type="text"
-                      className="form-control"
-                      value={cmsForm.announcements?.[0]?.hi || ''}
-                      onChange={(e) => {
-                        const arr = [...cmsForm.announcements];
-                        arr[0].hi = e.target.value;
-                        setCmsForm({ ...cmsForm, announcements: arr });
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" className="btn btn-primary btn-lg">
-                <Save size={18} />
-                <span>{t.cmsBtnSave}</span>
-              </button>
-
-            </form>
-          </div>
-        )}
-
-        {/* ====================================================================
-            TAB 3: ANALYTICS & DISTRICT CHARTS
-            ==================================================================== */}
-        {activeTab === 'analytics' && (
-          <div className="animate-fade-in">
-            <div className="grid-2" style={{ marginBottom: '2rem' }}>
-              
-              {/* Chart 1: Applications by District (SVG Bar Chart) */}
-              <div className="card" style={{ padding: '2rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1.5rem' }}>
-                  Applications by District (Geographic Distribution)
-                </h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {[
-                    { district: 'Jabalpur', count: 18, color: '#1E40AF' },
-                    { district: 'Bhopal', count: 14, color: '#2563EB' },
-                    { district: 'Indore', count: 12, color: '#3B82F6' },
-                    { district: 'Rewa', count: 9, color: '#60A5FA' },
-                    { district: 'Mandla', count: 7, color: '#93C5FD' },
-                    { district: 'Gwalior', count: 6, color: '#BFDBFE' }
-                  ].map((item) => (
-                    <div key={item.district}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 600 }}>
-                        <span>{item.district}</span>
-                        <span>{item.count} Applicants</span>
-                      </div>
-                      <div style={{ height: '10px', backgroundColor: '#F1F5F9', borderRadius: '6px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${(item.count / 20) * 100}%`, backgroundColor: item.color, borderRadius: '6px' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Chart 2: Applications by Category */}
-              <div className="card" style={{ padding: '2rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1.5rem' }}>
-                  Applications by Social Category
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  {[
-                    { cat: 'General', pct: '30%', count: 18, color: '#1E293B' },
-                    { cat: 'OBC (Other Backward Class)', pct: '38%', count: 23, color: '#D97706' },
-                    { cat: 'SC (Scheduled Caste)', pct: '18%', count: 11, color: '#DC2626' },
-                    { cat: 'ST (Scheduled Tribe)', pct: '14%', count: 8, color: '#16A34A' }
-                  ].map((item) => (
-                    <div key={item.cat}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 600 }}>
-                        <span>{item.cat}</span>
-                        <span>{item.pct} ({item.count})</span>
-                      </div>
-                      <div style={{ height: '10px', backgroundColor: '#F1F5F9', borderRadius: '6px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: item.pct, backgroundColor: item.color, borderRadius: '6px' }} />
-                      </div>
-                    </div>
-                  ))}
+                <div className="data-table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Application ID</th>
+                        <th>Student Name</th>
+                        <th>District / Block</th>
+                        <th>Institution</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {applications.slice(0, 5).map(app => (
+                        <tr key={app.id}>
+                          <td style={{ fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>{app.id}</td>
+                          <td>
+                            <div style={{ fontWeight: 700 }}>{app.studentName}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.mobile}</div>
+                          </td>
+                          <td>{app.district} / {app.block}</td>
+                          <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{app.institution}</td>
+                          <td>
+                            <span className={`badge ${
+                              app.status === 'Scholarship Released' ? 'badge-green' :
+                              app.status === 'Approved' ? 'badge-blue' :
+                              app.status === 'Rejected' ? 'badge-red' :
+                              app.status === 'Correction Requested' ? 'badge-yellow' : 'badge-navy'
+                            }`}>
+                              {app.status}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '0.8rem', color: '#64748B' }}>{app.submissionDate}</td>
+                          <td>
+                            <button className="btn btn-secondary btn-sm" onClick={() => setActiveModalApp(app)}>
+                              <Eye size={13} />
+                              <span>Scrutiny</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ====================================================================
-            APPLICATION SCRUTINY & ACTION MODAL
-            ==================================================================== */}
-        {activeModalApp && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1.5rem'
-          }}>
-            <div style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: '16px',
-              maxWidth: '740px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '2rem',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+          {/* ====================================================================
+              MODULE 2: APPLICATIONS & VERIFICATION TABLE
+              ==================================================================== */}
+          {activeTab === 'applications' && (
+            <div className="animate-fade-in">
+              
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                  <span className="badge badge-blue" style={{ marginBottom: '0.25rem' }}>
-                    {activeModalApp.id}
-                  </span>
-                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A' }}>
-                    {activeModalApp.studentName}
-                  </h3>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                    Application Master Management
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                    Complete applicant records, multi-tier scrutiny dossier, and status transition ledger
+                  </p>
                 </div>
-                <button 
-                  onClick={() => setActiveModalApp(null)}
-                  style={{ color: '#64748B', fontSize: '1.5rem', fontWeight: 700 }}
-                >
-                  ✕
-                </button>
-              </div>
 
-              {/* Applicant Info Summary */}
-              <div className="grid-2" style={{ gap: '0.75rem', fontSize: '0.875rem', backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
-                <div><strong>Father:</strong> {activeModalApp.fatherName}</div>
-                <div><strong>Mobile:</strong> {activeModalApp.mobile}</div>
-                <div><strong>Institution:</strong> {activeModalApp.institution}</div>
-                <div><strong>Course:</strong> {activeModalApp.course}</div>
-                <div><strong>District / Block:</strong> {activeModalApp.district} / {activeModalApp.block}</div>
-                <div><strong>Category:</strong> {activeModalApp.category}</div>
-                <div><strong>Bank:</strong> {activeModalApp.bankName}</div>
-                <div><strong>Account No:</strong> {activeModalApp.accountNumber}</div>
-                <div><strong>IFSC:</strong> {activeModalApp.ifsc}</div>
-                <div><strong>Current Status:</strong> <span className="badge badge-navy">{activeModalApp.status}</span></div>
-              </div>
-
-              {/* Scrutiny Remarks Box */}
-              <div className="form-group">
-                <label className="form-label">Verifier Remarks / Rejection Reason</label>
-                <textarea 
-                  className="form-control"
-                  rows={3}
-                  placeholder="Enter specific verification comments, rejection reasons, or correction requirements..."
-                  value={actionRemarks}
-                  onChange={(e) => setActionRemarks(e.target.value)}
-                />
-              </div>
-
-              {/* Verification Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    className="btn btn-primary btn-sm"
-                    onClick={() => handleReject(activeModalApp.id)}
-                  >
-                    <X size={14} />
-                    <span>Reject</span>
+                  <button className="btn btn-outline btn-sm" onClick={handleExportApplications}>
+                    <Download size={14} />
+                    <span>Export CSV</span>
                   </button>
+                  <button className="btn btn-primary btn-sm" onClick={() => loadApplications()}>
+                    <RefreshCw size={14} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ flex: 1, minWidth: '220px' }}>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      placeholder="Filter by ID, Student, Mobile, Institution..."
+                      value={tableSearch}
+                      onChange={(e) => setTableSearch(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ minWidth: '150px' }}>
+                    <select 
+                      className="form-control"
+                      value={selectedDistrict}
+                      onChange={(e) => setSelectedDistrict(e.target.value)}
+                    >
+                      <option value="All">All Districts</option>
+                      <option value="Jabalpur">Jabalpur</option>
+                      <option value="Bhopal">Bhopal</option>
+                      <option value="Indore">Indore</option>
+                      <option value="Rewa">Rewa</option>
+                      <option value="Mandla">Mandla</option>
+                      <option value="Gwalior">Gwalior</option>
+                    </select>
+                  </div>
+
+                  <div style={{ minWidth: '130px' }}>
+                    <select 
+                      className="form-control"
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                      <option value="All">All Categories</option>
+                      <option value="General">General</option>
+                      <option value="SC">SC</option>
+                      <option value="ST">ST</option>
+                      <option value="OBC">OBC</option>
+                    </select>
+                  </div>
+
+                  <div style={{ minWidth: '170px' }}>
+                    <select 
+                      className="form-control"
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="Under Verification">Under Verification</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Scholarship Released">Scholarship Released</option>
+                      <option value="Correction Requested">Correction Requested</option>
+                      <option value="Rejected">Rejected</option>
+                    </select>
+                  </div>
 
                   <button 
                     className="btn btn-outline btn-sm"
-                    style={{ borderColor: '#D97706', color: '#D97706' }}
-                    onClick={() => handleRequestCorrection(activeModalApp.id)}
+                    onClick={() => { setSelectedDistrict('All'); setSelectedCategory('All'); setSelectedStatus('All'); setTableSearch(''); }}
                   >
-                    <AlertTriangle size={14} />
-                    <span>Request Correction</span>
+                    <RefreshCw size={14} />
+                    <span>Reset</span>
                   </button>
                 </div>
+              </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => handleApprove(activeModalApp.id)}
-                  >
-                    <Check size={14} />
-                    <span>Approve Application</span>
-                  </button>
+              {/* Data Table */}
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Application ID</th>
+                      <th>Student Name</th>
+                      <th>District / Block</th>
+                      <th>Institution & Course</th>
+                      <th>Category</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredApplications.map(app => (
+                      <tr key={app.id}>
+                        <td style={{ fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>{app.id}</td>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>{app.studentName}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.mobile}</div>
+                        </td>
+                        <td>{app.district} / {app.block}</td>
+                        <td>
+                          <div style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{app.institution}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.course}</div>
+                        </td>
+                        <td><span className="badge badge-navy">{app.category}</span></td>
+                        <td>
+                          <span className={`badge ${
+                            app.status === 'Scholarship Released' ? 'badge-green' :
+                            app.status === 'Approved' ? 'badge-blue' :
+                            app.status === 'Rejected' ? 'badge-red' :
+                            app.status === 'Correction Requested' ? 'badge-yellow' : 'badge-navy'
+                          }`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.8rem', color: '#64748B' }}>{app.submissionDate}</td>
+                        <td>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setActiveModalApp(app)}>
+                            <Eye size={13} />
+                            <span>Scrutiny</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                  {activeModalApp.status === 'Approved' && (
-                    <button 
-                      className="btn btn-gold btn-sm"
-                      onClick={() => handleReleasePayment(activeModalApp.id)}
-                    >
-                      <CreditCard size={14} />
-                      <span>Release DBT Payment</span>
-                    </button>
-                  )}
-                </div>
+            </div>
+          )}
 
+          {/* ====================================================================
+              MODULE 3: VERIFICATION QUEUE (Focused for Verifiers)
+              ==================================================================== */}
+          {activeTab === 'verification' && (
+            <div className="animate-fade-in">
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                  Pending Verification Queue
+                </h2>
+                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                  Applications requiring institutional, block, or district verification scrutiny
+                </p>
+              </div>
+
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Application ID</th>
+                      <th>Applicant Name</th>
+                      <th>Institution</th>
+                      <th>District / Block</th>
+                      <th>Uploaded Docs</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {applications
+                      .filter(a => a.status === 'Under Verification' || a.status === 'Correction Requested' || a.status === 'Re-Submitted')
+                      .map(app => (
+                        <tr key={app.id}>
+                          <td style={{ fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>{app.id}</td>
+                          <td>
+                            <div style={{ fontWeight: 700 }}>{app.studentName}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.mobile}</div>
+                          </td>
+                          <td>{app.institution}</td>
+                          <td>{app.district} / {app.block}</td>
+                          <td>{Object.keys(app.documents || {}).length} Documents</td>
+                          <td>
+                            <span className="badge badge-yellow">{app.status}</span>
+                          </td>
+                          <td>
+                            <button className="btn btn-primary btn-sm" onClick={() => setActiveModalApp(app)}>
+                              <Eye size={13} />
+                              <span>Scrutinize</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
+          {/* ====================================================================
+              MODULE 4: PAYMENTS & DBT DISBURSEMENT
+              ==================================================================== */}
+          {activeTab === 'payments' && (
+            <div className="animate-fade-in">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                    Direct Benefit Transfer (DBT) & Payment Batches
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                    Batch processing, banking UTR reconciliation, and gateway integration
+                  </p>
+                </div>
+
+                <button className="btn btn-gold" onClick={handleCreateBatch}>
+                  <Plus size={16} />
+                  <span>Create New DBT Batch ({approvedCount} Approved)</span>
+                </button>
+              </div>
+
+              {/* Payment Batches Section */}
+              <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  Active & Processed Payment Batches
+                </h3>
+
+                <div className="data-table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Batch Number</th>
+                        <th>Academic Year</th>
+                        <th>Total Students</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dbtBatches.map(b => (
+                        <tr key={b.id}>
+                          <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#1E40AF' }}>{b.batch_number}</td>
+                          <td>{b.academic_year || '2026-27'}</td>
+                          <td>{b.total_students} Students</td>
+                          <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{parseFloat(b.total_amount || 0).toLocaleString('en-IN')}</td>
+                          <td>
+                            <span className={`badge ${b.status === 'COMPLETED' ? 'badge-green' : 'badge-yellow'}`}>
+                              {b.status}
+                            </span>
+                          </td>
+                          <td>
+                            {b.status !== 'COMPLETED' ? (
+                              <button className="btn btn-gold btn-sm" onClick={() => handleDisburseBatch(b.id)}>
+                                <CreditCard size={13} />
+                                <span>Disburse & Record UTR</span>
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '0.8rem', color: '#16A34A', fontWeight: 600 }}>Disbursed</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {dbtBatches.length === 0 && (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                            No active payment batches. Click "Create New DBT Batch" to group approved students.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Direct Benefit Transfer Ledger */}
+              <div className="card" style={{ padding: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  Direct Benefit Transfer Ledger
+                </h3>
+
+                <div className="data-table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Application ID</th>
+                        <th>Beneficiary Name</th>
+                        <th>Mobile</th>
+                        <th>Bank Account</th>
+                        <th>Amount</th>
+                        <th>UTR Number</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dbtPayments.map(p => (
+                        <tr key={p.id}>
+                          <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#1E40AF' }}>{p.applicationId}</td>
+                          <td>{p.studentName}</td>
+                          <td>{p.mobile}</td>
+                          <td>{p.bankAccount} ({p.ifsc})</td>
+                          <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{parseFloat(p.amount || 12000).toLocaleString('en-IN')}</td>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{p.utrNumber}</td>
+                          <td>
+                            <span className={`badge ${p.status === 'SUCCESS' ? 'badge-green' : 'badge-yellow'}`}>
+                              {p.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* ====================================================================
+              MODULE 5: LIVE CMS & POLICY EDITOR (Zero Code Changes Required)
+              ==================================================================== */}
+          {activeTab === 'cms' && (
+            <div className="card animate-fade-in" style={{ padding: '2.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A' }}>
+                    Live CMS & Foundation Policy Editor
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                    Changes made here instantly update the public website without editing source code
+                  </p>
+                </div>
+
+                <button className="btn btn-primary" onClick={handleSaveCMS}>
+                  <Save size={16} />
+                  <span>Save CMS Content to Database</span>
+                </button>
+              </div>
+
+              {cmsSaveAlert && (
+                <div style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '1rem 1.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <CheckCircle2 size={20} />
+                  <span style={{ fontWeight: 700 }}>CMS updates successfully saved to Supabase! Public website updated.</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveCMS}>
+                
+                {/* 1. Core Scholarship Parameters */}
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  1. Scholarship Scheme Parameters
+                </h3>
+                <div className="grid-2" style={{ marginBottom: '2rem' }}>
+                  <div className="form-group">
+                    <label className="form-label required">Scholarship Grant Amount (Display Value)</label>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      value={cmsForm.scholarshipAmount || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, scholarshipAmount: e.target.value })}
+                    />
+                    <div className="form-hint">Controls the scholarship grant value displayed across all public pages</div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label required">Eligibility Overview Summary</label>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      value={cmsForm.eligibilityCriteria || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, eligibilityCriteria: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label required">Application Start Date</label>
+                    <input 
+                      type="date"
+                      className="form-control"
+                      value={cmsForm.applicationStartDate || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, applicationStartDate: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label required">Application Last Date</label>
+                    <input 
+                      type="date"
+                      className="form-control"
+                      value={cmsForm.applicationLastDate || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, applicationLastDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Official Organization Contacts */}
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  2. Official Verified Contacts & Registration
+                </h3>
+                <div className="grid-3" style={{ marginBottom: '2rem' }}>
+                  <div className="form-group">
+                    <label className="form-label required">Helpline Mobile</label>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      value={cmsForm.officialMobile || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, officialMobile: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label required">Helpline Telephone</label>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      value={cmsForm.officialTelephone || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, officialTelephone: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label required">Official Email</label>
+                    <input 
+                      type="email"
+                      className="form-control"
+                      value={cmsForm.officialEmail || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, officialEmail: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row-2" style={{ marginBottom: '2rem' }}>
+                  <div className="form-group">
+                    <label className="form-label required">Official Office Address</label>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      value={cmsForm.officeAddress || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, officeAddress: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label required">Official Registration Number</label>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      value={cmsForm.registrationDetails || ''}
+                      onChange={(e) => setCmsForm({ ...cmsForm, registrationDetails: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Hero Slideshow Editor */}
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  3. Homepage Hero Slideshow Manager ({heroSlides.length} Slides)
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                  {heroSlides.map((slide, idx) => (
+                    <div key={slide.id || idx} style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                        <span className="badge badge-navy">Slide #{idx + 1}</span>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <input 
+                              type="checkbox" 
+                              checked={slide.is_active !== false}
+                              onChange={(e) => {
+                                const updated = [...heroSlides];
+                                updated[idx].is_active = e.target.checked;
+                                setHeroSlides(updated);
+                              }}
+                            />
+                            <span>Active</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="grid-2" style={{ gap: '0.75rem' }}>
+                        <div>
+                          <label className="form-label">Image URL / Media Path</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            value={slide.image_url || ''} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].image_url = e.target.value;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Slide Duration (ms)</label>
+                          <input 
+                            type="number" 
+                            className="form-control" 
+                            value={slide.slide_duration_ms || 3000} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].slide_duration_ms = parseInt(e.target.value) || 3000;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">English Heading</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            value={slide.heading_en || ''} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].heading_en = e.target.value;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Hindi Heading (हिंदी)</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            value={slide.heading_hi || ''} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].heading_hi = e.target.value;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 4. Top Announcement Bar */}
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  4. Top Announcement Bar Ticker
+                </h3>
+                <div style={{ backgroundColor: '#F8FAFC', padding: '1.5rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '2rem' }}>
+                  <div className="form-row-2">
+                    <div>
+                      <label className="form-label">English Ticker Text</label>
+                      <input 
+                        type="text"
+                        className="form-control"
+                        value={cmsForm.announcements?.[0]?.en || ''}
+                        onChange={(e) => {
+                          const arr = [...(cmsForm.announcements || [])];
+                          if (arr[0]) arr[0].en = e.target.value;
+                          setCmsForm({ ...cmsForm, announcements: arr });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Hindi Ticker Text (हिंदी)</label>
+                      <input 
+                        type="text"
+                        className="form-control"
+                        value={cmsForm.announcements?.[0]?.hi || ''}
+                        onChange={(e) => {
+                          const arr = [...(cmsForm.announcements || [])];
+                          if (arr[0]) arr[0].hi = e.target.value;
+                          setCmsForm({ ...cmsForm, announcements: arr });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg">
+                  <Save size={18} />
+                  <span>Save CMS Content to Database</span>
+                </button>
+
+              </form>
+            </div>
+          )}
+
+          {/* ====================================================================
+              MODULE 6: COMMISSIONS MANAGEMENT
+              ==================================================================== */}
+          {activeTab === 'commissions' && (
+            <div className="animate-fade-in">
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                  Commission Rates & Coordinator Settlements
+                </h2>
+                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                  Configure role-based commission amounts per approved application and manage payouts
+                </p>
+              </div>
+
+              {/* Commission Rates Configurator */}
+              <div className="card" style={{ padding: '1.75rem', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  Configured Role Commission Slabs
+                </h3>
+
+                <div className="grid-4" style={{ gap: '1rem' }}>
+                  {commissionRates.map(rate => (
+                    <div key={rate.id} style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                        {rate.role_id.replace('_', ' ')}
+                      </div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#16A34A', margin: '0.25rem 0' }}>
+                        ₹{parseFloat(rate.rate_amount).toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                        Model: {rate.model_type}
+                      </div>
+                      <button 
+                        className="btn btn-outline btn-sm"
+                        style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.75rem' }}
+                        onClick={async () => {
+                          const newRate = prompt(`Enter new commission rate (₹) for ${rate.role_id}:`, rate.rate_amount);
+                          if (newRate && !isNaN(newRate)) {
+                            await commissionService.updateCommissionRate(rate.role_id, parseFloat(newRate));
+                            const updated = await commissionService.getCommissionRates();
+                            setCommissionRates(updated);
+                          }
+                        }}
+                      >
+                        <Edit3 size={12} />
+                        <span>Edit Rate</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Generated Commissions Table */}
+              <div className="card" style={{ padding: '1.75rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  Coordinator Commission Ledger
+                </h3>
+
+                <div className="data-table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Beneficiary</th>
+                        <th>Role</th>
+                        <th>Application ID</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {commissionsList.map(c => (
+                        <tr key={c.id}>
+                          <td style={{ fontWeight: 700 }}>{c.profiles?.full_name || 'Coordinator'}</td>
+                          <td><span className="badge badge-navy">{c.beneficiary_role}</span></td>
+                          <td style={{ fontFamily: 'monospace' }}>{c.application_id}</td>
+                          <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{c.amount}</td>
+                          <td>
+                            <span className={`badge ${c.status === 'APPROVED' ? 'badge-green' : 'badge-yellow'}`}>
+                              {c.status}
+                            </span>
+                          </td>
+                          <td>
+                            {c.status !== 'APPROVED' ? (
+                              <button 
+                                className="btn btn-secondary btn-sm"
+                                onClick={async () => {
+                                  await commissionService.approveCommission(c.id, authUser?.id);
+                                  const updated = await commissionService.getCommissions();
+                                  setCommissionsList(updated);
+                                }}
+                              >
+                                Approve
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '0.8rem', color: '#16A34A' }}>Settled</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {commissionsList.length === 0 && (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                            Commissions automatically accrue upon application verification and DBT approval.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* ====================================================================
+              MODULE 7: REPORTS & MIS
+              ==================================================================== */}
+          {activeTab === 'reports' && (
+            <div className="animate-fade-in">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                    Management Information System (MIS) Reports
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                    Real-time aggregated performance metrics, scheme utilization, and CSV exports
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button className="btn btn-outline" onClick={handleExportApplications}>
+                    <Download size={15} />
+                    <span>Export Application Master (CSV)</span>
+                  </button>
+                  <button className="btn btn-primary" onClick={() => window.print()}>
+                    <Printer size={15} />
+                    <span>Print MIS Summary</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Summary KPIs */}
+              <div className="grid-4" style={{ marginBottom: '2rem' }}>
+                <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>TOTAL APPLICANTS</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#1E40AF', margin: '0.25rem 0' }}>{totalCount}</div>
+                </div>
+
+                <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>SANCTIONED / APPROVED</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#2563EB', margin: '0.25rem 0' }}>{approvedCount + releasedCount}</div>
+                </div>
+
+                <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>STUDENTS DISBURSED</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#16A34A', margin: '0.25rem 0' }}>{releasedCount}</div>
+                </div>
+
+                <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>TOTAL FUNDS DISBURSED</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#16A34A', margin: '0.25rem 0' }}>
+                    ₹{(releasedCount * 12000).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Printable Table of District Breakdown */}
+              <div className="card" style={{ padding: '1.75rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
+                  District-Wise Scrutiny & Disbursement Matrix
+                </h3>
+
+                <div className="data-table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>District Name</th>
+                        <th>Total Applicants</th>
+                        <th>Approved</th>
+                        <th>Disbursed</th>
+                        <th>Under Scrutiny</th>
+                        <th>Disbursed Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['Jabalpur', 'Bhopal', 'Indore', 'Rewa', 'Mandla', 'Gwalior'].map(d => {
+                        const distApps = applications.filter(a => a.district === d);
+                        const apprv = distApps.filter(a => a.status === 'Approved').length;
+                        const disb = distApps.filter(a => a.status === 'Scholarship Released').length;
+                        const underV = distApps.filter(a => a.status === 'Under Verification').length;
+                        return (
+                          <tr key={d}>
+                            <td style={{ fontWeight: 700 }}>{d}</td>
+                            <td>{distApps.length}</td>
+                            <td>{apprv}</td>
+                            <td>{disb}</td>
+                            <td>{underV}</td>
+                            <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{(disb * 12000).toLocaleString('en-IN')}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* ====================================================================
+              MODULE 8: GRIEVANCES REDRESSAL
+              ==================================================================== */}
+          {activeTab === 'grievances' && (
+            <div className="animate-fade-in">
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                  Student Grievance & Helpdesk Cell
+                </h2>
+                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                  Review student complaints, update status, and post official resolution remarks
+                </p>
+              </div>
+
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Grievance ID</th>
+                      <th>Student Name</th>
+                      <th>Mobile</th>
+                      <th>Application ID</th>
+                      <th>Category</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grievances.map(g => (
+                      <tr key={g.id}>
+                        <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#DC2626' }}>{g.id}</td>
+                        <td>{g.student_name || g.name}</td>
+                        <td>{g.mobile}</td>
+                        <td style={{ fontFamily: 'monospace' }}>{g.application_id || g.applicationId || '-'}</td>
+                        <td><span className="badge badge-navy">{g.category}</span></td>
+                        <td>
+                          <span className={`badge ${g.status === 'RESOLVED' || g.status === 'Resolved' ? 'badge-green' : 'badge-yellow'}`}>
+                            {g.status}
+                          </span>
+                        </td>
+                        <td>
+                          <button 
+                            className="btn btn-secondary btn-sm"
+                            onClick={async () => {
+                              const note = prompt(`Enter resolution notes for ${g.id}:`);
+                              if (note) {
+                                await grievanceService.updateGrievanceStatus(g.id, 'RESOLVED', note, authUser?.id);
+                                alert('Grievance marked as resolved!');
+                              }
+                            }}
+                          >
+                            Resolve Ticket
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ====================================================================
+              MODULE 9: AUDIT LOGS
+              ==================================================================== */}
+          {activeTab === 'audit' && (
+            <div className="animate-fade-in">
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                  System Audit Logs & Security Traceability
+                </h2>
+                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                  Tamper-resistant audit record of status transitions, logins, exports, and payment dispatches
+                </p>
+              </div>
+
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Actor Role</th>
+                      <th>Action</th>
+                      <th>Entity</th>
+                      <th>Entity ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditLogs.map(log => (
+                      <tr key={log.id}>
+                        <td style={{ fontSize: '0.8rem', color: '#64748B' }}>{new Date(log.created_at).toLocaleString()}</td>
+                        <td><span className="badge badge-navy">{log.actor_role || 'SYSTEM'}</span></td>
+                        <td style={{ fontWeight: 700 }}>{log.action}</td>
+                        <td>{log.entity_type}</td>
+                        <td style={{ fontFamily: 'monospace' }}>{log.entity_id || '-'}</td>
+                      </tr>
+                    ))}
+                    {auditLogs.length === 0 && (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                          No audit entries recorded yet. System operations will automatically populate here.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ====================================================================
+              MODULE 10: CERTIFICATES & QR
+              ==================================================================== */}
+          {activeTab === 'certificates' && (
+            <div className="animate-fade-in">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                    Digital Scholarship Award Certificates
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                    Digitally signed award certificates issued to approved candidates with QR verification
+                  </p>
+                </div>
+              </div>
+
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Certificate Number</th>
+                      <th>Student Name</th>
+                      <th>Application ID</th>
+                      <th>Issue Date</th>
+                      <th>QR Code</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {issuedCertificates.map(cert => (
+                      <tr key={cert.id}>
+                        <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#1E40AF' }}>{cert.certificate_number}</td>
+                        <td style={{ fontWeight: 700 }}>{cert.student_name}</td>
+                        <td style={{ fontFamily: 'monospace' }}>{cert.application_id}</td>
+                        <td>{cert.issue_date}</td>
+                        <td>
+                          <QrCodeDisplay value={`${window.location.origin}/verify/certificate/${cert.verification_token}`} size={42} />
+                        </td>
+                        <td>
+                          <button 
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigate(`/certificate/${cert.application_id}`)}
+                          >
+                            <Eye size={13} />
+                            <span>View / Print</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {issuedCertificates.length === 0 && (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                          Certificates are automatically generated when an application is approved.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Real Functional Admin Modules */}
+          {activeTab === 'districts' && <DistrictsManager />}
+          {activeTab === 'institutions' && <InstitutionsManager />}
+          {activeTab === 'schemes' && <SchemesManager />}
+          {activeTab === 'merit' && <MeritManager />}
+          {activeTab === 'donors' && <DonorsManager />}
+          {activeTab === 'notifications' && <NotificationsManager />}
+          {activeTab === 'media' && <MediaManager />}
+          {activeTab === 'downloads' && <DownloadsManager />}
+          {activeTab === 'qr_verify' && <QrVerifyManager />}
+          {activeTab === 'users' && <UsersManager />}
+          {activeTab === 'settings' && <SettingsManager />}
+
+        </main>
       </div>
+
+      {/* Scrutiny Modal */}
+      {activeModalApp && (
+        <ApplicationScrutinyModal 
+          application={activeModalApp}
+          onClose={() => setActiveModalApp(null)}
+          onStatusUpdated={(appId, newStatus, utr) => {
+            loadApplications();
+            setActiveModalApp(null);
+          }}
+          currentUser={authUser}
+        />
+      )}
+
     </div>
   );
 };

@@ -15,31 +15,59 @@ import {
   FileText
 } from 'lucide-react';
 
+import { applicationService } from '../services/applicationService';
+
 export const Track = () => {
   const { lang, t, navigate, applications, setActiveStudentApp } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState(() => applications[0]);
+  const [searchResult, setSearchResult] = useState(() => applications[0] || null);
   const [hasSearched, setHasSearched] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [searching, setSearching] = useState(false);
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e?.preventDefault();
     const query = searchQuery.trim();
     if (!query) return;
 
     setHasSearched(true);
-    const found = applications.find(
-      app => app.id.toLowerCase() === query.toLowerCase() || app.mobile === query
-    );
-
-    if (found) {
-      setSearchResult(found);
-      setActiveStudentApp(found);
-      setNotFound(false);
-    } else {
-      setNotFound(true);
-      setSearchResult(null);
+    setSearching(true);
+    try {
+      // 1. Query Supabase database
+      const liveResult = await applicationService.trackApplication(query);
+      if (liveResult) {
+        setSearchResult(liveResult);
+        setActiveStudentApp(liveResult);
+        setNotFound(false);
+      } else {
+        // Fallback to local memory applications
+        const found = applications.find(
+          app => app.id.toLowerCase() === query.toLowerCase() || app.mobile === query
+        );
+        if (found) {
+          setSearchResult(found);
+          setActiveStudentApp(found);
+          setNotFound(false);
+        } else {
+          setNotFound(true);
+          setSearchResult(null);
+        }
+      }
+    } catch (err) {
+      console.warn('Track error:', err);
+      const found = applications.find(
+        app => app.id.toLowerCase() === query.toLowerCase() || app.mobile === query
+      );
+      if (found) {
+        setSearchResult(found);
+        setNotFound(false);
+      } else {
+        setNotFound(true);
+        setSearchResult(null);
+      }
+    } finally {
+      setSearching(false);
     }
   };
 

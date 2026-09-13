@@ -19,6 +19,7 @@ import {
   Building,
   UserCheck
 } from 'lucide-react';
+import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 
 export const Apply = () => {
   const { lang, t, navigate, submitNewApplication, cms } = useApp();
@@ -198,25 +199,35 @@ export const Apply = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleFinalSubmit = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleFinalSubmit = async () => {
     if (!formData.declared) {
       setErrors({ declared: lang === 'hi' ? 'कृपया घोषणा स्वीकार करें' : 'Please accept declaration' });
       return;
     }
 
-    const record = submitNewApplication(formData);
-    setSubmittedRecord(record);
-    localStorage.removeItem('jmf_app_draft');
-    setCurrentStep(9); // Confirmation Screen
-
+    setIsSubmitting(true);
     try {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-    } catch (e) {
-      // ignore
+      const record = await submitNewApplication(formData);
+      setSubmittedRecord(record);
+      localStorage.removeItem('jmf_app_draft');
+      setCurrentStep(9); // Confirmation Screen
+
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {
+        // ignore
+      }
+    } catch (err) {
+      console.error('Submission error:', err);
+      alert('Application submission error: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -331,22 +342,31 @@ export const Apply = () => {
               </div>
             </div>
 
-            {/* Applicant Summary Table */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.4rem' }}>
-                Applicant Summary
-              </h4>
-              <div className="grid-2" style={{ gap: '0.85rem', fontSize: '0.9rem' }}>
-                <div><strong>Student Name:</strong> {submittedRecord.studentName}</div>
-                <div><strong>Father's Name:</strong> {submittedRecord.fatherName}</div>
-                <div><strong>Registered Mobile:</strong> {submittedRecord.mobile}</div>
-                <div><strong>District:</strong> {submittedRecord.district}</div>
-                <div><strong>Institution:</strong> {submittedRecord.institution}</div>
-                <div><strong>Class / Course:</strong> {submittedRecord.course}</div>
-                <div><strong>Social Category:</strong> {submittedRecord.category}</div>
-                <div><strong>Bank Name:</strong> {submittedRecord.bankName}</div>
-                <div><strong>Account Number:</strong> {submittedRecord.accountNumber}</div>
-                <div><strong>IFSC Code:</strong> {submittedRecord.ifsc}</div>
+            {/* Applicant Summary Table & Verification QR */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1.5rem', alignItems: 'center', marginBottom: '2rem' }}>
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.4rem' }}>
+                  Applicant Official Record
+                </h4>
+                <div className="grid-2" style={{ gap: '0.65rem', fontSize: '0.85rem' }}>
+                  <div><strong>Student Name:</strong> {submittedRecord.studentName}</div>
+                  <div><strong>Father's Name:</strong> {submittedRecord.fatherName}</div>
+                  <div><strong>Registered Mobile:</strong> {submittedRecord.mobile}</div>
+                  <div><strong>District:</strong> {submittedRecord.district}</div>
+                  <div><strong>Institution:</strong> {submittedRecord.institution}</div>
+                  <div><strong>Class / Course:</strong> {submittedRecord.course}</div>
+                  <div><strong>Social Category:</strong> {submittedRecord.category}</div>
+                  <div><strong>Bank Name:</strong> {submittedRecord.bankName}</div>
+                  <div><strong>Account Number:</strong> {submittedRecord.accountNumber}</div>
+                  <div><strong>IFSC Code:</strong> {submittedRecord.ifsc}</div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                <QrCodeDisplay value={`${window.location.origin}/verify/application/${submittedRecord.id}`} size={110} />
+                <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '0.4rem', fontWeight: 700 }}>
+                  Scan to Verify Docket
+                </div>
               </div>
             </div>
 

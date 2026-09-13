@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { grievanceService } from '../services/grievanceService';
 import { 
   AlertCircle, 
   Send, 
@@ -10,11 +11,13 @@ import {
   Clock, 
   ShieldCheck,
   FileQuestion,
-  LifeBuoy
+  LifeBuoy,
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 
 export const Grievance = () => {
-  const { lang, t, navigate, grievances, submitGrievance, cms } = useApp();
+  const { lang, t, navigate, cms } = useApp();
 
   // Registration Form State
   const [grvForm, setGrvForm] = useState({
@@ -26,37 +29,61 @@ export const Grievance = () => {
     description: ''
   });
 
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const [generatedId, setGeneratedId] = useState(null);
+
+  // Tracking State
   const [trackQuery, setTrackQuery] = useState('');
+  const [trackLoading, setTrackLoading] = useState(false);
   const [trackResult, setTrackResult] = useState(null);
   const [trackSearched, setTrackSearched] = useState(false);
+  const [trackError, setTrackError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
     if (!grvForm.name || !grvForm.mobile || !grvForm.description) {
-      alert('Please fill name, mobile, and description.');
+      setFormError('Please fill name, mobile, and description.');
       return;
     }
-    const newId = submitGrievance(grvForm);
-    setGeneratedId(newId);
-    setGrvForm({
-      name: '',
-      mobile: '',
-      email: '',
-      applicationId: '',
-      category: 'Document Re-verification',
-      description: ''
-    });
+    setLoading(true);
+    try {
+      const newId = await grievanceService.submitGrievance(grvForm);
+      setGeneratedId(newId);
+      setGrvForm({
+        name: '',
+        mobile: '',
+        email: '',
+        applicationId: '',
+        category: 'Document Re-verification',
+        description: ''
+      });
+    } catch (err) {
+      console.error('Submit grievance error:', err);
+      setFormError(err.message || 'Failed to submit grievance. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleTrackGrievance = (e) => {
+  const handleTrackGrievance = async (e) => {
     e.preventDefault();
-    setTrackSearched(true);
     const q = trackQuery.trim();
     if (!q) return;
 
-    const found = grievances.find(g => g.id.toLowerCase() === q.toLowerCase() || g.mobile === q);
-    setTrackResult(found || null);
+    setTrackLoading(true);
+    setTrackSearched(true);
+    setTrackError('');
+    try {
+      const result = await grievanceService.trackGrievance(q);
+      setTrackResult(result);
+    } catch (err) {
+      console.error('Track grievance error:', err);
+      setTrackError('Error querying grievance status. Please try again.');
+    } finally {
+      setTrackLoading(false);
+    }
   };
 
   return (
@@ -87,6 +114,13 @@ export const Grievance = () => {
             <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: '1.75rem' }}>
               {lang === 'hi' ? 'फाउंडेशन संवीक्षा दल 48 कार्य घंटों के भीतर समाधान प्रदान करता है।' : 'Our scrutiny cell resolves queries within 48 working hours.'}
             </p>
+
+            {formError && (
+              <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', color: '#991B1B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <AlertCircle size={18} />
+                <span>{formError}</span>
+              </div>
+            )}
 
             {generatedId && (
               <div style={{ backgroundColor: '#DCFCE7', border: '1px solid #BBF7D0', padding: '1.25rem', borderRadius: '12px', marginBottom: '1.75rem' }}>
@@ -179,9 +213,9 @@ export const Grievance = () => {
                 />
               </div>
 
-              <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-                <Send size={18} />
-                <span>{t.btnSubmitGrievance}</span>
+              <button type="submit" disabled={loading} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                <span>{loading ? 'Submitting...' : t.btnSubmitGrievance}</span>
               </button>
             </form>
           </div>
@@ -195,36 +229,52 @@ export const Grievance = () => {
                 {lang === 'hi' ? 'शिकायत की स्थिति ट्रैक करें' : 'Track Grievance Ticket'}
               </h3>
               <p style={{ color: '#64748B', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-                Enter Grievance ID (e.g. GRV-2026-00482) or registered mobile number.
+                Enter Grievance ID (e.g. GRV-2026-XXXXX) or registered mobile number.
               </p>
 
               <form onSubmit={handleTrackGrievance} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                 <input 
                   type="text"
                   className="form-control"
-                  placeholder="GRV-2026-XXXXX"
+                  placeholder="GRV-2026-XXXXX or Mobile"
                   value={trackQuery}
                   onChange={(e) => setTrackQuery(e.target.value)}
                 />
-                <button className="btn btn-secondary btn-sm" type="submit">
-                  <Search size={14} />
+                <button className="btn btn-secondary btn-sm" type="submit" disabled={trackLoading}>
+                  {trackLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
                 </button>
               </form>
 
-              {trackSearched && trackResult && (
-                <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '0.85rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                    <span style={{ fontWeight: 800, color: '#1E40AF' }}>{trackResult.id}</span>
-                    <span className="badge badge-yellow">{trackResult.status}</span>
-                  </div>
-                  <div><strong>Category:</strong> {trackResult.category}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>{trackResult.description}</div>
+              {trackError && (
+                <div style={{ color: '#DC2626', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                  {trackError}
                 </div>
               )}
 
-              {trackSearched && !trackResult && (
+              {trackSearched && trackResult && (
+                <div style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                    <span style={{ fontWeight: 800, color: '#1E40AF', fontSize: '1rem' }}>{trackResult.id}</span>
+                    <span className={`badge ${trackResult.status === 'RESOLVED' ? 'badge-green' : trackResult.status === 'IN_REVIEW' ? 'badge-yellow' : 'badge-navy'}`}>
+                      {trackResult.status}
+                    </span>
+                  </div>
+                  <div style={{ marginBottom: '0.25rem' }}><strong>Category:</strong> {trackResult.category}</div>
+                  <div style={{ marginBottom: '0.4rem' }}><strong>Student:</strong> {trackResult.student_name}</div>
+                  <div style={{ fontSize: '0.8rem', color: '#475569', backgroundColor: '#FFFFFF', padding: '0.6rem', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '0.5rem' }}>
+                    <strong>Issue:</strong> {trackResult.description}
+                  </div>
+                  {trackResult.resolution_notes && (
+                    <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', padding: '0.6rem', borderRadius: '6px', color: '#065F46' }}>
+                      <strong>Resolution / Officer Remarks:</strong> {trackResult.resolution_notes}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {trackSearched && !trackResult && !trackLoading && (
                 <div style={{ color: '#DC2626', fontSize: '0.85rem', textAlign: 'center', padding: '0.5rem 0' }}>
-                  No grievance record found with this query.
+                  No grievance record found with this query. Please check the ticket number.
                 </div>
               )}
             </div>

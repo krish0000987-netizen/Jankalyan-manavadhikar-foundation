@@ -221,6 +221,29 @@ export const Header = () => {
                         {authRole === r.id && <CheckCircle size={14} color="#2563EB" />}
                       </button>
                     ))}
+                    <div style={{ borderTop: '1px solid #F1F5F9', marginTop: '0.4rem', paddingTop: '0.4rem' }}>
+                      <button
+                        onClick={() => {
+                          setRoleDropdownOpen(false);
+                          navigate('/admin/login');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          width: '100%',
+                          padding: '0.55rem 0.75rem',
+                          fontSize: '0.8rem',
+                          color: '#DC2626',
+                          fontWeight: 700,
+                          borderRadius: '6px',
+                          backgroundColor: '#FEF2F2'
+                        }}
+                      >
+                        <Shield size={14} color="#DC2626" />
+                        <span>{lang === 'hi' ? 'अधिकारी लॉगिन (Password)' : 'Official Staff Login'}</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

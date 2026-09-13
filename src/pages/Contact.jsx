@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle, ShieldCheck } from 'lucide-react';
+import { cmsService } from '../services/cmsService';
+import { Phone, Mail, MapPin, Clock, Send, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export const Contact = () => {
   const { lang, t, cms } = useApp();
   const [formSent, setFormSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [contactData, setContactData] = useState({
     name: '',
     mobile: '',
@@ -13,11 +16,21 @@ export const Contact = () => {
     message: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormSent(true);
-    setContactData({ name: '', mobile: '', email: '', subject: '', message: '' });
-    setTimeout(() => setFormSent(false), 5000);
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      await cmsService.submitContactInquiry(contactData);
+      setFormSent(true);
+      setContactData({ name: '', mobile: '', email: '', subject: '', message: '' });
+      setTimeout(() => setFormSent(false), 6000);
+    } catch (err) {
+      console.error('Contact submit error:', err);
+      setErrorMsg(err.message || 'Failed to send message. Please try again or call our helpline.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -130,7 +143,14 @@ export const Contact = () => {
             {formSent && (
               <div style={{ backgroundColor: '#DCFCE7', border: '1px solid #BBF7D0', padding: '1rem', borderRadius: '10px', color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <CheckCircle size={18} />
-                <span>Your message has been sent successfully.</span>
+                <span>Your message has been sent successfully to the Jankalyan Foundation team.</span>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', padding: '1rem', borderRadius: '10px', color: '#991B1B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                <AlertCircle size={18} />
+                <span>{errorMsg}</span>
               </div>
             )}
 
@@ -193,9 +213,9 @@ export const Contact = () => {
                 />
               </div>
 
-              <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-                <Send size={18} />
-                <span>Send Message</span>
+              <button type="submit" disabled={loading} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                <span>{loading ? 'Submitting...' : 'Send Message'}</span>
               </button>
             </form>
           </div>

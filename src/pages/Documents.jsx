@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
+import { uploadFile, validateDocumentFile, getSignedUrl } from '../api/storage';
+import { supabase } from '../api/supabase';
+import { applicationService } from '../services/applicationService';
 import { 
   FileText, 
   Upload, 
@@ -11,11 +14,18 @@ import {
   HelpCircle,
   Eye,
   ShieldCheck,
-  FileCheck
+  FileCheck,
+  Search,
+  Loader2
 } from 'lucide-react';
 
 export const Documents = () => {
-  const { lang, t, navigate, activeStudentApp } = useApp();
+  const { lang, t, navigate, activeStudentApp, setActiveStudentApp } = useApp();
+  const fileInputRef = useRef(null);
+  const [activeDocToUpload, setActiveDocToUpload] = useState(null);
+  const [uploadingDocId, setUploadingDocId] = useState(null);
+  const [searchAppId, setSearchAppId] = useState('');
+  const [searching, setSearching] = useState(false);
 
   // Documents state for active student
   const [docList, setDocList] = useState([
@@ -101,24 +111,86 @@ export const Documents = () => {
   ]);
 
   const [uploadSuccessMsg, setUploadSuccessMsg] = useState(null);
+  const [uploadErrorMsg, setUploadErrorMsg] = useState(null);
 
-  const handleReplaceDoc = (id) => {
-    setDocList(prev => prev.map(d => {
-      if (d.id === id) {
-        return {
-          ...d,
-          status: 'Under Verification',
-          file: `replaced_${id}_document.pdf`,
-          size: '450 KB',
-          updated: new Date().toISOString().split('T')[0],
-          reason: ''
-        };
+  const handleStartUpload = (docId) => {
+    setActiveDocToUpload(docId);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeDocToUpload) return;
+
+    const validation = validateDocumentFile(file, 3072);
+    if (!validation.valid) {
+      setUploadErrorMsg(validation.error);
+      setTimeout(() => setUploadErrorMsg(null), 5000);
+      return;
+    }
+
+    setUploadingDocId(activeDocToUpload);
+    setUploadErrorMsg(null);
+
+    try {
+      const appId = activeStudentApp?.id || 'JMF-2026-108234';
+      const ext = file.name.split('.').pop() || 'pdf';
+      const storagePath = `${appId}/${activeDocToUpload}_${Date.now()}.${ext}`;
+
+      // Upload to Supabase Storage
+      await uploadFile('student-documents', storagePath, file, { upsert: true });
+
+      // Update local state
+      const fileSize = `${(file.size / 1024).toFixed(0)} KB`;
+      setDocList(prev => prev.map(d => {
+        if (d.id === activeDocToUpload) {
+          return {
+            ...d,
+            status: 'Under Verification',
+            file: file.name,
+            size: fileSize,
+            updated: new Date().toISOString().split('T')[0],
+            reason: ''
+          };
+        }
+        return d;
+      }));
+
+      setUploadSuccessMsg(lang === 'hi' ? 'दस्तावेज़ सफलतापूर्वक अपलोड हो गया है। संवीक्षा प्रगति पर है।' : `Document "${file.name}" uploaded to secure storage. Under scrutiny.`);
+      setTimeout(() => setUploadSuccessMsg(null), 5000);
+    } catch (err) {
+      console.error('Document upload error:', err);
+      setUploadErrorMsg(err.message || 'Upload failed. Please check network connection and try again.');
+    } finally {
+      setUploadingDocId(null);
+      setActiveDocToUpload(null);
+    }
+  };
+
+  const handleLookupApp = async (e) => {
+    e.preventDefault();
+    if (!searchAppId.trim()) return;
+    setSearching(true);
+    try {
+      const result = await applicationService.trackApplication(searchAppId.trim());
+      if (result) {
+        setActiveStudentApp({
+          id: result.id,
+          studentName: result.student_name || 'Applicant',
+          mobile: result.mobile || ''
+        });
+      } else {
+        setUploadErrorMsg('Application ID not found.');
+        setTimeout(() => setUploadErrorMsg(null), 4000);
       }
-      return d;
-    }));
-
-    setUploadSuccessMsg(lang === 'hi' ? 'दस्तावेज़ सफलतापूर्वक प्रतिस्थापित कर दिया गया है। संवीक्षा प्रगति पर है।' : 'Document replaced successfully. Now under verification.');
-    setTimeout(() => setUploadSuccessMsg(null), 4000);
+    } catch (err) {
+      setUploadErrorMsg('Error finding application.');
+    } finally {
+      setSearching(false);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -150,21 +222,56 @@ export const Documents = () => {
               {lang === 'hi' ? 'दस्तावेज़ प्रबंधन एवं सत्यापन स्थिति' : 'Document Upload & Verification Management'}
             </h1>
             <p style={{ color: '#64748B', fontSize: '0.95rem' }}>
-              {lang === 'hi'
-                ? 'अपने अपलोड किए गए दस्तावेज़ों की जांच स्थिति देखें अथवा अस्वीकृत दस्तावेज़ों को पुनः अपलोड करें।'
-                : 'Monitor scrutiny status, review verifier remarks, and replace rejected documents directly.'}
+              {activeStudentApp?.id ? (
+                <span>Application ID: <strong style={{ color: '#1E40AF' }}>{activeStudentApp.id}</strong> ({activeStudentApp.studentName})</span>
+              ) : (
+                lang === 'hi'
+                  ? 'अपने अपलोड किए गए दस्तावेज़ों की जांच स्थिति देखें अथवा अस्वीकृत दस्तावेज़ों को पुनः अपलोड करें।'
+                  : 'Monitor scrutiny status, review verifier remarks, and upload new documents directly.'
+              )}
             </p>
           </div>
 
-          <button className="btn btn-outline" onClick={() => navigate('/student-dashboard')}>
-            <span>{lang === 'hi' ? 'विद्यार्थी डैशबोर्ड' : 'Student Dashboard'}</span>
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <form onSubmit={handleLookupApp} style={{ display: 'flex', gap: '0.5rem' }}>
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder="Lookup App ID..." 
+                value={searchAppId}
+                onChange={(e) => setSearchAppId(e.target.value)}
+                style={{ width: '180px', height: '38px', fontSize: '0.85rem' }}
+              />
+              <button type="submit" className="btn btn-secondary btn-sm" disabled={searching}>
+                {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+              </button>
+            </form>
+            <button className="btn btn-outline btn-sm" onClick={() => navigate('/student-dashboard')}>
+              <span>{lang === 'hi' ? 'विद्यार्थी डैशबोर्ड' : 'Student Dashboard'}</span>
+            </button>
+          </div>
         </div>
+
+        {/* Hidden File Input */}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileChange} 
+          accept=".jpg,.jpeg,.png,.pdf" 
+          style={{ display: 'none' }} 
+        />
 
         {uploadSuccessMsg && (
           <div style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '1rem 1.5rem', borderRadius: '12px', marginBottom: '2rem', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <CheckCircle2 size={20} />
             <span style={{ fontWeight: 600 }}>{uploadSuccessMsg}</span>
+          </div>
+        )}
+
+        {uploadErrorMsg && (
+          <div style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '1rem 1.5rem', borderRadius: '12px', marginBottom: '2rem', border: '1px solid #FCA5A5', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <AlertCircle size={20} />
+            <span style={{ fontWeight: 600 }}>{uploadErrorMsg}</span>
           </div>
         )}
 
@@ -177,8 +284,8 @@ export const Documents = () => {
             </h3>
             <p style={{ fontSize: '0.875rem', color: '#1E40AF', lineHeight: 1.6 }}>
               {lang === 'hi'
-                ? '1. सभी दस्तावेज़ मूल प्रतियों से स्पष्ट स्कैन किए गए होने चाहिए। 2. फोटो एवं हस्ताक्षर स्पष्ट होने चाहिए। 3. अस्वीकृत दस्तावेज़ों के कारण को पढ़कर उसी आधार पर नवीन स्पष्ट प्रति अपलोड करें।'
-                : '1. Ensure scans are taken directly from original certificates. 2. Mobile photos must be glare-free. 3. For rejected documents, read the scrutiny remark carefully before uploading a replacement.'}
+                ? '1. सभी दस्तावेज़ मूल प्रतियों से स्पष्ट स्कैन किए गए होने चाहिए (अधिकतम 3 MB)। 2. फोटो एवं हस्ताक्षर स्पष्ट होने चाहिए। 3. अस्वीकृत दस्तावेज़ों के कारण को पढ़कर उसी आधार पर नवीन स्पष्ट प्रति अपलोड करें।'
+                : '1. Scans must be taken from original certificates (max 3 MB, JPG/PNG/PDF). 2. Files are stored securely in Supabase storage. 3. Verifiers will re-scrutinize any replaced documents within 24-48 hours.'}
             </p>
           </div>
         </div>
@@ -243,31 +350,27 @@ export const Documents = () => {
 
               {/* Actions */}
               <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '0.5rem' }}>
-                {doc.status === 'Rejected' ? (
-                  <button 
-                    className="btn btn-primary btn-sm"
-                    onClick={() => handleReplaceDoc(doc.id)}
-                  >
-                    <RefreshCw size={14} />
-                    <span>{lang === 'hi' ? 'नया दस्तावेज़ बदलें / अपलोड करें' : 'Upload Replacement'}</span>
-                  </button>
-                ) : doc.status === 'Not Uploaded' ? (
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => handleReplaceDoc(doc.id)}
-                  >
-                    <Upload size={14} />
-                    <span>{lang === 'hi' ? 'दस्तावेज़ अपलोड करें' : 'Upload Document'}</span>
-                  </button>
-                ) : (
-                  <button 
-                    className="btn btn-outline btn-sm"
-                    onClick={() => handleReplaceDoc(doc.id)}
-                  >
-                    <Upload size={14} />
-                    <span>{lang === 'hi' ? 'प्रतिस्थापित करें' : 'Replace File'}</span>
-                  </button>
-                )}
+                <button 
+                  className={`btn ${doc.status === 'Rejected' ? 'btn-primary' : doc.status === 'Not Uploaded' ? 'btn-secondary' : 'btn-outline'} btn-sm`}
+                  disabled={uploadingDocId === doc.id}
+                  onClick={() => handleStartUpload(doc.id)}
+                >
+                  {uploadingDocId === doc.id ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      {doc.status === 'Rejected' ? <RefreshCw size={14} /> : <Upload size={14} />}
+                      <span>
+                        {doc.status === 'Rejected' 
+                          ? (lang === 'hi' ? 'नया दस्तावेज़ अपलोड करें' : 'Upload Replacement')
+                          : (lang === 'hi' ? 'दस्तावेज़ चुनें व अपलोड करें' : 'Upload File')}
+                      </span>
+                    </>
+                  )}
+                </button>
               </div>
 
             </div>
