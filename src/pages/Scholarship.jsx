@@ -30,7 +30,7 @@ export const Scholarship = () => {
                 {lang === 'hi' ? 'आधिकारिक छात्रवृत्ति योजना 2026-27' : 'OFFICIAL SCHOLARSHIP YOJNA 2026-27'}
               </span>
               <h1 style={{ fontSize: '2.85rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1.25rem', lineHeight: 1.2 }}>
-                {lang === 'hi' ? 'जंकल्याण मानवाधिकार फाउंडेशन छात्रवृत्ति योजना' : 'Jankalyan Manavadhikar Foundation Scholarship Scheme'}
+                {lang === 'hi' ? 'जनकल्याण मानवाधिकार फाउंडेशन छात्रवृत्ति योजना' : 'Jankalyan Manavadhikar Foundation Scholarship Scheme'}
               </h1>
               <p style={{ color: '#CBD5E1', fontSize: '1.15rem', lineHeight: 1.65, marginBottom: '2rem' }}>
                 {lang === 'hi'

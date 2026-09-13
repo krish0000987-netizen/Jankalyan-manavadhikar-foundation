@@ -133,7 +133,7 @@ const INITIAL_CMS = {
     {
       id: "FAQ-01",
       qEn: "How do I apply for the Jankalyan Manavadhikar Foundation Scholarship?",
-      qHi: "जंकल्याण मानवाधिकार फाउंडेशन छात्रवृत्ति के लिए आवेदन कैसे करें?",
+      qHi: "जनकल्याण मानवाधिकार फाउंडेशन छात्रवृत्ति के लिए आवेदन कैसे करें?",
       aEn: "Click on 'Apply Now', register with your mobile number, verify OTP, complete the 8-step application form with personal, academic, and bank details, upload required documents, and submit to receive your unique Application ID.",
       aHi: "'अभी आवेदन करें' बटन पर क्लिक करें, मोबाइल नंबर दर्ज कर ओटीपी सत्यापित करें, 8-चरणीय फॉर्म में व्यक्तिगत, शैक्षणिक व बैंक विवरण भरें, दस्तावेज़ अपलोड कर आवेदन जमा करें।"
     },

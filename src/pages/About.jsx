@@ -29,7 +29,7 @@ export const About = () => {
               {lang === 'hi' ? 'संस्थागत परिचय' : 'INSTITUTIONAL PROFILE'}
             </span>
             <h1 style={{ fontSize: '2.75rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '1rem', lineHeight: 1.2 }}>
-              {lang === 'hi' ? 'जंकल्याण मानवाधिकार फाउंडेशन के बारे में' : 'About Jankalyan Manavadhikar Foundation'}
+              {lang === 'hi' ? 'जनकल्याण मानवाधिकार फाउंडेशन के बारे में' : 'About Jankalyan Manavadhikar Foundation'}
             </h1>
             <p style={{ color: '#CBD5E1', fontSize: '1.15rem', lineHeight: 1.65 }}>
               {lang === 'hi' 
@@ -53,7 +53,7 @@ export const About = () => {
               </h2>
               <p style={{ color: '#334155', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>
                 {lang === 'hi'
-                  ? 'जंकल्याण मानवाधिकार फाउंडेशन का गठन समाज के वंचित, आर्थिक रूप से कमजोर एवं होनहार छात्र-छात्राओं को सर्वांगीण शैक्षणिक अवसर उपलब्ध कराने के उद्देश्य से किया गया है। संस्था का दृढ़ विश्वास है कि शिक्षा ही मानवीय गरिमा और अधिकारों की वास्तविक संवाहिका है।'
+                  ? 'जनकल्याण मानवाधिकार फाउंडेशन का गठन समाज के वंचित, आर्थिक रूप से कमजोर एवं होनहार छात्र-छात्राओं को सर्वांगीण शैक्षणिक अवसर उपलब्ध कराने के उद्देश्य से किया गया है। संस्था का दृढ़ विश्वास है कि शिक्षा ही मानवीय गरिमा और अधिकारों की वास्तविक संवाहिका है।'
                   : 'Jankalyan Manavadhikar Foundation was instituted with a resolute vision to dismantle economic and institutional barriers faced by promising students across India. We believe education is the single most transformative pillar of human dignity.'}
               </p>
               
