@@ -24,20 +24,25 @@ import {
   Search,
   ExternalLink,
   ChevronRight,
-  BadgePercent
+  BadgePercent,
+  Languages
 } from 'lucide-react';
 
 export const Scholarship = () => {
-  const { lang, t, navigate, cms } = useApp();
+  const { lang, setSpecificLanguage, t, navigate, cms } = useApp();
+
+  const isHindi = lang === 'hi';
 
   const slabs = [
     {
       id: 'slab-1',
+      classTitle: isHindi ? '5वीं से 7वीं' : '5th to 7th Class',
       classTitleHi: '5वीं से 7वीं',
       classTitleEn: '5th to 7th Class',
-      subText: 'कक्षा 5, 6, 7 अध्ययनरत',
+      subText: isHindi ? 'कक्षा 5, 6, 7 अध्ययनरत छात्र' : 'Students Enrolled in Class 5th, 6th & 7th',
       amount: '₹4,000/-',
-      period: 'वार्षिक / Yearly',
+      period: isHindi ? 'वार्षिक (प्रति वर्ष)' : 'Annual / Yearly Grant',
+      badgeText: isHindi ? 'वार्षिक अनुदान' : 'ANNUAL GRANT',
       color: '#0284C7',
       bgGradient: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
       cardBg: '#F0F9FF',
@@ -47,11 +52,13 @@ export const Scholarship = () => {
     },
     {
       id: 'slab-2',
+      classTitle: isHindi ? '8वीं से 10वीं' : '8th to 10th Class',
       classTitleHi: '8वीं से 10वीं',
       classTitleEn: '8th to 10th Class',
-      subText: 'कक्षा 8, 9, 10 हाई स्कूल',
+      subText: isHindi ? 'कक्षा 8, 9, 10 हाई स्कूल' : 'High School (Classes 8th, 9th & 10th)',
       amount: '₹8,000/-',
-      period: 'वार्षिक / Yearly',
+      period: isHindi ? 'वार्षिक (प्रति वर्ष)' : 'Annual / Yearly Grant',
+      badgeText: isHindi ? 'वार्षिक अनुदान' : 'ANNUAL GRANT',
       color: '#16A34A',
       bgGradient: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
       cardBg: '#F0FDF4',
@@ -61,11 +68,13 @@ export const Scholarship = () => {
     },
     {
       id: 'slab-3',
+      classTitle: isHindi ? '11वीं से 12वीं' : '11th to 12th Class',
       classTitleHi: '11वीं से 12वीं',
       classTitleEn: '11th to 12th Class',
-      subText: 'कक्षा 11 व 12 हायर सेकेंडरी',
+      subText: isHindi ? 'कक्षा 11 व 12 हायर सेकेंडरी' : 'Higher Secondary (Classes 11th & 12th)',
       amount: '₹12,000/-',
-      period: 'वार्षिक / Yearly',
+      period: isHindi ? 'वार्षिक (प्रति वर्ष)' : 'Annual / Yearly Grant',
+      badgeText: isHindi ? 'वार्षिक अनुदान' : 'ANNUAL GRANT',
       color: '#E11D48',
       bgGradient: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)',
       cardBg: '#FFF1F2',
@@ -75,11 +84,13 @@ export const Scholarship = () => {
     },
     {
       id: 'slab-4',
+      classTitle: isHindi ? 'डिप्लोमा / पॉलिटेक्निक / ITI' : 'Diploma / Polytechnic / ITI',
       classTitleHi: 'Diploma / Polytechnic / ITI',
       classTitleEn: 'Diploma / Polytechnic / ITI',
-      subText: 'तकनीकी एवं व्यावसायिक डिप्लोमा',
+      subText: isHindi ? 'तकनीकी एवं व्यावसायिक डिप्लोमा पाठ्यक्रम' : 'Technical & Vocational Diploma Courses',
       amount: '₹14,000/-',
-      period: 'वार्षिक / Yearly',
+      period: isHindi ? 'वार्षिक (प्रति वर्ष)' : 'Annual / Yearly Grant',
+      badgeText: isHindi ? 'वार्षिक अनुदान' : 'ANNUAL GRANT',
       color: '#D97706',
       bgGradient: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
       cardBg: '#FFFBEB',
@@ -89,11 +100,13 @@ export const Scholarship = () => {
     },
     {
       id: 'slab-5',
+      classTitle: isHindi ? 'Graduation (स्नातक)' : 'Graduation (Bachelor Degree)',
       classTitleHi: 'Graduation (स्नातक)',
       classTitleEn: 'Graduation (Degree)',
-      subText: 'B.A., B.Sc., B.Com., B.Tech, etc.',
+      subText: isHindi ? 'B.A., B.Sc., B.Com., B.Tech, आदि' : 'B.A., B.Sc., B.Com., B.Tech, BBA, etc.',
       amount: '₹16,000/-',
-      period: 'वार्षिक / Yearly',
+      period: isHindi ? 'वार्षिक (प्रति वर्ष)' : 'Annual / Yearly Grant',
+      badgeText: isHindi ? 'वार्षिक अनुदान' : 'ANNUAL GRANT',
       color: '#7C3AED',
       bgGradient: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
       cardBg: '#F5F3FF',
@@ -103,11 +116,13 @@ export const Scholarship = () => {
     },
     {
       id: 'slab-6',
+      classTitle: isHindi ? 'Post Graduation (परास्नातक)' : 'Post Graduation (Master Degree)',
       classTitleHi: 'Post Graduation (परास्नातक)',
       classTitleEn: 'Post Graduation (Master)',
-      subText: 'M.A., M.Sc., M.Com., M.Tech, MBA',
+      subText: isHindi ? 'M.A., M.Sc., M.Com., M.Tech, MBA, आदि' : 'M.A., M.Sc., M.Com., M.Tech, MBA, etc.',
       amount: '₹22,000/-',
-      period: 'वार्षिक / Yearly',
+      period: isHindi ? 'वार्षिक (प्रति वर्ष)' : 'Annual / Yearly Grant',
+      badgeText: isHindi ? 'वार्षिक अनुदान' : 'ANNUAL GRANT',
       color: '#1E3A8A',
       bgGradient: 'linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%)',
       cardBg: '#EFF6FF',
@@ -117,6 +132,50 @@ export const Scholarship = () => {
     }
   ];
 
+  const eligibilityPoints = isHindi ? [
+    { title: 'भारतीय नागरिक', desc: 'आवेदक का भारत का स्थायी नागरिक होना अनिवार्य है।' },
+    { title: 'कक्षा 5वीं से पीजी स्तर', desc: 'कक्षा 5वीं, 8वीं, 10वीं, 12वीं, डिप्लोमा, स्नातक या परास्नातक में नियमित अध्ययनरत।' },
+    { title: 'मान्यता प्राप्त संस्थान', desc: 'शासकीय अथवा शासन द्वारा मान्यता प्राप्त विद्यालय / महाविद्यालय में प्रवेश।' },
+    { title: 'आर्थिक संबल की आवश्यकता', desc: 'आर्थिक रूप से कमजोर एवं जरूरतमंद परिवार के होनहार छात्र-छात्राएं।' }
+  ] : [
+    { title: 'Indian Citizen', desc: 'The applicant must be a bona fide and permanent citizen of India.' },
+    { title: 'Class 5th to PG Level', desc: 'Regularly enrolled in Class 5th, 8th, 10th, 12th, Diploma, UG or PG courses.' },
+    { title: 'Recognized Institution', desc: 'Enrolled in an affiliated government or recognized school/college.' },
+    { title: 'Economic Need', desc: 'Meritorious students from economically weaker sections seeking financial aid.' }
+  ];
+
+  const requiredDocuments = isHindi ? [
+    'आधार कार्ड (Aadhaar Card)',
+    'शैक्षणिक योग्यता अंकसूची (Marksheet)',
+    'मूल निवास प्रमाण पत्र (Domicile)',
+    'जाति प्रमाण पत्र (Caste Certificate)',
+    'सक्षम अधिकारी द्वारा आय प्रमाण पत्र',
+    'बैंक पासबुक की स्पष्ट प्रति (Bank Passbook)',
+    'बोनाफाइड / प्रवेश प्रमाण पत्र (Admission Proof)',
+    'पासपोर्ट साइज नवीनतम फोटो (Passport Photo)'
+  ] : [
+    'Aadhaar Card (UIDAI Verified)',
+    'Previous Class Marksheet / Grade Sheet',
+    'Domicile / Residence Certificate',
+    'Caste Certificate (if applicable)',
+    'Income Certificate issued by Competent Authority',
+    'Bank Passbook Copy / Account Details',
+    'Institution Bonafide / Admission Receipt',
+    'Recent Passport Size Photograph'
+  ];
+
+  const keyFeatures = isHindi ? [
+    'आर्थिक रूप से कमजोर एवं मेधावी विद्यार्थियों के लिए प्रत्यक्ष वित्तीय संबल',
+    'सभी वर्गों (General, OBC, SC, ST) के लिए पारदर्शी एवं समान अवसर',
+    'डिजिटल दस्तावेज़ अपलोड एवं संस्थागत सत्यापन से पूरी तरह निष्पक्ष चयन',
+    'डायरेक्ट बेनिफिट ट्रांसफर (DBT) के माध्यम से बैंक खाते में सीधे अनुदान जारी'
+  ] : [
+    'Direct annual financial aid for economically weaker and deserving students',
+    'Fair and equal opportunity across all categories (General, OBC, SC, ST)',
+    'Fully transparent verification with digital photo and institutional attestation',
+    'Direct Benefit Transfer (DBT) credited straight into student bank accounts'
+  ];
+
   return (
     <div style={{ backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
       
@@ -124,12 +183,12 @@ export const Scholarship = () => {
       <section style={{
         background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #1E3A8A 100%)',
         color: '#FFFFFF',
-        padding: '3.5rem 0 3rem',
+        padding: '3rem 0 2.75rem',
         position: 'relative',
         overflow: 'hidden',
         borderBottom: '4px solid #EAB308'
       }}>
-        {/* Background decorative elements */}
+        {/* Background decorative glow */}
         <div style={{
           position: 'absolute',
           top: '-10%',
@@ -142,13 +201,14 @@ export const Scholarship = () => {
         }} />
 
         <div className="container">
-          {/* Top Brand & Tagline Bar from Poster */}
+          
+          {/* Top Brand, Language Switcher & Tagline Bar from Poster */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '1rem',
+            gap: '1.25rem',
             paddingBottom: '1.5rem',
             borderBottom: '1px solid rgba(255,255,255,0.15)',
             marginBottom: '2rem'
@@ -169,28 +229,94 @@ export const Scholarship = () => {
                 }}
               />
               <div>
-                <h2 style={{ fontSize: '1.55rem', fontWeight: 900, letterSpacing: '0.04em', color: '#FFFFFF', margin: 0, textTransform: 'uppercase' }}>
+                <h2 style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '0.04em', color: '#FFFFFF', margin: 0, textTransform: 'uppercase' }}>
                   JAN KALYAN MANAVADHIKAR FOUNDATION
                 </h2>
                 <div style={{ fontSize: '0.88rem', color: '#FEF08A', fontWeight: 700, marginTop: '2px' }}>
-                  — सामाजिक सेवा, मानव अधिकार एवं जनकल्याण के लिए समर्पित —
+                  {isHindi 
+                    ? '— सामाजिक सेवा, मानव अधिकार एवं जनकल्याण के लिए समर्पित —' 
+                    : '— Dedicated to Social Welfare, Human Rights & Empowerment —'}
                 </div>
               </div>
             </div>
 
-            <div style={{
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              backdropFilter: 'blur(8px)',
-              padding: '0.6rem 1.25rem',
-              borderRadius: '999px',
-              border: '1px solid rgba(255,255,255,0.2)',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              color: '#FEF08A',
-              letterSpacing: '0.02em',
-              textAlign: 'center'
-            }}>
-              🇮🇳 शिक्षित युवा • सशक्त समाज • समृद्ध भारत
+            {/* In-Page Interactive Language Switcher + Tagline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              
+              {/* Language Switcher Buttons */}
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '999px',
+                padding: '4px',
+                border: '1.5px solid rgba(255,255,255,0.25)',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+              }}>
+                <button
+                  type="button"
+                  id="scholarship-lang-hi"
+                  onClick={() => setSpecificLanguage('hi')}
+                  style={{
+                    padding: '0.45rem 1rem',
+                    borderRadius: '999px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    backgroundColor: isHindi ? '#EAB308' : 'transparent',
+                    color: isHindi ? '#0F172A' : '#FFFFFF',
+                    boxShadow: isHindi ? '0 2px 8px rgba(234, 179, 8, 0.4)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <span>🇮🇳</span>
+                  <span>हिन्दी</span>
+                </button>
+                
+                <button
+                  type="button"
+                  id="scholarship-lang-en"
+                  onClick={() => setSpecificLanguage('en')}
+                  style={{
+                    padding: '0.45rem 1rem',
+                    borderRadius: '999px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    backgroundColor: !isHindi ? '#EAB308' : 'transparent',
+                    color: !isHindi ? '#0F172A' : '#FFFFFF',
+                    boxShadow: !isHindi ? '0 2px 8px rgba(234, 179, 8, 0.4)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Languages size={15} />
+                  <span>English</span>
+                </button>
+              </div>
+
+              {/* Patriotic / Mottos Pill */}
+              <div style={{
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                padding: '0.55rem 1.15rem',
+                borderRadius: '999px',
+                border: '1px solid rgba(255,255,255,0.18)',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                color: '#FEF08A',
+                letterSpacing: '0.02em',
+                textAlign: 'center'
+              }}>
+                {isHindi ? '🇮🇳 शिक्षित युवा • सशक्त समाज • समृद्ध भारत' : '🇮🇳 Educated Youth • Empowered Society • Prosperous Bharat'}
+              </div>
             </div>
           </div>
 
@@ -212,7 +338,7 @@ export const Scholarship = () => {
                   alignItems: 'center',
                   gap: '6px'
                 }}>
-                  📢 2026 का अंतिम राउंड • LAST ROUND
+                  {isHindi ? '📢 2026 का अंतिम राउंड • LAST ROUND' : '📢 2026 FINAL CALL • LAST ROUND'}
                 </span>
 
                 <span style={{
@@ -223,12 +349,12 @@ export const Scholarship = () => {
                   fontSize: '0.85rem',
                   fontWeight: 800
                 }}>
-                  पड़ेगा भारत बढ़ेगा भारत
+                  {isHindi ? 'पड़ेगा भारत बढ़ेगा भारत' : 'Padhega Bharat Badhega Bharat'}
                 </span>
               </div>
 
               <h1 style={{
-                fontSize: '3rem',
+                fontSize: '2.9rem',
                 fontWeight: 950,
                 color: '#FEF08A',
                 lineHeight: 1.15,
@@ -238,8 +364,8 @@ export const Scholarship = () => {
                 SCHOLARSHIP YOJNA 2026
               </h1>
 
-              <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.75rem' }}>
-                शिक्षा के सपनों को मिलेगा आर्थिक सहयोग
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.75rem' }}>
+                {isHindi ? 'शिक्षा के सपनों को मिलेगा आर्थिक सहयोग' : 'Financial Aid & Scholarship for Your Educational Dreams'}
               </div>
 
               <div style={{
@@ -248,12 +374,14 @@ export const Scholarship = () => {
                 border: '1px solid rgba(255,255,255,0.25)',
                 padding: '0.5rem 1.25rem',
                 borderRadius: '8px',
-                fontSize: '1.1rem',
+                fontSize: '1.05rem',
                 fontWeight: 700,
                 color: '#93C5FD',
                 marginBottom: '1.75rem'
               }}>
-                🎓 कक्षा 5वीं से Post Graduation एवं Diploma Courses तक
+                {isHindi 
+                  ? '🎓 कक्षा 5वीं से Post Graduation एवं Diploma Courses तक' 
+                  : '🎓 From Class 5th to Post Graduation & Diploma Courses'}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -271,7 +399,7 @@ export const Scholarship = () => {
                   }}
                 >
                   <Sparkles size={20} />
-                  <span>{lang === 'hi' ? 'अभी ऑनलाइन आवेदन करें' : 'Apply Online Now'}</span>
+                  <span>{isHindi ? 'अभी ऑनलाइन आवेदन करें' : 'Apply Online Now'}</span>
                 </button>
 
                 <button 
@@ -280,7 +408,7 @@ export const Scholarship = () => {
                   style={{ fontWeight: 700 }}
                 >
                   <Search size={18} />
-                  <span>{lang === 'hi' ? 'आवेदन स्थिति ट्रैक करें' : 'Track Application'}</span>
+                  <span>{isHindi ? 'आवेदन स्थिति ट्रैक करें' : 'Track Application Status'}</span>
                 </button>
               </div>
             </div>
@@ -308,20 +436,22 @@ export const Scholarship = () => {
                   borderRadius: '999px',
                   boxShadow: '0 4px 10px rgba(220, 38, 38, 0.3)'
                 }}>
-                  📢 जल्द ही जारी किया जाएगा!
+                  {isHindi ? '📢 अंतिम अवसर सक्रिय!' : '📢 Active Last Round!'}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#DC2626', fontWeight: 800, fontSize: '0.95rem', marginBottom: '0.5rem' }}>
                   <BadgePercent size={20} />
-                  <span>Registration Fee (आवेदन शुल्क)</span>
+                  <span>{isHindi ? 'Registration Fee (आवेदन शुल्क)' : 'Registration Fee (Application Processing)'}</span>
                 </div>
 
                 <div style={{ fontSize: '3rem', fontWeight: 950, color: '#DC2626', margin: '0.2rem 0', lineHeight: 1 }}>
                   ₹ 211.30/-
                 </div>
 
-                <div style={{ fontSize: '0.9rem', color: '#64748B', fontWeight: 700, marginBottom: '1.5rem' }}>
-                  (केवल आवेदन प्रक्रिया हेतु / Application processing only)
+                <div style={{ fontSize: '0.88rem', color: '#64748B', fontWeight: 700, marginBottom: '1.5rem' }}>
+                  {isHindi 
+                    ? '(केवल आवेदन प्रक्रिया हेतु / Application processing only)' 
+                    : '(Charged strictly for application processing & verification)'}
                 </div>
 
                 <div style={{
@@ -332,20 +462,20 @@ export const Scholarship = () => {
                   marginBottom: '1.25rem'
                 }}>
                   <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-                    कुल छात्रवृत्ति अनुदान सीमा
+                    {isHindi ? 'कुल छात्रवृत्ति अनुदान सीमा' : 'Annual Scholarship Grant Range'}
                   </div>
                   <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#1E3A8A', margin: '0.2rem 0' }}>
-                    ₹4,000/- से ₹22,000/- वार्षिक
+                    {isHindi ? '₹4,000/- से ₹22,000/- वार्षिक' : '₹4,000/- to ₹22,000/- Yearly'}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 700 }}>
-                    ✓ प्रत्यक्ष बैंक अंतरण (Direct Benefit Transfer - DBT)
+                    {isHindi ? '✓ प्रत्यक्ष बैंक अंतरण (Direct Benefit Transfer - DBT)' : '✓ Direct Benefit Transfer (DBT) directly into Student Bank Account'}
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem', color: '#334155' }}>
                   <Clock size={16} color="#DC2626" />
                   <div>
-                    <strong>Help Line समय:</strong> सुबह 10:00 बजे से शाम 7:00 बजे तक
+                    <strong>{isHindi ? 'Help Line समय:' : 'Help Line Operating Hours:'}</strong> {isHindi ? 'सुबह 10:00 बजे से शाम 7:00 बजे तक' : '10:00 AM to 07:00 PM'}
                   </div>
                 </div>
               </div>
@@ -375,15 +505,19 @@ export const Scholarship = () => {
               boxShadow: '0 4px 12px rgba(30, 58, 138, 0.2)'
             }}>
               <GraduationCap size={18} />
-              <span>छात्रवृत्ति राशि (SCHOLARSHIP SLABS)</span>
+              <span>{isHindi ? 'छात्रवृत्ति राशि (SCHOLARSHIP SLABS)' : 'SCHOLARSHIP GRANT SLABS (6 TIERS)'}</span>
               <GraduationCap size={18} />
             </div>
 
             <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: '#0F172A', marginBottom: '0.75rem' }}>
-              प्रत्येक कक्षा एवं पाठ्यक्रम अनुसार स्वीकृत वार्षिक राशि
+              {isHindi 
+                ? 'प्रत्येक कक्षा एवं पाठ्यक्रम अनुसार स्वीकृत वार्षिक राशि' 
+                : 'Approved Annual Grants for Each Class & Course Tier'}
             </h2>
             <p style={{ color: '#64748B', fontSize: '1.05rem', lineHeight: 1.6 }}>
-              फाउंडेशन द्वारा कक्षा 5वीं से लेकर परास्नातक (PG) एवं डिप्लोमा पाठ्यक्रमों के विद्यार्थियों के लिए निर्धारित वित्तीय अनुदान:
+              {isHindi 
+                ? 'फाउंडेशन द्वारा कक्षा 5वीं से लेकर परास्नातक (PG) एवं डिप्लोमा पाठ्यक्रमों के विद्यार्थियों के लिए निर्धारित वित्तीय अनुदान:' 
+                : 'Sanctioned yearly financial assistance for students across schools, colleges, ITIs, and professional institutes:'}
             </p>
           </div>
 
@@ -451,14 +585,14 @@ export const Scholarship = () => {
                       borderRadius: '999px',
                       letterSpacing: '0.02em'
                     }}>
-                      ANNUAL GRANT
+                      {slab.badgeText}
                     </span>
                   </div>
 
                   {/* Course Title */}
                   <div>
                     <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.35rem' }}>
-                      {slab.classTitleHi}
+                      {slab.classTitle}
                     </h3>
                     <div style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 600, marginBottom: '1.25rem' }}>
                       {slab.subText}
@@ -501,7 +635,7 @@ export const Scholarship = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    <span>इस वर्ग हेतु आवेदन करें</span>
+                    <span>{isHindi ? 'इस वर्ग हेतु आवेदन करें' : 'Apply for this Category'}</span>
                     <ArrowRight size={14} />
                   </button>
                 </div>
@@ -537,10 +671,14 @@ export const Scholarship = () => {
               </div>
               <div>
                 <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#991B1B' }}>
-                  आवेदन प्रक्रिया शुल्क: ₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)
+                  {isHindi 
+                    ? 'आवेदन प्रक्रिया शुल्क: ₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)' 
+                    : 'Application Processing Fee: ₹ 211.30/- (Processing Fee Only)'}
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#7F1D1D', marginTop: '2px' }}>
-                  सभी वर्गों एवं पाठ्यक्रमों के लिए एक समान पारदर्शी ऑनलाइन एवं ऑफलाइन आवेदन प्रक्रिया।
+                  {isHindi 
+                    ? 'सभी वर्गों एवं पाठ्यक्रमों के लिए एक समान पारदर्शी ऑनलाइन एवं ऑफलाइन आवेदन प्रक्रिया।' 
+                    : 'Standard and transparent scrutiny process across all courses and categories without hidden costs.'}
                 </div>
               </div>
             </div>
@@ -551,7 +689,7 @@ export const Scholarship = () => {
               style={{ backgroundColor: '#DC2626', borderColor: '#DC2626', fontWeight: 800 }}
             >
               <Sparkles size={16} />
-              <span>अभी आवेदन प्रारंभ करें</span>
+              <span>{isHindi ? 'अभी आवेदन प्रारंभ करें' : 'Start Application Now'}</span>
             </button>
           </div>
 
@@ -567,10 +705,12 @@ export const Scholarship = () => {
               SCHEME BLUEPRINT & GUIDELINES
             </span>
             <h2 style={{ fontSize: '2.3rem', fontWeight: 900, color: '#0F172A' }}>
-              योजना के चार मुख्य स्तंभ एवं आवश्यक जानकारी
+              {isHindi ? 'योजना के चार मुख्य स्तंभ एवं आवश्यक जानकारी' : 'Four Core Pillars & Official Scheme Guidelines'}
             </h2>
             <p style={{ color: '#64748B', fontSize: '1rem', marginTop: '0.5rem' }}>
-              आधिकारिक पोस्टर के अनुसार पात्रता, आवश्यक दस्तावेज, मुख्य विशेषताएं एवं आवेदन प्रक्रिया:
+              {isHindi 
+                ? 'आधिकारिक पोस्टर के अनुसार पात्रता, आवश्यक दस्तावेज, मुख्य विशेषताएं एवं आवेदन प्रक्रिया:' 
+                : 'Official criteria for Eligibility, Required Documents, Advantages, and Step-by-Step Application:'}
             </p>
           </div>
 
@@ -594,29 +734,21 @@ export const Scholarship = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                    पात्रता (Eligibility)
+                    {isHindi ? 'पात्रता (Eligibility)' : 'Eligibility Criteria'}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Who Can Apply</span>
+                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+                    {isHindi ? 'कौन आवेदन कर सकता है' : 'Who Can Apply'}
+                  </span>
                 </div>
               </div>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span><strong>भारतीय नागरिक</strong> (Applicant must be an Indian citizen)</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span><strong>कक्षा 5वीं से पोस्ट ग्रेजुएशन तक</strong> (Enrolled from Class 5th to PG level)</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span><strong>सरकारी / मान्यता प्राप्त संस्थान में अध्ययनरत</strong> (Enrolled in Recognized/Govt Institution)</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span><strong>आर्थिक रूप से कमजोर वर्ग</strong> (विभिन्न श्रेणियों के जरूरतमंद विद्यार्थी)</span>
-                </li>
+                {eligibilityPoints.map((item, idx) => (
+                  <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
+                    <CheckCircle2 size={18} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <span><strong>{item.title}:</strong> {item.desc}</span>
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -634,45 +766,21 @@ export const Scholarship = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                    आवश्यक दस्तावेज (Documents)
+                    {isHindi ? 'आवश्यक दस्तावेज (Documents)' : 'Required Documents'}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Checklist for Verification</span>
+                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+                    {isHindi ? 'सत्यापन हेतु चेकलिस्ट' : 'Verification Checklist'}
+                  </span>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>आधार कार्ड</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>शैक्षणिक योग्यता प्रमाण पत्र</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>निवास प्रमाण पत्र</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>जाति प्रमाण पत्र (यदि लागू हो)</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>आय प्रमाण पत्र</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>बैंक पासबुक की प्रति</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>Bonafide / Admission Proof</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <CheckCircle2 size={15} color="#DC2626" />
-                  <span>पासपोर्ट साइज फोटो</span>
-                </div>
+                {requiredDocuments.map((doc, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#334155', backgroundColor: '#F8FAFC', padding: '0.6rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <CheckCircle2 size={15} color="#DC2626" style={{ flexShrink: 0 }} />
+                    <span style={{ lineHeight: 1.3 }}>{doc}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -690,29 +798,21 @@ export const Scholarship = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                    योजना की मुख्य विशेषताएं
+                    {isHindi ? 'योजना की मुख्य विशेषताएं' : 'Key Scheme Highlights'}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Key Advantages</span>
+                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+                    {isHindi ? 'प्रमुख लाभ व उद्देश्य' : 'Benefits & Governance'}
+                  </span>
                 </div>
               </div>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span>आर्थिक रूप से कमजोर एवं सेवायति विद्यार्थियों के लिए प्रत्यक्ष संबल</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span>सभी वर्गों (General, OBC, SC, ST) के लिए समान व न्यायसंगत अवसर</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span>डिजिटल फोटो एवं ऑनलाइन सत्यापन से पारदर्शी प्रक्रिया</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
-                  <CheckCircle2 size={18} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <span>शिक्षा, कौशल एवं उज्ज्वल भविष्य के लिए निरंतर सहयोग</span>
-                </li>
+                {keyFeatures.map((feat, idx) => (
+                  <li key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: '#334155' }}>
+                    <CheckCircle2 size={18} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <span>{feat}</span>
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -730,14 +830,18 @@ export const Scholarship = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                    आवेदन प्रक्रिया (Process)
+                    {isHindi ? 'आवेदन प्रक्रिया (Process)' : 'Application Process'}
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Step by Step</span>
+                  <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+                    {isHindi ? 'चरणबद्ध आवेदन मार्गदर्शिका' : 'Step-by-Step Flow'}
+                  </span>
                 </div>
               </div>
 
               <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.65, marginBottom: '1.25rem' }}>
-                ऑनलाइन एवं ऑफलाइन आवेदन की प्रक्रिया, अंतिम तिथि एवं चयन संबंधी विस्तृत जानकारी Foundation द्वारा समय-समय पर आधिकारिक रूप से जारी की जाती है।
+                {isHindi 
+                  ? 'ऑनलाइन एवं ऑफलाइन आवेदन की प्रक्रिया, अंतिम तिथि एवं चयन संबंधी विस्तृत जानकारी Foundation द्वारा समय-समय पर आधिकारिक रूप से जारी की जाती है।' 
+                  : 'Detailed timelines, online verification protocols, and merit selection lists are officially declared and published periodically by the Foundation.'}
               </p>
 
               <div style={{
@@ -751,7 +855,7 @@ export const Scholarship = () => {
                 fontWeight: 700,
                 textAlign: 'center'
               }}>
-                🌟 शिक्षा ही सच्चा विकास है 🌟
+                {isHindi ? '🌟 शिक्षा ही सच्चा विकास है 🌟' : '🌟 Education is the True Development 🌟'}
               </div>
 
               <button 
@@ -760,7 +864,7 @@ export const Scholarship = () => {
                 style={{ width: '100%', justifyContent: 'center' }}
               >
                 <Sparkles size={16} />
-                <span>फॉर्म भरें (Start Application)</span>
+                <span>{isHindi ? 'फॉर्म भरें (Start Application)' : 'Fill Application Form'}</span>
               </button>
             </div>
 
@@ -791,10 +895,12 @@ export const Scholarship = () => {
               VERIFIED FOUNDATION HEADQUARTERS
             </span>
             <h2 style={{ fontSize: '2.1rem', fontWeight: 900, color: '#FFFFFF', marginTop: '0.75rem' }}>
-              आधिकारिक संपर्क एवं कार्यालय पता
+              {isHindi ? 'आधिकारिक संपर्क एवं कार्यालय पता' : 'Official Contact & Registered Office Address'}
             </h2>
             <div style={{ color: '#94A3B8', fontSize: '0.95rem' }}>
-              जनकल्याण मानवाधिकार फाउंडेशन — आपकी सेवा में सदैव तत्पर
+              {isHindi 
+                ? 'जनकल्याण मानवाधिकार फाउंडेशन — आपकी सेवा में सदैव तत्पर' 
+                : 'Jan Kalyan Manavadhikar Foundation — At Your Service Always'}
             </div>
           </div>
 
@@ -818,7 +924,7 @@ export const Scholarship = () => {
               <MapPin size={28} color="#F87171" style={{ marginTop: '3px', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: '0.8rem', color: '#FEF08A', fontWeight: 800, textTransform: 'uppercase' }}>
-                  Office Address
+                  {isHindi ? 'कार्यालय का पता (Office Address)' : 'Official Registered Address'}
                 </div>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', marginTop: '0.3rem', lineHeight: 1.5 }}>
                   {cms.officeAddress}
@@ -842,7 +948,7 @@ export const Scholarship = () => {
               <Phone size={28} color="#60A5FA" style={{ marginTop: '3px', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: '0.8rem', color: '#FEF08A', fontWeight: 800, textTransform: 'uppercase' }}>
-                  संपर्क करें (Contact Numbers)
+                  {isHindi ? 'संपर्क करें (Helpline Numbers)' : 'Contact Helpline Numbers'}
                 </div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', marginTop: '0.3rem' }}>
                   <a href="tel:0761-4500054" style={{ color: '#FFFFFF', textDecoration: 'none' }}>0761-4500054</a>
@@ -850,7 +956,7 @@ export const Scholarship = () => {
                   <a href="tel:8871557054" style={{ color: '#FFFFFF', textDecoration: 'none' }}>8871557054</a>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#4ADE80', marginTop: '0.4rem', fontWeight: 600 }}>
-                  Help Line: सुबह 10:00 बजे से शाम 7:00 बजे तक
+                  {isHindi ? 'Help Line समय: सुबह 10:00 बजे से शाम 7:00 बजे तक' : 'Help Line: 10:00 AM to 07:00 PM (IST)'}
                 </div>
               </div>
             </div>
@@ -868,7 +974,7 @@ export const Scholarship = () => {
               <Mail size={28} color="#FBBF24" style={{ marginTop: '3px', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: '0.8rem', color: '#FEF08A', fontWeight: 800, textTransform: 'uppercase' }}>
-                  Email Address
+                  {isHindi ? 'ईमेल पता (Email Address)' : 'Official Email Address'}
                 </div>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', marginTop: '0.3rem', wordBreak: 'break-all' }}>
                   <a href={`mailto:${cms.officialEmail}`} style={{ color: '#93C5FD' }}>
@@ -876,7 +982,7 @@ export const Scholarship = () => {
                   </a>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '0.4rem' }}>
-                  Official Grievance & Application Queries
+                  {isHindi ? 'आधिकारिक शिकायत एवं आवेदन सहायता' : 'Official Queries & Grievances'}
                 </div>
               </div>
             </div>
@@ -894,7 +1000,7 @@ export const Scholarship = () => {
               <Globe size={28} color="#34D399" style={{ marginTop: '3px', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: '0.8rem', color: '#FEF08A', fontWeight: 800, textTransform: 'uppercase' }}>
-                  Official Portal Website
+                  {isHindi ? 'आधिकारिक पोर्टल (Official Website)' : 'Official Web Portal'}
                 </div>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', marginTop: '0.3rem' }}>
                   <a href="https://jankalyanmanavadhikar.in" target="_blank" rel="noopener noreferrer" style={{ color: '#34D399', textDecoration: 'none' }}>
@@ -902,7 +1008,7 @@ export const Scholarship = () => {
                   </a>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '0.4rem' }}>
-                  24x7 Digital Application Gateway
+                  {isHindi ? '24x7 डिजिटल आवेदन सेवा' : '24x7 Online Scholarship Gateway'}
                 </div>
               </div>
             </div>
@@ -919,7 +1025,9 @@ export const Scholarship = () => {
             color: '#FEF08A',
             letterSpacing: '0.05em'
           }}>
-            — शिक्षा से सशक्त, अधिकार से सुरक्षित —
+            {isHindi 
+              ? '— शिक्षा से सशक्त, अधिकार से सुरक्षित —' 
+              : '— Empowered by Education, Protected by Rights —'}
           </div>
 
         </div>
