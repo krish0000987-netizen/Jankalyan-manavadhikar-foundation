@@ -33,7 +33,52 @@ export const ApplicationScrutinyModal = ({
 
   if (!application) return null;
 
+  // Strict Jurisdictional Authorization Check
+  let isJurisdictionAuthorized = true;
+  let jurisdictionViolationMessage = '';
+
+  if (currentUser && currentUser.role && currentUser.role !== 'SUPER_ADMIN') {
+    if (currentUser.role === 'DISTRICT_COORDINATOR') {
+      const userDistId = currentUser.jurisdiction?.district?.id || currentUser.district_id;
+      const userDistName = (currentUser.jurisdiction?.district?.name || '').toLowerCase();
+      const appDistId = application.districtId || application.district_id;
+      const appDistName = (application.district || '').toLowerCase();
+
+      if ((userDistId && appDistId && userDistId !== appDistId) || 
+          (userDistName && appDistName && userDistName !== appDistName)) {
+        isJurisdictionAuthorized = false;
+        jurisdictionViolationMessage = `This application is assigned to the "${application.district}" District Cell. You are logged in as the coordinator for "${currentUser.jurisdiction?.district?.name}". According to foundation governance rules, applications can only be approved by their assigned district coordinator.`;
+      }
+    } else if (currentUser.role === 'BLOCK_COORDINATOR') {
+      const userBlkId = currentUser.jurisdiction?.block?.id || currentUser.block_id;
+      const userBlkName = (currentUser.jurisdiction?.block?.name || '').toLowerCase();
+      const appBlkId = application.blockId || application.block_id;
+      const appBlkName = (application.block || '').toLowerCase();
+
+      if ((userBlkId && appBlkId && userBlkId !== appBlkId) || 
+          (userBlkName && appBlkName && userBlkName !== appBlkName)) {
+        isJurisdictionAuthorized = false;
+        jurisdictionViolationMessage = `This application is assigned to the "${application.block}" Block Cell. You are authorized only for "${currentUser.jurisdiction?.block?.name}".`;
+      }
+    } else if (currentUser.role === 'INSTITUTION') {
+      const userInstId = currentUser.jurisdiction?.institution?.id || currentUser.institution_id;
+      const userInstName = (currentUser.jurisdiction?.institution?.name || '').toLowerCase();
+      const appInstId = application.institutionId || application.institution_id;
+      const appInstName = (application.institution || '').toLowerCase();
+
+      if ((userInstId && appInstId && userInstId !== appInstId) || 
+          (userInstName && appInstName && userInstName !== appInstName)) {
+        isJurisdictionAuthorized = false;
+        jurisdictionViolationMessage = `This student is enrolled in "${application.institution}". You are authorized only for "${currentUser.jurisdiction?.institution?.name}".`;
+      }
+    }
+  }
+
   const handleAction = async (newStatus) => {
+    if (!isJurisdictionAuthorized) {
+      alert('Action Unauthorized: ' + jurisdictionViolationMessage);
+      return;
+    }
     if ((newStatus === 'Rejected' || newStatus === 'Correction Requested') && !actionRemarks.trim()) {
       alert('Please enter specific remarks or reasons for this action.');
       return;
@@ -183,7 +228,57 @@ export const ApplicationScrutinyModal = ({
         {/* Modal Scrollable Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
           
-          {/* Phase Workflow Context Banner */}
+          {/* Assigned Governance Cell Hierarchy Strip */}
+          <div style={{
+            backgroundColor: '#F1F5F9',
+            borderRadius: '12px',
+            padding: '0.85rem 1.25rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            fontSize: '0.825rem',
+            border: '1px solid #CBD5E1'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0F172A' }}>
+              <strong>🏫 Assigned Institution:</strong>
+              <span style={{ fontWeight: 600 }}>{application.institution || 'Educational Institution'}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0F172A' }}>
+              <strong>🏛️ Assigned Block Cell:</strong>
+              <span className="badge badge-navy">{application.block || 'Patan'}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0F172A' }}>
+              <strong>🗺️ Assigned District Cell:</strong>
+              <span className="badge badge-blue">{application.district || 'Jabalpur'}</span>
+            </div>
+          </div>
+
+          {/* Strict Jurisdiction Violation Alert if User is not Authorized */}
+          {!isJurisdictionAuthorized && (
+            <div style={{
+              backgroundColor: '#FEF2F2',
+              border: '2px solid #FECACA',
+              borderRadius: '12px',
+              padding: '1rem 1.25rem',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.85rem'
+            }}>
+              <AlertTriangle size={24} color="#DC2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#991B1B' }}>
+                  🔒 Action Locked: Jurisdictional Cell Boundary Enforced
+                </div>
+                <div style={{ fontSize: '0.825rem', color: '#7F1D1D', marginTop: '3px', lineHeight: 1.5 }}>
+                  {jurisdictionViolationMessage}
+                </div>
+              </div>
+            </div>
+          )}
           {currentUser?.role === 'INSTITUTION' ? (
             <div style={{ backgroundColor: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
               <div style={{ width: '38px', height: '38px', borderRadius: '8px', backgroundColor: '#0D9488', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -422,13 +517,20 @@ export const ApplicationScrutinyModal = ({
             />
           </div>
 
+          {!isJurisdictionAuthorized && (
+            <div style={{ color: '#DC2626', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#FEF2F2', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+              <AlertTriangle size={15} />
+              <span>Approval Locked: You are authorized only for your assigned jurisdiction ({currentUser.jurisdiction?.district?.name || currentUser.jurisdiction?.institution?.name || currentUser.role}).</span>
+            </div>
+          )}
+
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
             
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button 
                 className="btn btn-outline btn-sm"
                 style={{ color: '#DC2626', borderColor: '#FECACA' }}
-                disabled={submitting}
+                disabled={submitting || !isJurisdictionAuthorized}
                 onClick={() => handleAction('Rejected')}
               >
                 <XCircle size={14} />
@@ -438,7 +540,7 @@ export const ApplicationScrutinyModal = ({
               <button 
                 className="btn btn-outline btn-sm"
                 style={{ color: '#D97706', borderColor: '#FDE68A' }}
-                disabled={submitting}
+                disabled={submitting || !isJurisdictionAuthorized}
                 onClick={() => handleAction('Correction Requested')}
               >
                 <AlertTriangle size={14} />
@@ -452,7 +554,7 @@ export const ApplicationScrutinyModal = ({
                 <button 
                   className="btn btn-primary btn-sm"
                   style={{ backgroundColor: '#0D9488', borderColor: '#0D9488', color: '#FFFFFF' }}
-                  disabled={submitting || application.status === 'Bonafide Attested' || application.status === 'Approved' || application.status === 'Scholarship Released'}
+                  disabled={submitting || !isJurisdictionAuthorized || application.status === 'Bonafide Attested' || application.status === 'Approved' || application.status === 'Scholarship Released'}
                   onClick={() => handleAction('Bonafide Attested')}
                 >
                   <ShieldCheck size={14} />
@@ -464,7 +566,7 @@ export const ApplicationScrutinyModal = ({
               {(currentUser?.role === 'DISTRICT_COORDINATOR' || currentUser?.role === 'BLOCK_COORDINATOR') && (
                 <button 
                   className="btn btn-secondary btn-sm"
-                  disabled={submitting || application.status === 'Approved' || application.status === 'Scholarship Released'}
+                  disabled={submitting || !isJurisdictionAuthorized || application.status === 'Approved' || application.status === 'Scholarship Released'}
                   onClick={() => handleAction('Approved')}
                 >
                   <CheckCircle2 size={14} />

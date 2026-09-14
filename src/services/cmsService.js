@@ -35,20 +35,24 @@ export const cmsService = {
       const activeScheme = schemesRes.data || {};
 
       return {
-        scholarshipAmount: activeScheme.grant_amount_display || `₹${activeScheme.grant_amount || '12,000'} / Session`,
-        grantAmountRaw: activeScheme.grant_amount || 12000,
+        scholarshipAmount: activeScheme.grant_amount_display || '₹4,000 to ₹22,000 / Academic Session',
+        grantAmountRaw: activeScheme.grant_amount || 16000,
+        registrationFee: portalConfig.registration_fee || '₹ 211.30/-',
+        registrationFeeNote: '₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)',
         applicationStartDate: activeScheme.application_start_date || '2026-08-01',
         applicationLastDate: activeScheme.application_end_date || '2026-10-31',
-        eligibilityCriteria: activeScheme.eligibility_overview || 'Class 10th/12th/Graduation students with min 50% qualifying marks and family income under criteria limits.',
+        eligibilityCriteria: activeScheme.eligibility_overview || 'Class 5th to Post Graduation & Diploma Courses in recognized institutions.',
         academicYear: activeScheme.academic_year || '2026-27',
         schemeId: activeScheme.id,
         
         // Contacts & Org
-        officeAddress: portalConfig.office_address || 'Near High Court Road, Jabalpur, Madhya Pradesh - 482001',
+        officeAddress: portalConfig.office_address || 'Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Madhya Pradesh – 482002',
         registrationDetails: portalConfig.registration_number || 'JMF/MP/NGO/2026/894',
         officialEmail: portalConfig.official_email || 'jankalyanmanavadhikar@gmail.com',
         officialMobile: portalConfig.helpline_mobile || '8871557054',
-        officialTelephone: portalConfig.helpline_telephone || '07614500054',
+        officialTelephone: portalConfig.helpline_telephone || '0761-4500054',
+        helplineHours: portalConfig.helpline_hours || 'सुबह 10:00 बजे से शाम 7:00 बजे तक (10:00 AM – 07:00 PM)',
+        officialWebsite: 'https://jankalyanmanavadhikar.in',
         
         // Structured CMS lists
         heroSlides: slidesRes.data || [],

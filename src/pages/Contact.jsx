@@ -120,10 +120,12 @@ export const Contact = () => {
                 <Clock size={20} color="#1E40AF" />
                 <div>
                   <div style={{ fontWeight: 700, color: '#1E3A8A', fontSize: '0.95rem' }}>
-                    {lang === 'hi' ? 'कार्यालय कार्य समय' : 'Office Operating Hours'}
+                    {lang === 'hi' ? 'हेल्पलाइन एवं कार्यालय समय (Help Line Hours)' : 'Helpline & Office Operating Hours'}
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#1E40AF' }}>
-                    Monday – Saturday: 10:00 AM to 05:00 PM (Closed on Sundays & Gazetted Holidays)
+                  <div style={{ fontSize: '0.85rem', color: '#1E40AF', marginTop: '2px' }}>
+                    {lang === 'hi' 
+                      ? 'सोमवार – शनिवार: सुबह 10:00 बजे से शाम 7:00 बजे तक' 
+                      : 'Monday – Saturday: 10:00 AM to 07:00 PM (Help Line)'}
                   </div>
                 </div>
               </div>

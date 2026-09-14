@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Phone, Mail, MapPin, ShieldCheck, Award, FileText, ChevronRight, Globe, ExternalLink } from 'lucide-react';
+import { Phone, Mail, MapPin, ShieldCheck, Award, FileText, ChevronRight, Globe, ExternalLink, Clock } from 'lucide-react';
 
 export const Footer = () => {
   const { lang, setSpecificLanguage, t, navigate, cms } = useApp();
@@ -155,6 +155,16 @@ export const Footer = () => {
                   <a href={`tel:${cms.officialTelephone}`} style={{ color: '#FFFFFF', fontWeight: 600 }}>
                     {cms.officialTelephone}
                   </a>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <Clock size={18} color="#FEF08A" style={{ marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  <div style={{ color: '#94A3B8', fontSize: '0.75rem' }}>{lang === 'hi' ? 'हेल्पलाइन समय' : 'Help Line Hours'}</div>
+                  <span style={{ color: '#FEF08A', fontWeight: 600, fontSize: '0.8rem' }}>
+                    सुबह 10:00 बजे से शाम 7:00 बजे तक
+                  </span>
                 </div>
               </div>
 

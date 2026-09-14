@@ -59,7 +59,11 @@ export const Header = () => {
   const navLinks = [
     { label: t.navHome, route: '/' },
     { label: lang === 'hi' ? 'हमारे बारे में' : 'About', route: '/about' },
-    { label: lang === 'hi' ? 'छात्रवृत्ति' : 'Scholarship', route: '/scholarship' },
+    { 
+      label: lang === 'hi' ? 'छात्रवृत्ति योजना 2026' : 'Scholarship 2026', 
+      route: '/scholarship',
+      badge: '2026'
+    },
     { label: lang === 'hi' ? 'आवेदन ट्रैक' : 'Track Status', route: '/track' },
     { label: lang === 'hi' ? 'दस्तावेज़' : 'Documents', route: '/documents' },
     { label: lang === 'hi' ? 'डाउनलोड' : 'Downloads', route: '/downloads' },
@@ -72,7 +76,7 @@ export const Header = () => {
   const mobileNavLinks = [
     { label: t.navHome, route: '/' },
     { label: t.navAbout, route: '/about' },
-    { label: t.navScholarship, route: '/scholarship' },
+    { label: lang === 'hi' ? '🌟 छात्रवृत्ति योजना 2026 (अंतिम राउंड)' : '🌟 Scholarship Yojna 2026 (Last Round)', route: '/scholarship' },
     { label: t.navTrack, route: '/track' },
     { label: t.navDocuments, route: '/documents' },
     { label: t.navDownloads, route: '/downloads' },
@@ -289,9 +293,23 @@ export const Header = () => {
                   <li key={item.route}>
                     <button
                       onClick={() => navigate(item.route)}
-                      className={`nav-link ${currentRoute === item.route ? 'active' : ''}`}
+                      className={`nav-link ${currentRoute === item.route || (item.route === '/scholarship' && currentRoute === '/scholarship-yojna-2026') ? 'active' : ''}`}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                     >
-                      {item.label}
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <span style={{
+                          backgroundColor: '#DC2626',
+                          color: '#FFFFFF',
+                          fontSize: '0.62rem',
+                          fontWeight: 800,
+                          padding: '1px 5px',
+                          borderRadius: '999px',
+                          lineHeight: 1.2
+                        }}>
+                          {item.badge}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}

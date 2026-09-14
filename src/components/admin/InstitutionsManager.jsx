@@ -20,6 +20,7 @@ import {
 export const InstitutionsManager = () => {
   const [institutions, setInstitutions] = useState([]);
   const [districts, setDistricts] = useState([]);
+  const [blocks, setBlocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
@@ -35,6 +36,8 @@ export const InstitutionsManager = () => {
     code: '',
     type: 'School',
     district_id: '',
+    block_id: '',
+    csc_name: '',
     affiliation_board: 'MP Board',
     contact_person: '',
     mobile: '',
@@ -46,14 +49,22 @@ export const InstitutionsManager = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [{ data: instData }, { data: distData }] = await Promise.all([
-        supabase.from('institutions').select('*, districts(name_en)').order('name', { ascending: true }),
-        supabase.from('districts').select('id, name_en').order('name_en', { ascending: true })
+      const [{ data: instData }, { data: distData }, { data: blkData }] = await Promise.all([
+        supabase.from('institutions').select('*, districts(name, name_en), blocks(name)').order('name', { ascending: true }),
+        supabase.from('districts').select('id, name_en, name').order('name_en', { ascending: true }),
+        supabase.from('blocks').select('id, name, district_id').order('name', { ascending: true })
       ]);
       setInstitutions(instData || []);
       setDistricts(distData || []);
+      setBlocks(blkData || []);
       if (distData?.length > 0 && !form.district_id) {
-        setForm(prev => ({ ...prev, district_id: distData[0].id }));
+        const firstDistId = distData[0].id;
+        const matchingBlk = (blkData || []).find(b => b.district_id === firstDistId);
+        setForm(prev => ({ 
+          ...prev, 
+          district_id: firstDistId,
+          block_id: matchingBlk?.id || ''
+        }));
       }
     } catch (err) {
       console.error('Error loading institutions:', err);
@@ -73,13 +84,15 @@ export const InstitutionsManager = () => {
     try {
       const { error } = await supabase.from('institutions').insert([form]);
       if (error) throw error;
-      setFeedback({ type: 'success', message: `Institution "${form.name}" registered successfully!` });
+      setFeedback({ type: 'success', message: `Institution "${form.name}" registered successfully with assigned District & Block Cells!` });
       setShowAddModal(false);
       setForm({
         name: '',
         code: '',
         type: 'School',
         district_id: districts[0]?.id || '',
+        block_id: '',
+        csc_name: '',
         affiliation_board: 'MP Board',
         contact_person: '',
         mobile: '',
@@ -265,8 +278,18 @@ export const InstitutionsManager = () => {
                       <div style={{ fontWeight: 800, color: '#0F172A' }}>{inst.name}</div>
                       <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{inst.affiliation_board || 'State Board'}</div>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: '#334155' }}>
-                      {inst.districts?.name_en || '-'}
+                    <td style={{ padding: '0.85rem 1rem' }}>
+                      <div style={{ fontWeight: 700, color: '#1E40AF', fontSize: '0.825rem' }}>
+                        📍 {inst.districts?.name_en || inst.districts?.name || 'District Cell'}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                        🏛️ {inst.blocks?.name || 'Assigned Block'}
+                      </div>
+                      {inst.csc_name && (
+                        <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
+                          💻 CSC: {inst.csc_name}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span className="badge badge-navy" style={{ fontSize: '0.7rem' }}>
@@ -361,24 +384,63 @@ export const InstitutionsManager = () => {
 
               <div className="form-row-2">
                 <div className="form-group">
-                  <label className="form-label required">District</label>
+                  <label className="form-label required">District Cell (जिला प्रकोष्ठ)</label>
                   <select 
                     className="form-control"
                     value={form.district_id}
-                    onChange={(e) => setForm({ ...form, district_id: e.target.value })}
+                    onChange={(e) => {
+                      const newDistId = e.target.value;
+                      const matchingBlk = blocks.find(b => b.district_id === newDistId);
+                      setForm({ 
+                        ...form, 
+                        district_id: newDistId,
+                        block_id: matchingBlk?.id || ''
+                      });
+                    }}
                   >
                     {districts.map(d => (
-                      <option key={d.id} value={d.id}>{d.name_en}</option>
+                      <option key={d.id} value={d.id}>{d.name_en || d.name}</option>
                     ))}
                   </select>
                 </div>
+
+                <div className="form-group">
+                  <label className="form-label">Block Cell (ब्लॉक प्रकोष्ठ)</label>
+                  <select 
+                    className="form-control"
+                    value={form.block_id}
+                    onChange={(e) => setForm({ ...form, block_id: e.target.value })}
+                  >
+                    <option value="">-- Select Assigned Block Cell --</option>
+                    {blocks
+                      .filter(b => !form.district_id || b.district_id === form.district_id)
+                      .map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row-2">
                 <div className="form-group">
                   <label className="form-label">Affiliation Board / Council</label>
                   <input 
                     type="text"
                     className="form-control"
+                    placeholder="e.g. MP Board / CBSE / UGC"
                     value={form.affiliation_board}
                     onChange={(e) => setForm({ ...form, affiliation_board: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Linked CSC Facilitation Center (Optional)</label>
+                  <input 
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Jabalpur Digital CSC Center"
+                    value={form.csc_name}
+                    onChange={(e) => setForm({ ...form, csc_name: e.target.value })}
                   />
                 </div>
               </div>

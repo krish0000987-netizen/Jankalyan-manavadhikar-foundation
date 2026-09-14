@@ -39,12 +39,60 @@ export const scrutinyService = {
       stage = 2;
     }
 
-    // 1. Fetch current status
-    const { data: current } = await supabase
-      .from('applications')
-      .select('status, approval_date, payment_date, utr_number')
-      .eq('id', appId)
-      .single();
+    // 1. Fetch current status & jurisdictional assignments
+    let current = null;
+    try {
+      const { data } = await supabase
+        .from('applications')
+        .select('status, approval_date, payment_date, utr_number, district_id, block_id, institution_id, districts(name), blocks(name), institutions(name)')
+        .eq('id', appId)
+        .maybeSingle();
+      current = data;
+    } catch (e) {
+      console.warn('Scrutiny lookup note:', e);
+    }
+
+    // 1b. Strict Jurisdictional Scrutiny Authorization Check
+    if (actor && actor.role && actor.role !== 'SUPER_ADMIN') {
+      const appDistrict = current?.districts?.name || current?.district || '';
+      const appDistrictId = current?.district_id || current?.districtId;
+      const appBlock = current?.blocks?.name || current?.block || '';
+      const appBlockId = current?.block_id || current?.blockId;
+      const appInstitution = current?.institutions?.name || current?.institution || '';
+      const appInstitutionId = current?.institution_id || current?.institutionId;
+
+      if (actor.role === 'DISTRICT_COORDINATOR') {
+        const actorDistrictId = actor.jurisdiction?.district?.id || actor.district_id;
+        const actorDistrictName = (actor.jurisdiction?.district?.name || '').toLowerCase();
+
+        if (actorDistrictId && appDistrictId && actorDistrictId !== appDistrictId) {
+          throw new Error(`Jurisdiction Violation: This application belongs to the "${appDistrict || 'assigned'}" District Cell. You only have authority to review and approve applications within your assigned district (${actor.jurisdiction?.district?.name || 'assigned'}).`);
+        }
+        if (actorDistrictName && appDistrict && actorDistrictName !== appDistrict.toLowerCase()) {
+          throw new Error(`Jurisdiction Violation: This application belongs to the "${appDistrict}" District Cell. Only the authorized District Coordinator can approve it.`);
+        }
+      } else if (actor.role === 'BLOCK_COORDINATOR') {
+        const actorBlockId = actor.jurisdiction?.block?.id || actor.block_id;
+        const actorBlockName = (actor.jurisdiction?.block?.name || '').toLowerCase();
+
+        if (actorBlockId && appBlockId && actorBlockId !== appBlockId) {
+          throw new Error(`Jurisdiction Violation: This application belongs to the "${appBlock || 'assigned'}" Block Cell. Only the authorized Block Coordinator can approve it.`);
+        }
+        if (actorBlockName && appBlock && actorBlockName !== appBlock.toLowerCase()) {
+          throw new Error(`Jurisdiction Violation: This application belongs to the "${appBlock}" Block Cell. Only the authorized Block Coordinator can approve it.`);
+        }
+      } else if (actor.role === 'INSTITUTION') {
+        const actorInstId = actor.jurisdiction?.institution?.id || actor.institution_id;
+        const actorInstName = (actor.jurisdiction?.institution?.name || '').toLowerCase();
+
+        if (actorInstId && appInstitutionId && actorInstId !== appInstitutionId) {
+          throw new Error(`Jurisdiction Violation: This student is enrolled in "${appInstitution || 'another institution'}". Institutional Bonafide can only be attested by the assigned school or college.`);
+        }
+        if (actorInstName && appInstitution && actorInstName !== appInstitution.toLowerCase()) {
+          throw new Error(`Jurisdiction Violation: This student is enrolled in "${appInstitution}". Institutional Bonafide can only be attested by the assigned school or college.`);
+        }
+      }
+    }
 
     const previousStatus = current?.status || 'UNDER_VERIFICATION';
 

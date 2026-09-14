@@ -806,7 +806,7 @@ export const applicationService = {
         status: 'UNDER_VERIFICATION',
         stage: 2,
         submission_date: new Date().toISOString().split('T')[0],
-        disbursed_amount: scheme?.grant_amount || 12000.00
+        disbursed_amount: formData.scholarshipAmount ? parseFloat(formData.scholarshipAmount) : (scheme?.grant_amount || 12000.00)
       })
       .select()
       .single();

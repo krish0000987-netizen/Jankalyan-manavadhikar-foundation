@@ -22,6 +22,15 @@ import {
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { applicationService } from '../services/applicationService';
 
+export const SCHOLARSHIP_SLABS = [
+  { id: 'slab-1', nameHi: '5वीं से 7वीं', nameEn: 'Class 5th - 7th', amount: 4000, amountDisplay: '₹4,000/-', period: 'वार्षिक', color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', defaultCourse: 'Class 6th' },
+  { id: 'slab-2', nameHi: '8वीं से 10वीं', nameEn: 'Class 8th - 10th', amount: 8000, amountDisplay: '₹8,000/-', period: 'वार्षिक', color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', defaultCourse: 'Class 10th' },
+  { id: 'slab-3', nameHi: '11वीं से 12वीं', nameEn: 'Class 11th - 12th', amount: 12000, amountDisplay: '₹12,000/-', period: 'वार्षिक', color: '#E11D48', bg: '#FFF1F2', border: '#FECDD3', defaultCourse: 'Class 12th' },
+  { id: 'slab-4', nameHi: 'Diploma / ITI', nameEn: 'Diploma / Polytechnic / ITI', amount: 14000, amountDisplay: '₹14,000/-', period: 'वार्षिक', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', defaultCourse: 'Polytechnic Diploma' },
+  { id: 'slab-5', nameHi: 'Graduation (स्नातक)', nameEn: 'Graduation (Degree)', amount: 16000, amountDisplay: '₹16,000/-', period: 'वार्षिक', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', defaultCourse: 'B.Sc / B.A / B.Com' },
+  { id: 'slab-6', nameHi: 'Post Graduation (परास्नातक)', nameEn: 'Post Graduation (Master)', amount: 22000, amountDisplay: '₹22,000/-', period: 'वार्षिक', color: '#1E3A8A', bg: '#EFF6FF', border: '#BFDBFE', defaultCourse: 'M.Sc / M.A / M.Com' }
+];
+
 export const Apply = () => {
   const { lang, t, navigate, submitNewApplication, cms } = useApp();
 
@@ -56,15 +65,20 @@ export const Apply = () => {
       address: '',
       state: 'Madhya Pradesh',
       district: 'Jabalpur',
+      districtId: 'a0000000-0000-0000-0000-000000000001',
       block: 'Patan',
+      blockId: 'b0000000-0000-0000-0000-000000000001',
       villageCity: '',
       pincode: '',
 
-      // Step 3: Academic
+      // Step 3: Academic & Poster Scholarship Slabs
       institutionId: 'c0000000-0000-0000-0000-000000000001',
       institutionName: 'Govt. Model Higher Secondary School',
       institutionCategory: 'School',
-      classCourse: '',
+      selectedSlab: 'slab-3',
+      scholarshipAmount: 12000,
+      registrationFee: '₹ 211.30/-',
+      classCourse: 'Class 12th',
       academicYear: '2026-27',
       boardUni: '',
       rollNo: '',
@@ -182,7 +196,11 @@ export const Apply = () => {
           ...prev,
           institutionId: selectedInst.id,
           institutionName: selectedInst.name,
-          institutionCategory: selectedInst.category
+          institutionCategory: selectedInst.category,
+          district: selectedInst.districts?.name || prev.district,
+          districtId: selectedInst.district_id || prev.districtId,
+          block: selectedInst.blocks?.name || prev.block,
+          blockId: selectedInst.block_id || prev.blockId
         }));
       }
     }
@@ -838,7 +856,7 @@ export const Apply = () => {
 
                 {/* Direct Verification Badge when registered institution is selected */}
                 {!isOtherInstitution && formData.institutionName && (
-                  <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <CheckCircle size={20} color="#16A34A" style={{ flexShrink: 0 }} />
                     <div style={{ fontSize: '0.82rem', color: '#166534', lineHeight: 1.4 }}>
                       <strong>{lang === 'hi' ? 'सीधा संस्थागत संवीक्षा मार्ग:' : 'Direct Institutional Route:'}</strong>{' '}
@@ -848,6 +866,17 @@ export const Apply = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Assigned Governance Cell Hierarchy Strip */}
+                <div style={{ backgroundColor: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.825rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1E293B' }}>
+                    <MapPin size={16} color="#DC2626" />
+                    <span><strong>लिंक्ड प्रशासनिक प्रकोष्ठ (Jurisdiction):</strong> {formData.district} जिला प्रकोष्ठ • {formData.block} ब्लॉक प्रकोष्ठ</span>
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#166534', backgroundColor: '#DCFCE7', padding: '0.2rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
+                    ✓ संबंधित जिला समन्वयक द्वारा ही संवीक्षा मान्य
+                  </span>
+                </div>
 
                 {/* Unlisted Institution Text Box */}
                 {isOtherInstitution && (
@@ -869,6 +898,104 @@ export const Apply = () => {
                     </div>
                   </div>
                 )}
+
+                {/* SCHOLARSHIP YOJNA 2026 - 6 SLABS SELECTION (From Official Poster) */}
+                <div style={{ marginBottom: '1.75rem' }}>
+                  <label className="form-label required" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span>{lang === 'hi' ? 'छात्रवृत्ति योजना 2026 - कक्षा / पाठ्यक्रम श्रेणी चुनें' : 'Scholarship Yojna 2026 - Select Education Slab'}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 700 }}>
+                      {lang === 'hi' ? '📢 2026 का अंतिम राउंड (LAST ROUND)' : '📢 Last Round 2026'}
+                    </span>
+                  </label>
+                  <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '0.75rem' }}>
+                    {lang === 'hi'
+                      ? 'अपनी वर्तमान अध्ययनरत कक्षा का चयन करें। स्वीकृत छात्रवृत्ति राशि एवं आवेदन शुल्क स्वतः निर्धारित होंगे:'
+                      : 'Select your enrolled class slab. Entitled grant and processing fee calculate automatically:'}
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                    {SCHOLARSHIP_SLABS.map((slab) => {
+                      const isSelected = formData.selectedSlab === slab.id;
+                      return (
+                        <div
+                          key={slab.id}
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedSlab: slab.id,
+                              scholarshipAmount: slab.amount,
+                              classCourse: prev.classCourse && prev.classCourse !== 'Class 12th' ? prev.classCourse : slab.defaultCourse
+                            }));
+                          }}
+                          style={{
+                            cursor: 'pointer',
+                            border: isSelected ? `2px solid ${slab.color}` : '1px solid #E2E8F0',
+                            backgroundColor: isSelected ? slab.bg : '#FFFFFF',
+                            borderRadius: '12px',
+                            padding: '0.85rem',
+                            textAlign: 'center',
+                            boxShadow: isSelected ? `0 4px 14px ${slab.color}30` : 'none',
+                            transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.85rem', fontWeight: 800, color: isSelected ? slab.color : '#0F172A' }}>
+                            {slab.nameHi}
+                          </div>
+                          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: slab.color, margin: '0.2rem 0' }}>
+                            {slab.amountDisplay}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>
+                            {slab.period}
+                          </div>
+                          {isSelected && (
+                            <div style={{ marginTop: '0.35rem', fontSize: '0.7rem', color: slab.color, fontWeight: 800 }}>
+                              ✓ चयनित (Selected)
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Real-time calculated Entitlement & Fee Summary Banner */}
+                  <div style={{
+                    marginTop: '1rem',
+                    backgroundColor: '#F8FAFC',
+                    border: '2px solid #E2E8F0',
+                    borderRadius: '12px',
+                    padding: '1rem 1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                        स्वीकृत वार्षिक छात्रवृत्ति अनुदान (Entitled Scholarship Grant)
+                      </div>
+                      <div style={{ fontSize: '1.55rem', fontWeight: 900, color: '#16A34A', marginTop: '2px' }}>
+                        ₹ {formData.scholarshipAmount?.toLocaleString('en-IN') || '12,000'}/- वार्षिक
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                        सत्यापन उपरांत आधार लिंक्ड बैंक खाते में प्रत्यक्ष लाभ अंतरण (DBT)
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 700, textTransform: 'uppercase' }}>
+                        आवेदन प्रक्रिया शुल्क (Registration Fee)
+                      </div>
+                      <div style={{ fontSize: '1.55rem', fontWeight: 900, color: '#DC2626', marginTop: '2px' }}>
+                        ₹ 211.30/-
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#7F1D1D', fontWeight: 600 }}>
+                        (केवल आवेदन प्रक्रिया हेतु / Application processing only)
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="form-row-2">
                   <div className="form-group">
@@ -1309,11 +1436,13 @@ export const Apply = () => {
                     <div><strong>Mobile:</strong> {formData.mobile || '-'}</div>
                     <div><strong>DOB:</strong> {formData.dob || '-'}</div>
                     <div><strong>Institution:</strong> {formData.institutionName || '-'}</div>
-                    <div><strong>Course:</strong> {formData.classCourse || '-'}</div>
+                    <div><strong>Course / Class:</strong> {formData.classCourse || '-'}</div>
+                    <div><strong>Entitled Scholarship:</strong> <span style={{ color: '#16A34A', fontWeight: 800 }}>₹ {formData.scholarshipAmount?.toLocaleString('en-IN') || '12,000'}/- वार्षिक</span></div>
+                    <div><strong>Registration Fee:</strong> <span style={{ color: '#DC2626', fontWeight: 800 }}>₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)</span></div>
                     <div><strong>Category:</strong> {formData.category}</div>
                     <div><strong>Percentage:</strong> {formData.percentage ? `${formData.percentage}%` : '-'}</div>
                     <div><strong>Bank:</strong> {formData.bankName}</div>
-                    <div><strong>IFSC:</strong> {formData.ifsc}</div>
+                    <div><strong>Assigned Jurisdiction:</strong> {formData.district} District Cell • {formData.block} Block Cell</div>
                   </div>
                 </div>
 
