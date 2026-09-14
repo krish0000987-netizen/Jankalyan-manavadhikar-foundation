@@ -382,38 +382,12 @@ export const AppProvider = ({ children }) => {
       const record = await applicationService.submitApplication(formData, authUser?.id);
       setApplications(prev => [record, ...prev]);
       setActiveStudentApp(record);
-      loadLiveCounters();
+      await loadLiveCounters();
+      await loadApplications(authRole, jurisdiction);
       return record;
     } catch (err) {
       console.error('Error submitting application to Supabase:', err);
-      // Fallback
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-      const fallbackRecord = {
-        id: `JMF-2026-${randomSuffix}`,
-        studentName: formData.fullName || 'Student Applicant',
-        fatherName: formData.fatherName || '',
-        mobile: formData.mobile || '',
-        email: formData.email || '',
-        dob: formData.dob || '',
-        gender: formData.gender || 'Male',
-        district: formData.district || 'Jabalpur',
-        block: formData.block || 'Patan',
-        institution: formData.institutionName || 'State Institute',
-        course: formData.classCourse || '12th Standard',
-        category: formData.category || 'General',
-        annualIncome: formData.annualIncome ? `₹${formData.annualIncome}` : '₹1,00,000',
-        bankName: formData.bankName || 'State Bank of India',
-        accountNumber: formData.accountNumber || 'XXXXXXXX1234',
-        ifsc: formData.ifsc || 'SBIN0001234',
-        status: 'Under Verification',
-        stage: 2,
-        submissionDate: new Date().toISOString().split('T')[0],
-        disbursedAmount: cms.scholarshipAmount,
-        documents: {}
-      };
-      setApplications(prev => [fallbackRecord, ...prev]);
-      setActiveStudentApp(fallbackRecord);
-      return fallbackRecord;
+      throw err;
     }
   };
 

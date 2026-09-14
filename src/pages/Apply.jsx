@@ -20,12 +20,19 @@ import {
   UserCheck
 } from 'lucide-react';
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
+import { applicationService } from '../services/applicationService';
 
 export const Apply = () => {
   const { lang, t, navigate, submitNewApplication, cms } = useApp();
 
   // Wizard Step (1 to 8, or 9 for Final Submission Confirmation)
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Registered Institutions & Districts
+  const [registeredInstitutions, setRegisteredInstitutions] = useState([]);
+  const [districtsList, setDistrictsList] = useState([]);
+  const [isOtherInstitution, setIsOtherInstitution] = useState(false);
+  const [institutionLevelFilter, setInstitutionLevelFilter] = useState('All'); // 'All' | 'School' | 'College'
 
   // Form State
   const [formData, setFormData] = useState(() => {
@@ -54,7 +61,9 @@ export const Apply = () => {
       pincode: '',
 
       // Step 3: Academic
-      institutionName: '',
+      institutionId: 'c0000000-0000-0000-0000-000000000001',
+      institutionName: 'Govt. Model Higher Secondary School',
+      institutionCategory: 'School',
       classCourse: '',
       academicYear: '2026-27',
       boardUni: '',
@@ -82,12 +91,19 @@ export const Apply = () => {
 
       // Step 7: Documents
       photoFile: null,
+      photoFileName: '',
       aadhaarFile: null,
+      aadhaarFileName: '',
       marksheetFile: null,
+      marksheetFileName: '',
       bonafideFile: null,
+      bonafideFileName: '',
       passbookFile: null,
+      passbookFileName: '',
       incomeFile: null,
+      incomeFileName: '',
       casteFile: null,
+      casteFileName: '',
 
       // Step 8: Declaration
       declared: false
@@ -97,6 +113,23 @@ export const Apply = () => {
   const [errors, setErrors] = useState({});
   const [draftSavedMsg, setDraftSavedMsg] = useState(false);
   const [submittedRecord, setSubmittedRecord] = useState(null);
+
+  // Load registered institutions and districts from DB
+  useEffect(() => {
+    async function loadMeta() {
+      try {
+        const [insts, dists] = await Promise.all([
+          applicationService.getInstitutions(),
+          applicationService.getDistricts()
+        ]);
+        if (insts && insts.length > 0) setRegisteredInstitutions(insts);
+        if (dists && dists.length > 0) setDistrictsList(dists);
+      } catch (err) {
+        console.warn('Metadata load note:', err);
+      }
+    }
+    loadMeta();
+  }, []);
 
   // Autosave Draft
   const saveDraft = () => {
@@ -110,6 +143,76 @@ export const Apply = () => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
+  };
+
+  const handleDistrictChange = (distName) => {
+    let defaultBlock = 'Patan';
+    if (distName === 'Bhopal') defaultBlock = 'Berasia';
+    else if (distName === 'Indore') defaultBlock = 'Depalpur';
+    else if (distName === 'Rewa') defaultBlock = 'Mauganj';
+    else if (distName === 'Mandla') defaultBlock = 'Niwas';
+    else if (distName === 'Gwalior') defaultBlock = 'Gwalior';
+
+    setFormData(prev => {
+      // Find matching institution in this district if currently set
+      const matchingInst = registeredInstitutions.find(i => 
+        (i.districts?.name || '').toLowerCase() === distName.toLowerCase()
+      );
+
+      return {
+        ...prev,
+        district: distName,
+        block: defaultBlock,
+        institutionId: matchingInst ? matchingInst.id : prev.institutionId,
+        institutionName: matchingInst ? matchingInst.name : prev.institutionName
+      };
+    });
+  };
+
+  const handleInstitutionSelect = (e) => {
+    const val = e.target.value;
+    if (val === '__OTHER__') {
+      setIsOtherInstitution(true);
+      setFormData(prev => ({ ...prev, institutionId: '', institutionName: '' }));
+    } else {
+      setIsOtherInstitution(false);
+      const selectedInst = registeredInstitutions.find(i => i.id === val);
+      if (selectedInst) {
+        setFormData(prev => ({
+          ...prev,
+          institutionId: selectedInst.id,
+          institutionName: selectedInst.name,
+          institutionCategory: selectedInst.category
+        }));
+      }
+    }
+  };
+
+  const handleFileSelect = (docKey, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFormData(prev => ({
+      ...prev,
+      [docKey + 'File']: file,
+      [docKey + 'FileName']: file.name,
+      [docKey + 'FileSize']: Math.round(file.size / 1024) + ' KB'
+    }));
+  };
+
+  const handleAutoFillDemoDocs = () => {
+    setFormData(prev => ({
+      ...prev,
+      photoFile: 'passport_photo.jpg',
+      photoFileName: 'passport_photo.jpg',
+      aadhaarFile: 'aadhaar_card.pdf',
+      aadhaarFileName: 'aadhaar_card.pdf',
+      marksheetFile: '12th_marksheet.pdf',
+      marksheetFileName: '12th_marksheet.pdf',
+      bonafideFile: 'bonafide_attestation.pdf',
+      bonafideFileName: 'bonafide_attestation.pdf',
+      passbookFile: 'bank_passbook.pdf',
+      passbookFileName: 'bank_passbook.pdf'
+    }));
   };
 
   // OTP Simulation
@@ -604,12 +707,21 @@ export const Apply = () => {
                 <div className="form-row-3">
                   <div className="form-group">
                     <label className="form-label required">{t.fieldDistrict}</label>
-                    <input 
-                      type="text"
+                    <select 
                       className="form-control"
                       value={formData.district}
-                      onChange={(e) => handleInputChange('district', e.target.value)}
-                    />
+                      onChange={(e) => handleDistrictChange(e.target.value)}
+                    >
+                      <option value="Jabalpur">Jabalpur</option>
+                      <option value="Bhopal">Bhopal</option>
+                      <option value="Indore">Indore</option>
+                      <option value="Rewa">Rewa</option>
+                      <option value="Mandla">Mandla</option>
+                      <option value="Gwalior">Gwalior</option>
+                      {districtsList.filter(d => !['Jabalpur','Bhopal','Indore','Rewa','Mandla','Gwalior'].includes(d.name)).map(d => (
+                        <option key={d.id} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="form-group">
@@ -640,21 +752,123 @@ export const Apply = () => {
             {/* Step 3: Academic Information */}
             {currentStep === 3 && (
               <div className="animate-fade-in">
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', marginBottom: '1.5rem' }}>
-                  {t.step3Tab}
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    {t.step3Tab}
+                  </h3>
+                  
+                  {/* Category Filter */}
+                  <div style={{ display: 'flex', gap: '0.4rem', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '8px' }}>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${institutionLevelFilter === 'All' ? 'btn-primary' : 'btn-outline'}`}
+                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
+                      onClick={() => setInstitutionLevelFilter('All')}
+                    >
+                      All Institutions
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${institutionLevelFilter === 'School' ? 'btn-primary' : 'btn-outline'}`}
+                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
+                      onClick={() => setInstitutionLevelFilter('School')}
+                    >
+                      🏫 School (10th/12th)
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${institutionLevelFilter === 'College' ? 'btn-primary' : 'btn-outline'}`}
+                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
+                      onClick={() => setInstitutionLevelFilter('College')}
+                    >
+                      🏛️ College / Degree
+                    </button>
+                  </div>
+                </div>
 
                 <div className="form-group">
-                  <label className="form-label required">{t.fieldInstitutionName}</label>
-                  <input 
-                    type="text"
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label className="form-label required" style={{ marginBottom: 0 }}>
+                      {lang === 'hi' ? 'मान्यता प्राप्त अध्ययनरत विद्यालय / महाविद्यालय' : 'Enrolled Registered School / College'}
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <ShieldCheck size={14} /> {lang === 'hi' ? 'नोडल अधिकारी सत्यापित मार्ग' : 'Direct Nodal Verification Route'}
+                    </span>
+                  </div>
+
+                  <select 
                     className={`form-control ${errors.institutionName ? 'error' : ''}`}
-                    placeholder="e.g. Govt. Model Higher Secondary School / College"
-                    value={formData.institutionName}
-                    onChange={(e) => handleInputChange('institutionName', e.target.value)}
-                  />
+                    value={isOtherInstitution ? '__OTHER__' : (formData.institutionId || '')}
+                    onChange={handleInstitutionSelect}
+                  >
+                    <option value="">{lang === 'hi' ? '-- मान्यता प्राप्त संस्थान का चयन करें --' : '-- Choose Registered School or College --'}</option>
+                    
+                    {/* District matched institutions */}
+                    <optgroup label={lang === 'hi' ? `📍 आपके जिले (${formData.district || 'MP'}) में मान्यता प्राप्त:` : `📍 In Your District (${formData.district || 'MP'}):`}>
+                      {registeredInstitutions
+                        .filter(i => (i.districts?.name || '').toLowerCase() === (formData.district || '').toLowerCase())
+                        .filter(i => institutionLevelFilter === 'All' || i.category === institutionLevelFilter)
+                        .map(inst => (
+                          <option key={inst.id} value={inst.id}>
+                            {inst.name} ({inst.code}) - {inst.category}
+                          </option>
+                        ))}
+                    </optgroup>
+
+                    {/* Other institutions in state */}
+                    <optgroup label={lang === 'hi' ? '🏛️ अन्य मान्यता प्राप्त संस्थान (मध्य प्रदेश):' : '🏛️ Other Registered Institutions in MP:'}>
+                      {registeredInstitutions
+                        .filter(i => (i.districts?.name || '').toLowerCase() !== (formData.district || '').toLowerCase())
+                        .filter(i => institutionLevelFilter === 'All' || i.category === institutionLevelFilter)
+                        .map(inst => (
+                          <option key={inst.id} value={inst.id}>
+                            {inst.name} ({inst.code}) - {inst.category} [{inst.districts?.name || 'MP'}]
+                          </option>
+                        ))}
+                    </optgroup>
+
+                    <optgroup label={lang === 'hi' ? '✏️ अन्य गैर-सूचीबद्ध संस्थान:' : '✏️ Other / Unlisted Institution:'}>
+                      <option value="__OTHER__">
+                        {lang === 'hi' ? '➕ मेरा संस्थान सूची में नहीं है (अन्य दर्ज करें)' : '➕ My School / College is not listed (Enter manually)'}
+                      </option>
+                    </optgroup>
+                  </select>
                   {errors.institutionName && <div className="form-error">{errors.institutionName}</div>}
                 </div>
+
+                {/* Direct Verification Badge when registered institution is selected */}
+                {!isOtherInstitution && formData.institutionName && (
+                  <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <CheckCircle size={20} color="#16A34A" style={{ flexShrink: 0 }} />
+                    <div style={{ fontSize: '0.82rem', color: '#166534', lineHeight: 1.4 }}>
+                      <strong>{lang === 'hi' ? 'सीधा संस्थागत संवीक्षा मार्ग:' : 'Direct Institutional Route:'}</strong>{' '}
+                      {lang === 'hi' 
+                        ? `आपका आवेदन सीधे ${formData.institutionName} के नोडल अधिकारी के पोर्टल में संवीक्षा व बोनाफाइड सत्यापन हेतु जाएगा।` 
+                        : `Your application will go directly into the institutional verification queue of ${formData.institutionName} for Tier-1 Bonafide Attestation.`}
+                    </div>
+                  </div>
+                )}
+
+                {/* Unlisted Institution Text Box */}
+                {isOtherInstitution && (
+                  <div className="form-group animate-fade-in" style={{ backgroundColor: '#FFFBEB', padding: '1.1rem', borderRadius: '12px', border: '1px solid #FDE68A', marginBottom: '1.25rem' }}>
+                    <label className="form-label required">
+                      {lang === 'hi' ? 'विद्यालय / महाविद्यालय का आधिकारिक नाम' : 'Full Official School or College Name'}
+                    </label>
+                    <input 
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Maharani Laxmi Bai Girls Higher Secondary School"
+                      value={formData.institutionName}
+                      onChange={(e) => handleInputChange('institutionName', e.target.value)}
+                    />
+                    <div style={{ fontSize: '0.78rem', color: '#92400E', marginTop: '0.4rem', lineHeight: 1.4 }}>
+                      {lang === 'hi'
+                        ? 'ℹ️ यह संस्थान डेटाबेस में स्वचालित रूप से पंजीकृत होगा और जिला समन्वयक द्वारा संवीक्षा हेतु संस्थागत अधिकारी को आवंटित किया जाएगा।'
+                        : 'ℹ️ This institution will be automatically registered in the system and routed to the District Coordinator for scrutiny allocation.'}
+                    </div>
+                  </div>
+                )}
 
                 <div className="form-row-2">
                   <div className="form-group">
@@ -888,55 +1102,189 @@ export const Apply = () => {
             {/* Step 7: Document Upload */}
             {currentStep === 7 && (
               <div className="animate-fade-in">
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem' }}>
-                  {t.step7Tab}
-                </h3>
-                <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: '1.75rem' }}>
-                  {t.allowedFilesHint}
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem' }}>
+                      {t.step7Tab}
+                    </h3>
+                    <p style={{ color: '#64748B', fontSize: '0.875rem', margin: 0 }}>
+                      {t.allowedFilesHint}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    style={{ borderColor: '#2563EB', color: '#2563EB', display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#EFF6FF' }}
+                    onClick={handleAutoFillDemoDocs}
+                  >
+                    <Sparkles size={14} />
+                    <span>⚡ Auto-Attach Demo Verification Files</span>
+                  </button>
+                </div>
 
                 <div className="grid-2" style={{ gap: '1.25rem' }}>
                   
-                  <div className="upload-dropzone">
-                    <Upload size={24} color="#1E40AF" style={{ marginBottom: '0.5rem' }} />
+                  {/* Photo Upload */}
+                  <div className="upload-dropzone" style={{ backgroundColor: formData.photoFileName ? '#F0FDF4' : '#FFFFFF', borderColor: formData.photoFileName ? '#86EFAC' : '#E2E8F0' }}>
+                    <input 
+                      type="file" 
+                      id="upload_photo" 
+                      style={{ display: 'none' }} 
+                      accept="image/jpeg,image/png"
+                      onChange={(e) => handleFileSelect('photo', e)}
+                    />
+                    <Upload size={24} color={formData.photoFileName ? '#16A34A' : '#1E40AF'} style={{ marginBottom: '0.5rem' }} />
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t.uploadPhotoTitle}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', margin: '0.25rem 0' }}>JPG, PNG under 200KB</div>
-                    <button className="btn btn-outline btn-sm" type="button">Select File</button>
+                    {formData.photoFileName ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#16A34A', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.4rem' }}>
+                        <CheckCircle size={14} /> {formData.photoFileName} {formData.photoFileSize ? `(${formData.photoFileSize})` : ''}
+                      </div>
+                    ) : null}
+                    <button 
+                      className="btn btn-outline btn-sm" 
+                      type="button" 
+                      style={{ marginTop: '0.5rem' }}
+                      onClick={() => document.getElementById('upload_photo').click()}
+                    >
+                      {formData.photoFileName ? 'Change Photo' : 'Select File'}
+                    </button>
                   </div>
 
-                  <div className="upload-dropzone">
-                    <Upload size={24} color="#1E40AF" style={{ marginBottom: '0.5rem' }} />
+                  {/* Aadhaar Upload */}
+                  <div className="upload-dropzone" style={{ backgroundColor: formData.aadhaarFileName ? '#F0FDF4' : '#FFFFFF', borderColor: formData.aadhaarFileName ? '#86EFAC' : '#E2E8F0' }}>
+                    <input 
+                      type="file" 
+                      id="upload_aadhaar" 
+                      style={{ display: 'none' }} 
+                      accept="application/pdf,image/jpeg,image/png"
+                      onChange={(e) => handleFileSelect('aadhaar', e)}
+                    />
+                    <Upload size={24} color={formData.aadhaarFileName ? '#16A34A' : '#1E40AF'} style={{ marginBottom: '0.5rem' }} />
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t.uploadAadhaarTitle}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', margin: '0.25rem 0' }}>PDF or JPG</div>
-                    <button className="btn btn-outline btn-sm" type="button">Select File</button>
+                    {formData.aadhaarFileName ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#16A34A', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.4rem' }}>
+                        <CheckCircle size={14} /> {formData.aadhaarFileName} {formData.aadhaarFileSize ? `(${formData.aadhaarFileSize})` : ''}
+                      </div>
+                    ) : null}
+                    <button 
+                      className="btn btn-outline btn-sm" 
+                      type="button" 
+                      style={{ marginTop: '0.5rem' }}
+                      onClick={() => document.getElementById('upload_aadhaar').click()}
+                    >
+                      {formData.aadhaarFileName ? 'Change File' : 'Select File'}
+                    </button>
                   </div>
 
-                  <div className="upload-dropzone">
-                    <Upload size={24} color="#1E40AF" style={{ marginBottom: '0.5rem' }} />
+                  {/* Marksheet Upload */}
+                  <div className="upload-dropzone" style={{ backgroundColor: formData.marksheetFileName ? '#F0FDF4' : '#FFFFFF', borderColor: formData.marksheetFileName ? '#86EFAC' : '#E2E8F0' }}>
+                    <input 
+                      type="file" 
+                      id="upload_marksheet" 
+                      style={{ display: 'none' }} 
+                      accept="application/pdf,image/jpeg,image/png"
+                      onChange={(e) => handleFileSelect('marksheet', e)}
+                    />
+                    <Upload size={24} color={formData.marksheetFileName ? '#16A34A' : '#1E40AF'} style={{ marginBottom: '0.5rem' }} />
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t.uploadMarksheetTitle}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', margin: '0.25rem 0' }}>PDF or JPG</div>
-                    <button className="btn btn-outline btn-sm" type="button">Select File</button>
+                    {formData.marksheetFileName ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#16A34A', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.4rem' }}>
+                        <CheckCircle size={14} /> {formData.marksheetFileName} {formData.marksheetFileSize ? `(${formData.marksheetFileSize})` : ''}
+                      </div>
+                    ) : null}
+                    <button 
+                      className="btn btn-outline btn-sm" 
+                      type="button" 
+                      style={{ marginTop: '0.5rem' }}
+                      onClick={() => document.getElementById('upload_marksheet').click()}
+                    >
+                      {formData.marksheetFileName ? 'Change File' : 'Select File'}
+                    </button>
                   </div>
 
-                  <div className="upload-dropzone">
-                    <Upload size={24} color="#1E40AF" style={{ marginBottom: '0.5rem' }} />
+                  {/* Bonafide Certificate Upload */}
+                  <div className="upload-dropzone" style={{ backgroundColor: formData.bonafideFileName ? '#F0FDF4' : '#FFFFFF', borderColor: formData.bonafideFileName ? '#86EFAC' : '#E2E8F0' }}>
+                    <input 
+                      type="file" 
+                      id="upload_bonafide" 
+                      style={{ display: 'none' }} 
+                      accept="application/pdf,image/jpeg,image/png"
+                      onChange={(e) => handleFileSelect('bonafide', e)}
+                    />
+                    <Upload size={24} color={formData.bonafideFileName ? '#16A34A' : '#1E40AF'} style={{ marginBottom: '0.5rem' }} />
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t.uploadBonafideTitle}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', margin: '0.25rem 0' }}>PDF or JPG</div>
-                    <button className="btn btn-outline btn-sm" type="button">Select File</button>
+                    {formData.bonafideFileName ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#16A34A', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.4rem' }}>
+                        <CheckCircle size={14} /> {formData.bonafideFileName} {formData.bonafideFileSize ? `(${formData.bonafideFileSize})` : ''}
+                      </div>
+                    ) : null}
+                    <button 
+                      className="btn btn-outline btn-sm" 
+                      type="button" 
+                      style={{ marginTop: '0.5rem' }}
+                      onClick={() => document.getElementById('upload_bonafide').click()}
+                    >
+                      {formData.bonafideFileName ? 'Change File' : 'Select File'}
+                    </button>
                   </div>
 
-                  <div className="upload-dropzone">
-                    <Upload size={24} color="#1E40AF" style={{ marginBottom: '0.5rem' }} />
+                  {/* Bank Passbook Upload */}
+                  <div className="upload-dropzone" style={{ backgroundColor: formData.passbookFileName ? '#F0FDF4' : '#FFFFFF', borderColor: formData.passbookFileName ? '#86EFAC' : '#E2E8F0' }}>
+                    <input 
+                      type="file" 
+                      id="upload_passbook" 
+                      style={{ display: 'none' }} 
+                      accept="application/pdf,image/jpeg,image/png"
+                      onChange={(e) => handleFileSelect('passbook', e)}
+                    />
+                    <Upload size={24} color={formData.passbookFileName ? '#16A34A' : '#1E40AF'} style={{ marginBottom: '0.5rem' }} />
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{t.uploadPassbookTitle}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', margin: '0.25rem 0' }}>PDF or JPG</div>
-                    <button className="btn btn-outline btn-sm" type="button">Select File</button>
+                    {formData.passbookFileName ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#16A34A', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.4rem' }}>
+                        <CheckCircle size={14} /> {formData.passbookFileName} {formData.passbookFileSize ? `(${formData.passbookFileSize})` : ''}
+                      </div>
+                    ) : null}
+                    <button 
+                      className="btn btn-outline btn-sm" 
+                      type="button" 
+                      style={{ marginTop: '0.5rem' }}
+                      onClick={() => document.getElementById('upload_passbook').click()}
+                    >
+                      {formData.passbookFileName ? 'Change File' : 'Select File'}
+                    </button>
                   </div>
 
-                  <div className="upload-dropzone" style={{ borderStyle: 'dashed', borderColor: '#CBD5E1' }}>
+                  {/* Optional Income / Caste Upload */}
+                  <div className="upload-dropzone" style={{ borderStyle: 'dashed', borderColor: formData.incomeFileName ? '#86EFAC' : '#CBD5E1', backgroundColor: formData.incomeFileName ? '#F0FDF4' : '#FFFFFF' }}>
+                    <input 
+                      type="file" 
+                      id="upload_income" 
+                      style={{ display: 'none' }} 
+                      accept="application/pdf,image/jpeg,image/png"
+                      onChange={(e) => handleFileSelect('income', e)}
+                    />
                     <Upload size={24} color="#D97706" style={{ marginBottom: '0.5rem' }} />
                     <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Income / Caste (Optional)</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748B', margin: '0.25rem 0' }}>If applying in category</div>
-                    <button className="btn btn-outline btn-sm" type="button">Select File</button>
+                    <div style={{ fontSize: '0.75rem', color: '#64748B', margin: '0.25rem 0' }}>If applying under reserved quota</div>
+                    {formData.incomeFileName ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#16A34A', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.4rem' }}>
+                        <CheckCircle size={14} /> {formData.incomeFileName}
+                      </div>
+                    ) : null}
+                    <button 
+                      className="btn btn-outline btn-sm" 
+                      type="button" 
+                      style={{ marginTop: '0.5rem' }}
+                      onClick={() => document.getElementById('upload_income').click()}
+                    >
+                      {formData.incomeFileName ? 'Change File' : 'Select File'}
+                    </button>
                   </div>
 
                 </div>

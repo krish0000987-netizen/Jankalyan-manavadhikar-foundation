@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from './supabase.js';
 
 /**
  * Upload a file to a specific Supabase storage bucket
