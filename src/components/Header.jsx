@@ -92,12 +92,19 @@ export const Header = () => {
   ];
 
   const handleRoleSelect = (roleId) => {
-    setAuthRole(roleId);
     setRoleDropdownOpen(false);
-    if (roleId === 'admin' || roleId === 'district' || roleId === 'block' || roleId === 'institution' || roleId === 'center') {
-      navigate('/admin');
-    } else if (roleId === 'student') {
-      navigate('/student-dashboard');
+    if (roleId === 'student') {
+      navigate('/student-login');
+    } else if (roleId === 'institution') {
+      navigate('/school-login');
+    } else if (roleId === 'district') {
+      navigate('/district-login');
+    } else if (roleId === 'block') {
+      navigate('/block-login');
+    } else if (roleId === 'center') {
+      navigate('/login');
+    } else if (roleId === 'admin') {
+      navigate('/admin/login');
     } else {
       navigate('/');
     }
@@ -294,19 +301,25 @@ export const Header = () => {
             {/* Right: Student Login + Apply Now Action Buttons */}
             <div className="header-actions">
               
-              {/* Student Login or Admin button (Desktop >= 1160px) */}
+              {/* Multi-Role Portal Login Gateway (Desktop >= 1160px) */}
               <button
                 className="btn btn-secondary btn-sm header-student-btn"
                 onClick={() => {
-                  if (authRole === 'admin') {
+                  if (authRole === 'STUDENT') {
+                    navigate('/student-dashboard');
+                  } else if (authRole && authRole !== 'guest' && authRole !== 'guest-view') {
                     navigate('/admin');
                   } else {
-                    navigate('/student-dashboard');
+                    navigate('/login');
                   }
                 }}
               >
                 <User size={14} />
-                <span>{authRole === 'admin' ? t.navAdmin : t.navStudentLogin}</span>
+                <span>
+                  {authRole && authRole !== 'guest' && authRole !== 'guest-view'
+                    ? (lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard') 
+                    : (lang === 'hi' ? 'पोर्टल लॉगिन' : 'Portal Login')}
+                </span>
               </button>
 
               {/* Apply Now Primary CTA Button */}

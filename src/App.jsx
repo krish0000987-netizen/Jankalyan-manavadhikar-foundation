@@ -60,11 +60,15 @@ const MainRouter = () => {
         return <Track />;
       case '/student-dashboard':
         return <StudentDashboard />;
-      case '/admin/login':
+      case '/login':
+      case '/portal-login':
+      case '/student-login':
+      case '/school-login':
+      case '/college-login':
+      case '/institution-login':
       case '/district-login':
       case '/block-login':
-      case '/institution-login':
-      case '/portal-login':
+      case '/admin/login':
         return <AdminLogin />;
       case '/admin':
         return <Admin />;

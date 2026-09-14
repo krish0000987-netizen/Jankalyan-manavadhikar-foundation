@@ -209,7 +209,14 @@ export const AppProvider = ({ children }) => {
   const [authRole, setAuthRole] = useState(() => {
     return localStorage.getItem('jmf_role') || 'SUPER_ADMIN';
   });
-  const [jurisdiction, setJurisdiction] = useState({});
+  const [jurisdiction, setJurisdiction] = useState(() => {
+    try {
+      const saved = localStorage.getItem('jmf_jurisdiction');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
 
   // Active student application for tracking/dashboard
   const [activeStudentApp, setActiveStudentApp] = useState(FALLBACK_APPLICATIONS[0]);
@@ -480,10 +487,34 @@ export const AppProvider = ({ children }) => {
     const result = await authService.signIn(email, password);
     setAuthUser(result.user);
     setAuthRole(result.role);
-    setJurisdiction(result.jurisdiction);
+    setJurisdiction(result.jurisdiction || {});
     localStorage.setItem('jmf_role', result.role);
-    loadApplications(result.role, result.jurisdiction);
+    localStorage.setItem('jmf_jurisdiction', JSON.stringify(result.jurisdiction || {}));
+    await loadApplications(result.role, result.jurisdiction || {});
     return result;
+  };
+
+  // Student Login Wrapper
+  const handleStudentLogin = async (identifier, pinOrPassword = '') => {
+    const result = await authService.signInStudent(identifier, pinOrPassword);
+    setAuthUser(result.user);
+    setAuthRole('STUDENT');
+    setJurisdiction({});
+    if (result.studentApp) {
+      setActiveStudentApp(result.studentApp);
+    }
+    localStorage.setItem('jmf_role', 'STUDENT');
+    localStorage.removeItem('jmf_jurisdiction');
+    return result;
+  };
+
+  // Explicit Role & Jurisdiction Switcher (For testing or demo selection)
+  const switchRole = async (newRole, newJurisdiction = {}) => {
+    setAuthRole(newRole);
+    setJurisdiction(newJurisdiction);
+    localStorage.setItem('jmf_role', newRole);
+    localStorage.setItem('jmf_jurisdiction', JSON.stringify(newJurisdiction));
+    await loadApplications(newRole, newJurisdiction);
   };
 
   // Auth Logout Wrapper
@@ -493,6 +524,7 @@ export const AppProvider = ({ children }) => {
     setAuthRole('guest');
     setJurisdiction({});
     localStorage.setItem('jmf_role', 'guest');
+    localStorage.removeItem('jmf_jurisdiction');
     navigate('/');
   };
 
@@ -522,8 +554,11 @@ export const AppProvider = ({ children }) => {
       authUser,
       authRole,
       setAuthRole,
+      switchRole,
       jurisdiction,
+      setJurisdiction,
       login: handleLogin,
+      loginStudent: handleStudentLogin,
       logout: handleLogout,
       liveCounters
     }}>

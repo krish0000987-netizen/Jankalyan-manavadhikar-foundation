@@ -102,10 +102,16 @@ export const AdminSidebar = ({
             </div>
             <div>
               <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
-                Jankalyan Portal
+                {role === 'INSTITUTION' ? 'School / College' : 
+                 role === 'DISTRICT_COORDINATOR' ? 'District Cell' : 
+                 role === 'BLOCK_COORDINATOR' ? 'Block Cell' : 
+                 role === 'ONLINE_CENTER' ? 'CSC Center' : 'Jankalyan Portal'}
               </div>
-              <div style={{ fontSize: '0.7rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                ADMINISTRATION & CMS
+              <div style={{ fontSize: '0.68rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {role === 'INSTITUTION' ? 'INSTITUTIONAL NODAL DESK' : 
+                 role === 'DISTRICT_COORDINATOR' ? 'DISTRICT GOVERNANCE' : 
+                 role === 'BLOCK_COORDINATOR' ? 'BLOCK COORDINATION' : 
+                 role === 'ONLINE_CENTER' ? 'FACILITATION PORTAL' : 'ADMINISTRATION & CMS'}
               </div>
             </div>
           </div>

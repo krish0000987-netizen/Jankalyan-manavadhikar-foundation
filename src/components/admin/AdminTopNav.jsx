@@ -13,6 +13,7 @@ export const AdminTopNav = ({
   user, 
   role, 
   setRole, 
+  jurisdiction,
   sidebarOpen, 
   setSidebarOpen, 
   onExitPublic,
@@ -20,6 +21,19 @@ export const AdminTopNav = ({
   onSearchChange,
   searchValue = ''
 }) => {
+  const isSuperAdminUser = user?.email === 'admin@jankalyan.org' || user?.user_metadata?.role === 'SUPER_ADMIN' || !user;
+
+  // Derive jurisdiction display name
+  const jurisdictionLabel = jurisdiction?.institution?.name 
+    ? `${jurisdiction.institution.name} (${jurisdiction.institution.code || 'INST'})`
+    : jurisdiction?.district?.name 
+    ? `${jurisdiction.district.name} District Cell`
+    : jurisdiction?.block?.name
+    ? `${jurisdiction.block.name} Block Desk`
+    : jurisdiction?.center?.name
+    ? jurisdiction.center.name
+    : null;
+
   return (
     <header style={{
       height: '68px',
@@ -68,33 +82,52 @@ export const AdminTopNav = ({
         </div>
       </div>
 
-      {/* Right: Role Switcher, Public Link & User Profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      {/* Right: Role Switcher / Jurisdiction Scope Badge, Public Link & User Profile */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         
-        {/* Role Switcher (Super Admin can test any coordinator perspective) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Shield size={16} color="#1E40AF" />
-          <select
-            className="form-control"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            style={{
-              height: '36px',
-              padding: '0 0.75rem',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              backgroundColor: '#EFF6FF',
-              borderColor: '#BFDBFE',
-              color: '#1E40AF'
-            }}
-          >
-            <option value="SUPER_ADMIN">Super Admin</option>
-            <option value="DISTRICT_COORDINATOR">District Coordinator</option>
-            <option value="BLOCK_COORDINATOR">Block Coordinator</option>
-            <option value="INSTITUTION">School / College</option>
-            <option value="ONLINE_CENTER">Online Center (CSC)</option>
-          </select>
-        </div>
+        {/* If Super Admin, show preview switcher; if scoped user, show official jurisdiction badge */}
+        {isSuperAdminUser ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Shield size={16} color="#1E40AF" />
+            <select
+              className="form-control"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              title="Super Admin Perspective Switcher"
+              style={{
+                height: '36px',
+                padding: '0 0.75rem',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                backgroundColor: '#EFF6FF',
+                borderColor: '#BFDBFE',
+                color: '#1E40AF'
+              }}
+            >
+              <option value="SUPER_ADMIN">Super Admin (Statewide)</option>
+              <option value="INSTITUTION">School / College Nodal</option>
+              <option value="DISTRICT_COORDINATOR">District Coordinator</option>
+              <option value="BLOCK_COORDINATOR">Block Coordinator</option>
+              <option value="ONLINE_CENTER">Online Center (CSC)</option>
+            </select>
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '6px',
+            backgroundColor: role === 'INSTITUTION' ? '#F0FDFA' : '#EFF6FF',
+            border: `1px solid ${role === 'INSTITUTION' ? '#99F6E4' : '#BFDBFE'}`,
+            color: role === 'INSTITUTION' ? '#0F766E' : '#1E40AF',
+            fontSize: '0.78rem',
+            fontWeight: 700
+          }}>
+            <Shield size={14} />
+            <span>{jurisdictionLabel || (role || '').replace('_', ' ')}</span>
+          </div>
+        )}
 
         {/* Notifications Icon */}
         <div style={{ position: 'relative' }}>
@@ -143,16 +176,27 @@ export const AdminTopNav = ({
         </button>
 
         {/* User Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '1px solid #E2E8F0', paddingLeft: '1rem' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#1E40AF', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '1px solid #E2E8F0', paddingLeft: '0.85rem' }}>
+          <div style={{ 
+            width: '36px', 
+            height: '36px', 
+            borderRadius: '50%', 
+            backgroundColor: role === 'INSTITUTION' ? '#0D9488' : '#1E40AF', 
+            color: '#FFFFFF', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            fontWeight: 800, 
+            fontSize: '0.85rem' 
+          }}>
             {user?.email?.[0]?.toUpperCase() || 'A'}
           </div>
           <div className="admin-user-info" style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>
-              {user?.user_metadata?.full_name || (user?.email === 'admin@jankalyan.org' ? 'Super Administrator' : user?.email?.split('@')[0]) || 'Super Administrator'}
+              {user?.user_metadata?.full_name || (user?.email === 'admin@jankalyan.org' ? 'Super Administrator' : user?.email?.split('@')[0]) || 'Administrator'}
             </span>
             <span style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {(role || 'SUPER_ADMIN').replace('_', ' ')}
+              {jurisdiction?.institution?.name || (role || 'SUPER_ADMIN').replace('_', ' ')}
             </span>
           </div>
         </div>

@@ -261,8 +261,34 @@ export const applicationService = {
       console.warn('Live applications query failed, using seeded baseline:', err);
     }
 
-    // Apply filters to baseline applications if live DB returned empty or required auth
+    // Apply filters and role-based jurisdiction scoping to baseline applications
     let result = [...FALLBACK_APPLICATIONS];
+
+    // Role-based jurisdiction scoping for baseline data
+    if (role === 'INSTITUTION' && jurisdiction?.institution) {
+      const instName = (jurisdiction.institution.name || '').toLowerCase();
+      const instId = jurisdiction.institution.id;
+      result = result.filter(a => 
+        (instId && a.institutionId === instId) || 
+        (instName && a.institution.toLowerCase().includes(instName)) ||
+        (instName && instName.includes(a.institution.toLowerCase()))
+      );
+    } else if (role === 'DISTRICT_COORDINATOR' && jurisdiction?.district) {
+      const distName = (jurisdiction.district.name || '').toLowerCase();
+      const distId = jurisdiction.district.id;
+      result = result.filter(a => 
+        (distId && a.districtId === distId) || 
+        (distName && a.district.toLowerCase() === distName)
+      );
+    } else if (role === 'BLOCK_COORDINATOR' && jurisdiction?.block) {
+      const blkName = (jurisdiction.block.name || '').toLowerCase();
+      const blkId = jurisdiction.block.id;
+      result = result.filter(a => 
+        (blkId && a.blockId === blkId) || 
+        (blkName && a.block.toLowerCase() === blkName)
+      );
+    }
+
     if (filters.district && filters.district !== 'All') {
       result = result.filter(a => a.district === filters.district);
     }

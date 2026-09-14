@@ -72,6 +72,8 @@ export const Admin = () => {
     authUser, 
     authRole, 
     setAuthRole,
+    switchRole,
+    jurisdiction,
     logout,
     grievances 
   } = useApp();
@@ -119,7 +121,7 @@ export const Admin = () => {
 
   // Load backend data on tab change
   useEffect(() => {
-    loadApplications();
+    loadApplications(authRole, jurisdiction);
     reportService.getDashboardSummary().then(setMisSummary);
     paymentService.getPaymentBatches().then(setDbtBatches);
     paymentService.getPayments().then(setDbtPayments);
@@ -134,15 +136,39 @@ export const Admin = () => {
     cmsService.getFaqs().then(setFaqsList);
     cmsService.getTeamMembers().then(setTeamList);
     cmsService.getDownloads().then(setDownloadsList);
-  }, [activeTab]);
+  }, [activeTab, authRole, jurisdiction]);
 
   // Keep cmsForm synced with cms context
   useEffect(() => {
     setCmsForm(prev => ({ ...prev, ...cms }));
   }, [cms]);
 
-  // Filtered Applications
-  const filteredApplications = applications.filter(app => {
+  // Base role-scoped applications
+  const roleScopedApplications = applications.filter(app => {
+    if (authRole === 'INSTITUTION' && jurisdiction?.institution) {
+      const instName = (jurisdiction.institution.name || '').toLowerCase();
+      const instId = jurisdiction.institution.id;
+      return (instId && app.institutionId === instId) || 
+             (instName && app.institution?.toLowerCase().includes(instName)) ||
+             (instName && instName.includes(app.institution?.toLowerCase()));
+    }
+    if (authRole === 'DISTRICT_COORDINATOR' && jurisdiction?.district) {
+      const distName = (jurisdiction.district.name || '').toLowerCase();
+      const distId = jurisdiction.district.id;
+      return (distId && app.districtId === distId) || 
+             (distName && app.district?.toLowerCase() === distName);
+    }
+    if (authRole === 'BLOCK_COORDINATOR' && jurisdiction?.block) {
+      const blkName = (jurisdiction.block.name || '').toLowerCase();
+      const blkId = jurisdiction.block.id;
+      return (blkId && app.blockId === blkId) || 
+             (blkName && app.block?.toLowerCase() === blkName);
+    }
+    return true; // Super Admin sees all
+  });
+
+  // Filtered Applications (Search + Status + Category on top of scoped applications)
+  const filteredApplications = roleScopedApplications.filter(app => {
     const matchesDistrict = selectedDistrict === 'All' || app.district === selectedDistrict;
     const matchesCategory = selectedCategory === 'All' || app.category === selectedCategory;
     const matchesStatus = selectedStatus === 'All' || app.status === selectedStatus;
@@ -155,13 +181,13 @@ export const Admin = () => {
     return matchesDistrict && matchesCategory && matchesStatus && matchesSearch;
   });
 
-  // KPI Calculations
-  const totalCount = applications.length;
-  const approvedCount = applications.filter(a => a.status === 'Approved').length;
-  const releasedCount = applications.filter(a => a.status === 'Scholarship Released').length;
-  const underVerificationCount = applications.filter(a => a.status === 'Under Verification' || a.status === 'Re-Submitted').length;
-  const rejectedCount = applications.filter(a => a.status === 'Rejected').length;
-  const correctionCount = applications.filter(a => a.status === 'Correction Requested').length;
+  // KPI Calculations strictly based on roleScopedApplications
+  const totalCount = roleScopedApplications.length;
+  const approvedCount = roleScopedApplications.filter(a => a.status === 'Approved').length;
+  const releasedCount = roleScopedApplications.filter(a => a.status === 'Scholarship Released').length;
+  const underVerificationCount = roleScopedApplications.filter(a => a.status === 'Under Verification' || a.status === 'Re-Submitted').length;
+  const rejectedCount = roleScopedApplications.filter(a => a.status === 'Rejected').length;
+  const correctionCount = roleScopedApplications.filter(a => a.status === 'Correction Requested').length;
 
   // Handle CMS Save
   const handleSaveCMS = async (e) => {
@@ -201,7 +227,7 @@ export const Admin = () => {
 
   // Create Payment Batch for selected approved students
   const handleCreateBatch = async () => {
-    const approvedIds = applications.filter(a => a.status === 'Approved').map(a => a.id);
+    const approvedIds = roleScopedApplications.filter(a => a.status === 'Approved').map(a => a.id);
     if (approvedIds.length === 0) {
       alert('No approved applications available to batch.');
       return;
@@ -255,7 +281,8 @@ export const Admin = () => {
         <AdminTopNav 
           user={authUser}
           role={authRole}
-          setRole={setAuthRole}
+          setRole={(newRole) => switchRole(newRole)}
+          jurisdiction={jurisdiction}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           onExitPublic={() => navigate('/')}
@@ -276,16 +303,29 @@ export const Admin = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                    <Shield size={18} color="#1E40AF" />
-                    <span className="badge badge-blue">
-                      {authRole.replace('_', ' ')} GOVERNANCE DASHBOARD
+                    <Shield size={18} color={authRole === 'INSTITUTION' ? '#0D9488' : '#1E40AF'} />
+                    <span className={`badge ${authRole === 'INSTITUTION' ? 'badge-green' : 'badge-blue'}`}>
+                      {authRole === 'INSTITUTION' ? 'SCHOOL & COLLEGE NODAL PORTAL' : 
+                       authRole === 'DISTRICT_COORDINATOR' ? 'DISTRICT GOVERNANCE CELL' : 
+                       authRole === 'BLOCK_COORDINATOR' ? 'BLOCK COORDINATION DESK' : 
+                       authRole === 'ONLINE_CENTER' ? 'CSC FACILITATION DESK' : 'STATEWIDE GOVERNANCE DASHBOARD'}
                     </span>
                   </div>
                   <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0F172A' }}>
-                    Overview & Scrutiny Command Center
+                    {authRole === 'INSTITUTION'
+                      ? (jurisdiction?.institution?.name || 'Institution Nodal Center')
+                      : authRole === 'DISTRICT_COORDINATOR'
+                      ? `${jurisdiction?.district?.name || 'District'} Administration Hub`
+                      : authRole === 'BLOCK_COORDINATOR'
+                      ? `${jurisdiction?.block?.name || 'Block'} Coordination Cell`
+                      : 'Overview & Scrutiny Command Center'}
                   </h1>
                   <p style={{ color: '#64748B', fontSize: '0.9rem' }}>
-                    Multi-tier scrutiny, direct benefit transfer reconciliation, and real-time CMS governance
+                    {authRole === 'INSTITUTION'
+                      ? `Enrolled students bonafide verification, marksheet attestation & institutional records (Code: ${jurisdiction?.institution?.code || 'INST-01'})`
+                      : authRole === 'DISTRICT_COORDINATOR'
+                      ? `District-level scrutiny, school oversight, and regional verification tracking for ${jurisdiction?.district?.name || 'District'}`
+                      : 'Multi-tier scrutiny, direct benefit transfer reconciliation, and real-time CMS governance'}
                   </p>
                 </div>
 
@@ -295,10 +335,17 @@ export const Admin = () => {
                     <span>View Applications ({totalCount})</span>
                   </button>
 
-                  <button className="btn btn-gold btn-sm" onClick={handleCreateBatch}>
-                    <CreditCard size={15} />
-                    <span>Create DBT Batch</span>
+                  <button className="btn btn-primary btn-sm" onClick={() => setActiveTab('verification')}>
+                    <CheckCircle2 size={15} />
+                    <span>Verification Queue ({underVerificationCount})</span>
                   </button>
+
+                  {authRole === 'SUPER_ADMIN' && (
+                    <button className="btn btn-gold btn-sm" onClick={handleCreateBatch}>
+                      <CreditCard size={15} />
+                      <span>Create DBT Batch</span>
+                    </button>
+                  )}
 
                   <button className="btn btn-outline btn-sm" onClick={handleExportApplications}>
                     <Download size={15} />
@@ -347,33 +394,57 @@ export const Admin = () => {
                 <div className="card" style={{ padding: '1.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>
-                      Geographic Application Distribution
+                      {authRole === 'INSTITUTION' ? 'Course / Class Breakdown' : 'Geographic Application Distribution'}
                     </h3>
-                    <span className="badge badge-navy">6 Active Districts</span>
+                    <span className="badge badge-navy">
+                      {authRole === 'INSTITUTION' ? 'Institutional Roster' : '6 Active Districts'}
+                    </span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    {[
-                      { district: 'Jabalpur', count: applications.filter(a => a.district === 'Jabalpur').length, color: '#1E40AF' },
-                      { district: 'Bhopal', count: applications.filter(a => a.district === 'Bhopal').length, color: '#2563EB' },
-                      { district: 'Indore', count: applications.filter(a => a.district === 'Indore').length, color: '#3B82F6' },
-                      { district: 'Rewa', count: applications.filter(a => a.district === 'Rewa').length, color: '#60A5FA' },
-                      { district: 'Mandla', count: applications.filter(a => a.district === 'Mandla').length, color: '#93C5FD' },
-                      { district: 'Gwalior', count: applications.filter(a => a.district === 'Gwalior').length, color: '#BFDBFE' }
-                    ].map(item => {
-                      const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
-                      return (
-                        <div key={item.district}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600 }}>
-                            <span>{item.district}</span>
-                            <span>{item.count} Candidates ({pct}%)</span>
+                    {authRole === 'INSTITUTION' ? (
+                      [
+                        { label: 'Higher Secondary (11th/12th)', count: roleScopedApplications.filter(a => (a.course || '').includes('12') || (a.course || '').includes('Secondary')).length, color: '#1E40AF' },
+                        { label: 'High School (10th)', count: roleScopedApplications.filter(a => (a.course || '').includes('10')).length, color: '#2563EB' },
+                        { label: 'Undergraduate / Degree', count: roleScopedApplications.filter(a => (a.course || '').includes('B.') || (a.course || '').includes('Graduation')).length, color: '#3B82F6' },
+                        { label: 'Diploma / Technical', count: roleScopedApplications.filter(a => (a.course || '').includes('Polytechnic') || (a.course || '').includes('Diploma')).length, color: '#60A5FA' }
+                      ].map(item => {
+                        const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+                        return (
+                          <div key={item.label}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                              <span>{item.label}</span>
+                              <span>{item.count} Candidates ({pct}%)</span>
+                            </div>
+                            <div style={{ height: '8px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, backgroundColor: item.color, borderRadius: '4px' }} />
+                            </div>
                           </div>
-                          <div style={{ height: '8px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${pct}%`, backgroundColor: item.color, borderRadius: '4px' }} />
+                        );
+                      })
+                    ) : (
+                      [
+                        { district: 'Jabalpur', count: roleScopedApplications.filter(a => a.district === 'Jabalpur').length, color: '#1E40AF' },
+                        { district: 'Bhopal', count: roleScopedApplications.filter(a => a.district === 'Bhopal').length, color: '#2563EB' },
+                        { district: 'Indore', count: roleScopedApplications.filter(a => a.district === 'Indore').length, color: '#3B82F6' },
+                        { district: 'Rewa', count: roleScopedApplications.filter(a => a.district === 'Rewa').length, color: '#60A5FA' },
+                        { district: 'Mandla', count: roleScopedApplications.filter(a => a.district === 'Mandla').length, color: '#93C5FD' },
+                        { district: 'Gwalior', count: roleScopedApplications.filter(a => a.district === 'Gwalior').length, color: '#BFDBFE' }
+                      ].map(item => {
+                        const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+                        return (
+                          <div key={item.district}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                              <span>{item.district}</span>
+                              <span>{item.count} Candidates ({pct}%)</span>
+                            </div>
+                            <div style={{ height: '8px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, backgroundColor: item.color, borderRadius: '4px' }} />
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -388,10 +459,10 @@ export const Admin = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {[
-                      { cat: 'General Category', count: applications.filter(a => a.category === 'General').length, color: '#1E293B' },
-                      { cat: 'OBC (Other Backward Class)', count: applications.filter(a => a.category === 'OBC').length, color: '#D97706' },
-                      { cat: 'SC (Scheduled Caste)', count: applications.filter(a => a.category === 'SC').length, color: '#DC2626' },
-                      { cat: 'ST (Scheduled Tribe)', count: applications.filter(a => a.category === 'ST').length, color: '#16A34A' }
+                      { cat: 'General Category', count: roleScopedApplications.filter(a => a.category === 'General').length, color: '#1E293B' },
+                      { cat: 'OBC (Other Backward Class)', count: roleScopedApplications.filter(a => a.category === 'OBC').length, color: '#D97706' },
+                      { cat: 'SC (Scheduled Caste)', count: roleScopedApplications.filter(a => a.category === 'SC').length, color: '#DC2626' },
+                      { cat: 'ST (Scheduled Tribe)', count: roleScopedApplications.filter(a => a.category === 'ST').length, color: '#16A34A' }
                     ].map(item => {
                       const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
                       return (
@@ -436,7 +507,7 @@ export const Admin = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {applications.slice(0, 5).map(app => (
+                      {roleScopedApplications.slice(0, 5).map(app => (
                         <tr key={app.id}>
                           <td style={{ fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>{app.id}</td>
                           <td>
@@ -481,10 +552,16 @@ export const Admin = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
-                    Application Master Management
+                    {authRole === 'INSTITUTION' 
+                      ? `${jurisdiction?.institution?.name || 'School / College'} — Enrolled Applications` 
+                      : authRole === 'DISTRICT_COORDINATOR'
+                      ? `${jurisdiction?.district?.name || 'District'} — District Applications`
+                      : 'Application Master Management'}
                   </h2>
                   <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                    Complete applicant records, multi-tier scrutiny dossier, and status transition ledger
+                    {authRole === 'INSTITUTION'
+                      ? `Enrolled student records and bonafide verification ledger for ${jurisdiction?.institution?.name || 'this institution'}`
+                      : 'Complete applicant records, multi-tier scrutiny dossier, and status transition ledger'}
                   </p>
                 </div>
 
@@ -630,10 +707,16 @@ export const Admin = () => {
             <div className="animate-fade-in">
               <div style={{ marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
-                  Pending Verification Queue
+                  {authRole === 'INSTITUTION' 
+                    ? `${jurisdiction?.institution?.name || 'School / College'} — Institutional Verification Queue` 
+                    : authRole === 'DISTRICT_COORDINATOR'
+                    ? `${jurisdiction?.district?.name || 'District'} — Verification Queue`
+                    : 'Pending Verification Queue'}
                 </h2>
                 <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                  Applications requiring institutional, block, or district verification scrutiny
+                  {authRole === 'INSTITUTION'
+                    ? 'Verify enrolled students, review marksheets and attest institutional bonafide before forwarding to District Cell'
+                    : 'Applications requiring institutional, block, or district verification scrutiny'}
                 </p>
               </div>
 
@@ -651,7 +734,7 @@ export const Admin = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {applications
+                    {roleScopedApplications
                       .filter(a => a.status === 'Under Verification' || a.status === 'Correction Requested' || a.status === 'Re-Submitted')
                       .map(app => (
                         <tr key={app.id}>
