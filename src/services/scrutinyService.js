@@ -2,27 +2,37 @@ import { supabase } from '../api/supabase';
 
 export const scrutinyService = {
   /**
-   * Update Application Status with immutable history logging
+   * Update Application Status with immutable history logging across 5-phase scholarship workflow
    */
   async updateApplicationStatus(appId, newStatus, remarks = '', utr = '', actor = null) {
     let rawStatus = newStatus;
-    if (newStatus === 'Approved') rawStatus = 'APPROVED';
-    else if (newStatus === 'Scholarship Released') rawStatus = 'SCHOLARSHIP_RELEASED';
-    else if (newStatus === 'Rejected') rawStatus = 'REJECTED';
-    else if (newStatus === 'Correction Requested') rawStatus = 'CORRECTION_REQUESTED';
-    else if (newStatus === 'Under Verification') rawStatus = 'UNDER_VERIFICATION';
+    if (newStatus === 'Approved' || newStatus === 'APPROVED') rawStatus = 'APPROVED';
+    else if (newStatus === 'Scholarship Released' || newStatus === 'SCHOLARSHIP_RELEASED') rawStatus = 'SCHOLARSHIP_RELEASED';
+    else if (newStatus === 'Bonafide Attested' || newStatus === 'INSTITUTION_RECOMMENDED') rawStatus = 'INSTITUTION_RECOMMENDED';
+    else if (newStatus === 'Rejected' || newStatus === 'REJECTED') rawStatus = 'REJECTED';
+    else if (newStatus === 'Correction Requested' || newStatus === 'CORRECTION_REQUESTED') rawStatus = 'CORRECTION_REQUESTED';
+    else if (newStatus === 'Under Verification' || newStatus === 'UNDER_VERIFICATION') rawStatus = 'UNDER_VERIFICATION';
 
     let stage = 2;
     let approvalDate = null;
     let paymentDate = null;
+    let bonafideVerified = false;
+    let districtVerified = false;
     const today = new Date().toISOString().split('T')[0];
 
-    if (rawStatus === 'APPROVED') {
+    if (rawStatus === 'INSTITUTION_RECOMMENDED') {
+      stage = 3;
+      bonafideVerified = true;
+    } else if (rawStatus === 'APPROVED') {
       stage = 4;
       approvalDate = today;
+      bonafideVerified = true;
+      districtVerified = true;
     } else if (rawStatus === 'SCHOLARSHIP_RELEASED') {
       stage = 5;
       paymentDate = today;
+      bonafideVerified = true;
+      districtVerified = true;
     } else if (rawStatus === 'REJECTED') {
       stage = 2;
     } else if (rawStatus === 'CORRECTION_REQUESTED') {
@@ -47,6 +57,12 @@ export const scrutinyService = {
     if (approvalDate) updatePayload.approval_date = approvalDate;
     if (paymentDate) updatePayload.payment_date = paymentDate;
     if (utr) updatePayload.utr_number = utr;
+    if (bonafideVerified) updatePayload.bonafide_verified = true;
+    if (districtVerified) updatePayload.district_verified = true;
+    if (actor?.id) {
+      updatePayload.verified_by = actor.id;
+      updatePayload.verified_at = new Date().toISOString();
+    }
     if (rawStatus === 'REJECTED') updatePayload.rejection_reason = remarks;
     if (rawStatus === 'CORRECTION_REQUESTED') updatePayload.correction_remarks = remarks;
 

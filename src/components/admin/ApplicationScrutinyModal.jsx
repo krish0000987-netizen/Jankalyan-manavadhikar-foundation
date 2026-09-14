@@ -183,6 +183,51 @@ export const ApplicationScrutinyModal = ({
         {/* Modal Scrollable Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
           
+          {/* Phase Workflow Context Banner */}
+          {currentUser?.role === 'INSTITUTION' ? (
+            <div style={{ backgroundColor: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '8px', backgroundColor: '#0D9488', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Building size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0F766E' }}>
+                  Phase 2: Institutional Bonafide Attestation (Tier 1)
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#115E59', marginTop: '2px' }}>
+                  Review enrolled students in your institution. Confirm enrollment in 12th / Degree, verify roll number & marksheet. If documents are blurred or mismatched, request correction with specific remarks. Once satisfied, click <strong>"Sign & Attest Bonafide"</strong>.
+                </div>
+              </div>
+            </div>
+          ) : (currentUser?.role === 'DISTRICT_COORDINATOR' || currentUser?.role === 'BLOCK_COORDINATOR') ? (
+            <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '8px', backgroundColor: '#D97706', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <ShieldCheck size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#92400E' }}>
+                  Phase 3: District & Block Scrutiny (Tier 2)
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#78350F', marginTop: '2px' }}>
+                  Evaluate family annual income limit (&le; ₹3,00,000), category quotas, and bonafide genuineness across your district. Applications meeting all criteria should be marked as <strong>"Approve Application"</strong> for state DBT treasury clearance.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '8px', backgroundColor: '#1E40AF', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Award size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#1E40AF' }}>
+                  Phase 4: Board Clearance & Direct Benefit Transfer (Tier 3)
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#1E3A8A', marginTop: '2px' }}>
+                  Statewide administrative authority: Review verified candidates, aggregate approved students into DBT payment batches, and disburse official scholarships directly to student bank accounts with banking UTRs.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TAB 1: DOSSIER DETAILS */}
           {activeTab === 'dossier' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -216,7 +261,7 @@ export const ApplicationScrutinyModal = ({
                   <div><strong>Institution Name:</strong> {application.institution}</div>
                   <div><strong>Class / Course:</strong> {application.course}</div>
                   <div><strong>Academic Year:</strong> 2026-27</div>
-                  <div><strong>Qualifying Percentage:</strong> 78.50%</div>
+                  <div><strong>Status:</strong> {application.status}</div>
                 </div>
               </div>
 
@@ -227,12 +272,12 @@ export const ApplicationScrutinyModal = ({
                   <span>Direct Benefit Transfer (DBT) Banking Details</span>
                 </h4>
                 <div className="grid-3" style={{ gap: '0.75rem', fontSize: '0.85rem' }}>
-                  <div><strong>Bank Name:</strong> State Bank of India</div>
-                  <div><strong>Account Number (Masked):</strong> XXXX-XXXX-4829</div>
-                  <div><strong>IFSC Code:</strong> SBIN0001248</div>
+                  <div><strong>Bank Name:</strong> {application.bankName || 'State Bank of India'}</div>
+                  <div><strong>Account Number (Masked):</strong> {application.accountNumber || 'XXXX-XXXX-1234'}</div>
+                  <div><strong>IFSC Code:</strong> {application.ifsc || 'SBIN0001234'}</div>
                   <div><strong>Aadhaar DBT Status:</strong> <span className="badge badge-green">Seeded</span></div>
                   <div><strong>Payment Status:</strong> {application.paymentDate !== '-' ? 'Released' : 'Pending'}</div>
-                  <div><strong>Bank UTR:</strong> <span style={{ fontFamily: 'monospace' }}>{application.utrNumber}</span></div>
+                  <div><strong>Bank UTR:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{application.utrNumber}</span></div>
                 </div>
               </div>
 
@@ -387,7 +432,7 @@ export const ApplicationScrutinyModal = ({
                 onClick={() => handleAction('Rejected')}
               >
                 <XCircle size={14} />
-                <span>Reject</span>
+                <span>{currentUser?.role === 'INSTITUTION' ? 'Reject Bonafide' : 'Reject Application'}</span>
               </button>
 
               <button 
@@ -401,25 +446,69 @@ export const ApplicationScrutinyModal = ({
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button 
-                className="btn btn-secondary btn-sm"
-                disabled={submitting}
-                onClick={() => handleAction('Approved')}
-              >
-                <CheckCircle2 size={14} />
-                <span>Approve Application</span>
-              </button>
-
-              {application.status === 'Approved' && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {/* Institution Nodal Action: Phase 2 Institutional Bonafide Attestation */}
+              {currentUser?.role === 'INSTITUTION' && (
                 <button 
-                  className="btn btn-gold btn-sm"
-                  disabled={submitting}
-                  onClick={() => handleAction('Scholarship Released')}
+                  className="btn btn-primary btn-sm"
+                  style={{ backgroundColor: '#0D9488', borderColor: '#0D9488', color: '#FFFFFF' }}
+                  disabled={submitting || application.status === 'Bonafide Attested' || application.status === 'Approved' || application.status === 'Scholarship Released'}
+                  onClick={() => handleAction('Bonafide Attested')}
                 >
-                  <CreditCard size={14} />
-                  <span>Disburse DBT Payment</span>
+                  <ShieldCheck size={14} />
+                  <span>{application.status === 'Bonafide Attested' ? 'Bonafide Already Attested' : 'Sign & Attest Bonafide (Tier 1)'}</span>
                 </button>
+              )}
+
+              {/* District / Block Coordinator Action: Phase 3 District Scrutiny Approval */}
+              {(currentUser?.role === 'DISTRICT_COORDINATOR' || currentUser?.role === 'BLOCK_COORDINATOR') && (
+                <button 
+                  className="btn btn-secondary btn-sm"
+                  disabled={submitting || application.status === 'Approved' || application.status === 'Scholarship Released'}
+                  onClick={() => handleAction('Approved')}
+                >
+                  <CheckCircle2 size={14} />
+                  <span>{application.status === 'Approved' ? 'Already Approved' : 'Approve Application (Tier 2)'}</span>
+                </button>
+              )}
+
+              {/* Super Admin Actions: Complete Statewide Access */}
+              {(!currentUser?.role || currentUser?.role === 'SUPER_ADMIN') && (
+                <>
+                  {application.status === 'Under Verification' && (
+                    <button 
+                      className="btn btn-outline btn-sm"
+                      style={{ color: '#0D9488', borderColor: '#99F6E4' }}
+                      disabled={submitting}
+                      onClick={() => handleAction('Bonafide Attested')}
+                    >
+                      <ShieldCheck size={14} />
+                      <span>Attest Bonafide</span>
+                    </button>
+                  )}
+
+                  {application.status !== 'Approved' && application.status !== 'Scholarship Released' && (
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      disabled={submitting}
+                      onClick={() => handleAction('Approved')}
+                    >
+                      <CheckCircle2 size={14} />
+                      <span>Approve Application</span>
+                    </button>
+                  )}
+
+                  {application.status === 'Approved' && (
+                    <button 
+                      className="btn btn-gold btn-sm"
+                      disabled={submitting}
+                      onClick={() => handleAction('Scholarship Released')}
+                    >
+                      <CreditCard size={14} />
+                      <span>Disburse Direct Benefit Transfer</span>
+                    </button>
+                  )}
+                </>
               )}
             </div>
 

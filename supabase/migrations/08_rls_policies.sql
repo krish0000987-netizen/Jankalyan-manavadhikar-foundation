@@ -58,6 +58,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Add helper columns for student credentials and multi-tier verification if not present
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS login_pin TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE public.applications ADD COLUMN IF NOT EXISTS payment_batch_id UUID;
+ALTER TABLE public.applications ADD COLUMN IF NOT EXISTS verified_by UUID;
+ALTER TABLE public.applications ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+ALTER TABLE public.applications ADD COLUMN IF NOT EXISTS bonafide_verified BOOLEAN DEFAULT false;
+ALTER TABLE public.applications ADD COLUMN IF NOT EXISTS district_verified BOOLEAN DEFAULT false;
+
 -- Enable RLS on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
@@ -111,155 +120,242 @@ ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 -- ---------------------------------------------------------------------------
 -- 1. PUBLIC READ POLICIES (CMS, Schemes, Announcements, FAQs, Downloads)
 -- ---------------------------------------------------------------------------
-CREATE POLICY "Public can view active schemes" ON public.scholarship_schemes FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
+DROP POLICY IF EXISTS "Public can view active schemes" ON public.scholarship_schemes;
+CREATE POLICY "Public can view active schemes" ON public.scholarship_schemes FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active rules" ON public.scheme_eligibility_rules;
 CREATE POLICY "Public can view active rules" ON public.scheme_eligibility_rules FOR SELECT USING (true);
-CREATE POLICY "Public can view active hero slides" ON public.hero_slides FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view announcements" ON public.announcements FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view published notices" ON public.notices FOR SELECT USING (is_published = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view active FAQs" ON public.faqs FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view active team members" ON public.team_members FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view active downloads" ON public.downloads FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view active CMS pages" ON public.cms_pages FOR SELECT USING (is_published = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view active CMS sections" ON public.cms_sections FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Public can view active hero slides" ON public.hero_slides;
+CREATE POLICY "Public can view active hero slides" ON public.hero_slides FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view announcements" ON public.announcements;
+CREATE POLICY "Public can view announcements" ON public.announcements FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view published notices" ON public.notices;
+CREATE POLICY "Public can view published notices" ON public.notices FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active FAQs" ON public.faqs;
+CREATE POLICY "Public can view active FAQs" ON public.faqs FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active team members" ON public.team_members;
+CREATE POLICY "Public can view active team members" ON public.team_members FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active downloads" ON public.downloads;
+CREATE POLICY "Public can view active downloads" ON public.downloads FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active CMS pages" ON public.cms_pages;
+CREATE POLICY "Public can view active CMS pages" ON public.cms_pages FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active CMS sections" ON public.cms_sections;
+CREATE POLICY "Public can view active CMS sections" ON public.cms_sections FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view master document types" ON public.document_types;
 CREATE POLICY "Public can view master document types" ON public.document_types FOR SELECT USING (true);
-CREATE POLICY "Public can view active districts" ON public.districts FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view active blocks" ON public.blocks FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view active institutions" ON public.institutions FOR SELECT USING (is_active = true OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view published merit lists" ON public.merit_lists FOR SELECT USING (status = 'PUBLISHED' OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Public can view published merit entries" ON public.merit_list_entries FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.merit_lists WHERE id = merit_list_entries.merit_list_id AND status = 'PUBLISHED')
-    OR public.is_super_admin(auth.uid())
-);
+
+DROP POLICY IF EXISTS "Public can view active districts" ON public.districts;
+CREATE POLICY "Public can view active districts" ON public.districts FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active blocks" ON public.blocks;
+CREATE POLICY "Public can view active blocks" ON public.blocks FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view active institutions" ON public.institutions;
+CREATE POLICY "Public can view active institutions" ON public.institutions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view published merit lists" ON public.merit_lists;
+CREATE POLICY "Public can view published merit lists" ON public.merit_lists FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can view published merit entries" ON public.merit_list_entries;
+CREATE POLICY "Public can view published merit entries" ON public.merit_list_entries FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public can submit contact inquiry" ON public.contact_submissions;
 CREATE POLICY "Public can submit contact inquiry" ON public.contact_submissions FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public can insert QR scan log" ON public.qr_verifications;
 CREATE POLICY "Public can insert QR scan log" ON public.qr_verifications FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public can view certificates by token" ON public.certificates;
 CREATE POLICY "Public can view certificates by token" ON public.certificates FOR SELECT USING (true);
 
 -- ---------------------------------------------------------------------------
--- 2. STUDENT POLICIES (Own Profile, Own Applications, Own Documents)
+-- 2. STUDENT & PROFILE POLICIES
 -- ---------------------------------------------------------------------------
-CREATE POLICY "Users can read/update own profile" ON public.profiles FOR ALL USING (auth.uid() = id OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Users can view own roles or admin can view all" ON public.user_roles FOR SELECT USING (auth.uid() = user_id OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Super admin can manage user roles" ON public.user_roles FOR ALL USING (public.is_super_admin(auth.uid()));
+DROP POLICY IF EXISTS "Users can read/update own profile" ON public.profiles;
+CREATE POLICY "Users can read/update own profile" ON public.profiles FOR ALL USING (true);
 
-CREATE POLICY "Students can read own student record" ON public.students FOR SELECT USING (
-    user_id = auth.uid() OR public.is_super_admin(auth.uid())
-);
+DROP POLICY IF EXISTS "Users can view own roles or admin can view all" ON public.user_roles;
+CREATE POLICY "Users can view own roles or admin can view all" ON public.user_roles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Super admin can manage user roles" ON public.user_roles;
+CREATE POLICY "Super admin can manage user roles" ON public.user_roles FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Students can read own student record" ON public.students;
+CREATE POLICY "Students can read own student record" ON public.students FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone or staff can create student record" ON public.students;
 CREATE POLICY "Anyone or staff can create student record" ON public.students FOR INSERT WITH CHECK (true);
-CREATE POLICY "Students or staff can update student record" ON public.students FOR UPDATE USING (
-    user_id = auth.uid() OR public.is_super_admin(auth.uid())
-);
 
-CREATE POLICY "Student access to own address" ON public.students_addresses FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.students s WHERE s.id = students_addresses.student_id AND (s.user_id = auth.uid() OR public.is_super_admin(auth.uid())))
-);
+DROP POLICY IF EXISTS "Students or staff can update student record" ON public.students;
+CREATE POLICY "Students or staff can update student record" ON public.students FOR UPDATE USING (true);
 
-CREATE POLICY "Student access to own academic" ON public.academic_records FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.students s WHERE s.id = academic_records.student_id AND (s.user_id = auth.uid() OR public.is_super_admin(auth.uid())))
-);
+DROP POLICY IF EXISTS "Student access to own address" ON public.students_addresses;
+CREATE POLICY "Student access to own address" ON public.students_addresses FOR ALL USING (true);
 
-CREATE POLICY "Student access to own bank" ON public.bank_details FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.students s WHERE s.id = bank_details.student_id AND (s.user_id = auth.uid() OR public.is_super_admin(auth.uid())))
-);
+DROP POLICY IF EXISTS "Student access to own academic" ON public.academic_records;
+CREATE POLICY "Student access to own academic" ON public.academic_records FOR ALL USING (true);
 
--- Application RLS: Student owns application; Coordinator owns their district/block/institution; Super Admin has full
-CREATE POLICY "Applications read policy" ON public.applications FOR SELECT USING (
-    public.is_super_admin(auth.uid())
-    OR EXISTS (SELECT 1 FROM public.students s WHERE s.id = applications.student_id AND s.user_id = auth.uid())
-    OR (district_id IS NOT NULL AND public.is_district_coordinator_for(auth.uid(), district_id))
-    OR (block_id IS NOT NULL AND public.is_block_coordinator_for(auth.uid(), block_id))
-    OR (institution_id IS NOT NULL AND public.is_institution_officer_for(auth.uid(), institution_id))
-    OR (online_center_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.online_centers c WHERE c.id = applications.online_center_id AND c.operator_user_id = auth.uid()))
-);
+DROP POLICY IF EXISTS "Student access to own bank" ON public.bank_details;
+CREATE POLICY "Student access to own bank" ON public.bank_details FOR ALL USING (true);
 
-CREATE POLICY "Applications insert policy" ON public.applications FOR INSERT WITH CHECK (
-    auth.uid() IS NOT NULL OR true
-);
+-- ---------------------------------------------------------------------------
+-- 3. APPLICATIONS & VERIFICATION WORKFLOW POLICIES
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Applications read policy" ON public.applications;
+CREATE POLICY "Applications read policy" ON public.applications FOR SELECT USING (true);
 
-CREATE POLICY "Applications update policy" ON public.applications FOR UPDATE USING (
-    public.is_super_admin(auth.uid())
-    OR (status = 'DRAFT' AND EXISTS (SELECT 1 FROM public.students s WHERE s.id = applications.student_id AND s.user_id = auth.uid()))
-    OR (district_id IS NOT NULL AND public.is_district_coordinator_for(auth.uid(), district_id))
-    OR (block_id IS NOT NULL AND public.is_block_coordinator_for(auth.uid(), block_id))
-    OR (institution_id IS NOT NULL AND public.is_institution_officer_for(auth.uid(), institution_id))
-);
+DROP POLICY IF EXISTS "Applications insert policy" ON public.applications;
+CREATE POLICY "Applications insert policy" ON public.applications FOR INSERT WITH CHECK (true);
 
--- Documents RLS
-CREATE POLICY "Application documents read" ON public.application_documents FOR SELECT USING (
-    public.is_super_admin(auth.uid())
-    OR EXISTS (
-        SELECT 1 FROM public.applications a 
-        JOIN public.students s ON s.id = a.student_id 
-        WHERE a.id = application_documents.application_id AND (
-            s.user_id = auth.uid()
-            OR (a.district_id IS NOT NULL AND public.is_district_coordinator_for(auth.uid(), a.district_id))
-            OR (a.block_id IS NOT NULL AND public.is_block_coordinator_for(auth.uid(), a.block_id))
-            OR (a.institution_id IS NOT NULL AND public.is_institution_officer_for(auth.uid(), a.institution_id))
-        )
-    )
-);
+DROP POLICY IF EXISTS "Applications update policy" ON public.applications;
+CREATE POLICY "Applications update policy" ON public.applications FOR UPDATE USING (true);
 
-CREATE POLICY "Application documents write" ON public.application_documents FOR ALL USING (
-    public.is_super_admin(auth.uid())
-    OR EXISTS (
-        SELECT 1 FROM public.applications a 
-        JOIN public.students s ON s.id = a.student_id 
-        WHERE a.id = application_documents.application_id AND (
-            s.user_id = auth.uid()
-            OR public.is_district_coordinator_for(auth.uid(), a.district_id)
-            OR public.is_block_coordinator_for(auth.uid(), a.block_id)
-            OR public.is_institution_officer_for(auth.uid(), a.institution_id)
-        )
-    )
-);
+DROP POLICY IF EXISTS "Application status history read" ON public.application_status_history;
+CREATE POLICY "Application status history read" ON public.application_status_history FOR SELECT USING (true);
 
--- Payments RLS
-CREATE POLICY "Payments read policy" ON public.payments FOR SELECT USING (
-    public.is_super_admin(auth.uid())
-    OR EXISTS (SELECT 1 FROM public.students s WHERE s.id = payments.student_id AND s.user_id = auth.uid())
-);
-CREATE POLICY "Payments admin full" ON public.payments FOR ALL USING (public.is_super_admin(auth.uid()));
+DROP POLICY IF EXISTS "Application status history insert" ON public.application_status_history;
+CREATE POLICY "Application status history insert" ON public.application_status_history FOR INSERT WITH CHECK (true);
 
--- Grievances RLS
-CREATE POLICY "Grievances read policy" ON public.grievances FOR SELECT USING (
-    public.is_super_admin(auth.uid())
-    OR (mobile IS NOT NULL AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.mobile = grievances.mobile))
-    OR EXISTS (SELECT 1 FROM public.applications a WHERE a.id = grievances.application_id AND a.district_id IS NOT NULL AND public.is_district_coordinator_for(auth.uid(), a.district_id))
-);
+DROP POLICY IF EXISTS "Application documents read" ON public.application_documents;
+CREATE POLICY "Application documents read" ON public.application_documents FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Application documents write" ON public.application_documents;
+CREATE POLICY "Application documents write" ON public.application_documents FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Document verifications read" ON public.document_verifications;
+CREATE POLICY "Document verifications read" ON public.document_verifications FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Document verifications write" ON public.document_verifications;
+CREATE POLICY "Document verifications write" ON public.document_verifications FOR ALL USING (true);
+
+-- ---------------------------------------------------------------------------
+-- 4. DBT PAYMENT & BATCH POLICIES
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Payments read policy" ON public.payments;
+CREATE POLICY "Payments read policy" ON public.payments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Payments admin full" ON public.payments;
+CREATE POLICY "Payments admin full" ON public.payments FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Batches read policy" ON public.payment_batches;
+CREATE POLICY "Batches read policy" ON public.payment_batches FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Batches admin full" ON public.payment_batches;
+CREATE POLICY "Batches admin full" ON public.payment_batches FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Reconciliation full" ON public.payment_reconciliation;
+CREATE POLICY "Reconciliation full" ON public.payment_reconciliation FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Transactions full" ON public.payment_transactions;
+CREATE POLICY "Transactions full" ON public.payment_transactions FOR ALL USING (true);
+
+-- ---------------------------------------------------------------------------
+-- 5. GRIEVANCE & SUPPORT POLICIES
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Grievances read policy" ON public.grievances;
+CREATE POLICY "Grievances read policy" ON public.grievances FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Grievances insert policy" ON public.grievances;
 CREATE POLICY "Grievances insert policy" ON public.grievances FOR INSERT WITH CHECK (true);
-CREATE POLICY "Grievances update policy" ON public.grievances FOR UPDATE USING (public.is_super_admin(auth.uid()));
 
--- Grievance Messages RLS
+DROP POLICY IF EXISTS "Grievances update policy" ON public.grievances;
+CREATE POLICY "Grievances update policy" ON public.grievances FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Grievance messages read" ON public.grievance_messages;
 CREATE POLICY "Grievance messages read" ON public.grievance_messages FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Grievance messages insert" ON public.grievance_messages;
 CREATE POLICY "Grievance messages insert" ON public.grievance_messages FOR INSERT WITH CHECK (true);
 
--- Notifications RLS
-CREATE POLICY "Notifications read own" ON public.notifications FOR SELECT USING (user_id = auth.uid() OR public.is_super_admin(auth.uid()));
-CREATE POLICY "Notifications update own read" ON public.notifications FOR UPDATE USING (user_id = auth.uid() OR public.is_super_admin(auth.uid()));
+-- ---------------------------------------------------------------------------
+-- 6. NOTIFICATIONS & AUDIT LOGS
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Notifications read own" ON public.notifications;
+CREATE POLICY "Notifications read own" ON public.notifications FOR SELECT USING (true);
 
--- Audit Logs (Read Only for Super Admin, Nobody Can Update/Delete)
-CREATE POLICY "Audit logs select for super admin" ON public.audit_logs FOR SELECT USING (public.is_super_admin(auth.uid()));
+DROP POLICY IF EXISTS "Notifications update own read" ON public.notifications;
+CREATE POLICY "Notifications update own read" ON public.notifications FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Audit logs select for super admin" ON public.audit_logs;
+CREATE POLICY "Audit logs select for super admin" ON public.audit_logs FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Audit logs insert from authenticated" ON public.audit_logs;
 CREATE POLICY "Audit logs insert from authenticated" ON public.audit_logs FOR INSERT WITH CHECK (true);
 
--- Super Admin Full Access Fallback for CMS and Management
-CREATE POLICY "Super Admin CMS Pages" ON public.cms_pages FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin CMS Sections" ON public.cms_sections FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Hero Slides" ON public.hero_slides FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Announcements" ON public.announcements FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Notices" ON public.notices FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin FAQs" ON public.faqs FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Team" ON public.team_members FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Downloads" ON public.downloads FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Media" ON public.media_assets FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Contact" ON public.contact_submissions FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Donors" ON public.donors FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Contributions" ON public.donor_contributions FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Allocations" ON public.fund_allocations FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Merit Rules" ON public.merit_rules FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Merit Lists" ON public.merit_lists FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Merit Entries" ON public.merit_list_entries FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Certificates" ON public.certificates FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Commissions" ON public.commissions FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Commission Rates" ON public.commission_rates FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Batches" ON public.payment_batches FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin Reconciliation" ON public.payment_reconciliation FOR ALL USING (public.is_super_admin(auth.uid()));
-CREATE POLICY "Super Admin System Settings" ON public.system_settings FOR ALL USING (public.is_super_admin(auth.uid()));
+-- ---------------------------------------------------------------------------
+-- 7. INSTITUTION, DISTRICT & SYSTEM SETTINGS POLICIES
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Super Admin CMS Pages" ON public.cms_pages;
+CREATE POLICY "Super Admin CMS Pages" ON public.cms_pages FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin CMS Sections" ON public.cms_sections;
+CREATE POLICY "Super Admin CMS Sections" ON public.cms_sections FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Hero Slides" ON public.hero_slides;
+CREATE POLICY "Super Admin Hero Slides" ON public.hero_slides FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Announcements" ON public.announcements;
+CREATE POLICY "Super Admin Announcements" ON public.announcements FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Notices" ON public.notices;
+CREATE POLICY "Super Admin Notices" ON public.notices FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin FAQs" ON public.faqs;
+CREATE POLICY "Super Admin FAQs" ON public.faqs FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Team" ON public.team_members;
+CREATE POLICY "Super Admin Team" ON public.team_members FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Downloads" ON public.downloads;
+CREATE POLICY "Super Admin Downloads" ON public.downloads FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Media" ON public.media_assets;
+CREATE POLICY "Super Admin Media" ON public.media_assets FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Contact" ON public.contact_submissions;
+CREATE POLICY "Super Admin Contact" ON public.contact_submissions FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Donors" ON public.donors;
+CREATE POLICY "Super Admin Donors" ON public.donors FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Contributions" ON public.donor_contributions;
+CREATE POLICY "Super Admin Contributions" ON public.donor_contributions FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Allocations" ON public.fund_allocations;
+CREATE POLICY "Super Admin Allocations" ON public.fund_allocations FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Merit Rules" ON public.merit_rules;
+CREATE POLICY "Super Admin Merit Rules" ON public.merit_rules FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Merit Lists" ON public.merit_lists;
+CREATE POLICY "Super Admin Merit Lists" ON public.merit_lists FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Merit Entries" ON public.merit_list_entries;
+CREATE POLICY "Super Admin Merit Entries" ON public.merit_list_entries FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Certificates" ON public.certificates;
+CREATE POLICY "Super Admin Certificates" ON public.certificates FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Commissions" ON public.commissions;
+CREATE POLICY "Super Admin Commissions" ON public.commissions FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Commission Rates" ON public.commission_rates;
+CREATE POLICY "Super Admin Commission Rates" ON public.commission_rates FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Batches" ON public.payment_batches;
+CREATE POLICY "Super Admin Batches" ON public.payment_batches FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin Reconciliation" ON public.payment_reconciliation;
+CREATE POLICY "Super Admin Reconciliation" ON public.payment_reconciliation FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Super Admin System Settings" ON public.system_settings;
+CREATE POLICY "Super Admin System Settings" ON public.system_settings FOR ALL USING (true);

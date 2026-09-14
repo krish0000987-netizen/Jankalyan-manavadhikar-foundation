@@ -496,6 +496,22 @@ export const AdminLogin = ({ defaultRole = null }) => {
               </button>
             </form>
 
+            {/* Registration Helper for Students */}
+            {activeRole === 'STUDENT' && (
+              <div style={{ marginTop: '1.25rem', textAlign: 'center', padding: '0.85rem', backgroundColor: '#EFF6FF', borderRadius: '10px', border: '1px solid #BFDBFE' }}>
+                <span style={{ fontSize: '0.82rem', color: '#1E40AF', display: 'block', marginBottom: '0.35rem' }}>
+                  {lang === 'hi' ? 'नया छात्रवृत्ति आवेदन भरना चाहते हैं?' : 'New Applicant? Register & Submit Details'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate('/apply')}
+                  style={{ fontWeight: 800, color: '#1D4ED8', fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  {lang === 'hi' ? '→ नया छात्रवृत्ति आवेदन प्रारंभ करें (Apply Now)' : '→ Start New Scholarship Application (Apply Now)'}
+                </button>
+              </div>
+            )}
+
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
               <button
                 type="button"

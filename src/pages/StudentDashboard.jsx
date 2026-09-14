@@ -19,7 +19,10 @@ import {
   Search,
   Award,
   ExternalLink,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  Upload,
+  CheckCircle
 } from 'lucide-react';
 
 export const StudentDashboard = () => {
@@ -182,6 +185,48 @@ export const StudentDashboard = () => {
           {/* Left Column: Application Details & Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             
+            {/* Phase 2 Alert: Correction Requested */}
+            {student.status === 'Correction Requested' && (
+              <div style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                <AlertTriangle size={24} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#92400E' }}>
+                    {lang === 'hi' ? 'दस्तावेज़ सुधार आवश्यक (Correction Requested)' : 'Document Correction Requested by Nodal Officer'}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#78350F', marginTop: '0.35rem' }}>
+                    <strong>Officer Remarks:</strong> {student.correctionRemarks || student.rejectionReason || 'Uploaded institutional bonafide/marksheet is blurry or mismatched. Please re-upload clear stamped copy.'}
+                  </div>
+                  <div style={{ marginTop: '0.85rem' }}>
+                    <button className="btn btn-sm" style={{ backgroundColor: '#D97706', color: '#FFFFFF', borderColor: '#D97706' }} onClick={() => navigate('/documents')}>
+                      <Upload size={14} />
+                      <span>{lang === 'hi' ? 'दस्तावेज़ पुनः अपलोड करें' : 'Re-upload Corrected Documents'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Phase 4 Banner: Scholarship Released & UTR Confirmation */}
+            {student.status === 'Scholarship Released' && (
+              <div style={{ backgroundColor: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <CheckCircle size={28} color="#16A34A" />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#166534' }}>
+                      {lang === 'hi' ? 'छात्रवृत्ति राशि बैंक खाते में जारी (DBT Payout Complete)' : 'Scholarship Grant Disbursed via Direct Benefit Transfer!'}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#14532D', marginTop: '2px' }}>
+                      Banking UTR: <strong style={{ fontFamily: 'monospace' }}>{student.utrNumber}</strong> • Amount: <strong>{student.disbursedAmount}</strong>
+                    </div>
+                  </div>
+                </div>
+                <button className="btn btn-sm" style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A' }} onClick={() => navigate(`/certificate/${student.id}`)}>
+                  <Award size={14} />
+                  <span>{lang === 'hi' ? 'प्रमाण पत्र डाउनलोड करें' : 'Download Award Certificate'}</span>
+                </button>
+              </div>
+            )}
+
             {/* Live Status Card */}
             <div className="card" style={{ borderTop: '4px solid #1E40AF' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>

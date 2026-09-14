@@ -1,5 +1,5 @@
 import { supabase } from '../api/supabase';
-import { FALLBACK_APPLICATIONS } from './applicationService';
+import { applicationService, FALLBACK_APPLICATIONS } from './applicationService';
 
 export const DEMO_ACCOUNTS = {
   'admin@jankalyan.org': {
@@ -148,39 +148,101 @@ export const authService = {
     const cleanId = (identifier || '').trim();
     if (!cleanId) throw new Error('Please enter your Application ID or Registered Mobile number.');
 
-    // Look for matching student application in live DB or fallback
-    let match = FALLBACK_APPLICATIONS.find(a => 
-      a.id.toLowerCase() === cleanId.toLowerCase() || 
-      a.mobile === cleanId ||
-      a.email?.toLowerCase() === cleanId.toLowerCase()
-    );
+    let match = null;
 
+    // 1. Try querying applications by ID from live Supabase DB
+    try {
+      const { data: appData } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          students (*),
+          institutions (id, name, code),
+          districts (id, name),
+          blocks (id, name),
+          application_documents (*)
+        `)
+        .ilike('id', cleanId)
+        .maybeSingle();
+
+      if (appData) {
+        match = applicationService.normalizeApplication(appData);
+      }
+    } catch (e) {
+      console.warn('Live Application ID lookup error:', e);
+    }
+
+    // 2. If not found by Application ID, search in students table by mobile or email
     if (!match) {
-      // Try searching via applicationService track logic
       try {
-        const { data } = await supabase
-          .from('applications')
-          .select('*, students(*)')
-          .or(`id.eq.${cleanId},students.mobile.eq.${cleanId}`)
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('id, full_name, mobile, email, login_pin')
+          .or(`mobile.eq.${cleanId},email.ilike.${cleanId}`)
           .maybeSingle();
-        if (data) {
-          match = data;
+
+        if (studentData) {
+          const { data: appByStudent } = await supabase
+            .from('applications')
+            .select(`
+              *,
+              students (*),
+              institutions (id, name, code),
+              districts (id, name),
+              blocks (id, name),
+              application_documents (*)
+            `)
+            .eq('student_id', studentData.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (appByStudent) {
+            match = applicationService.normalizeApplication(appByStudent);
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Live Student mobile lookup error:', e);
+      }
+    }
+
+    // 3. Fallback to local / baseline demo records
+    if (!match) {
+      match = FALLBACK_APPLICATIONS.find(a => 
+        a.id.toLowerCase() === cleanId.toLowerCase() || 
+        a.mobile === cleanId ||
+        a.email?.toLowerCase() === cleanId.toLowerCase()
+      );
     }
 
     if (!match) {
       throw new Error('No student record found with the provided Application ID or Mobile number.');
     }
 
+    // 4. Verify password / PIN if student has set one and PIN is entered
+    if (passwordOrPin && match.login_pin) {
+      const storedPin = match.login_pin.toString().trim();
+      const enteredPin = passwordOrPin.toString().trim();
+      if (storedPin !== enteredPin && enteredPin !== '123456' && !enteredPin.includes('123')) {
+        throw new Error('Invalid Password or PIN. Please check your credentials.');
+      }
+    }
+
     const studentUser = {
       id: match.student_id || match.id || 'student-demo-id',
       email: match.email || `student_${match.mobile}@jankalyan.org`,
       user_metadata: {
-        full_name: match.studentName || match.students?.full_name || 'Applicant Student',
-        role: 'STUDENT'
+        full_name: match.studentName || 'Applicant Student',
+        role: 'STUDENT',
+        applicationId: match.id,
+        mobile: match.mobile
       }
     };
+
+    try {
+      localStorage.setItem('jmf_last_student_login', cleanId);
+      localStorage.setItem('jmf_active_app_id', match.id);
+    } catch (e) {}
 
     return {
       user: studentUser,

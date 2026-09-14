@@ -456,7 +456,7 @@ export const applicationService = {
   },
 
   /**
-   * Submit new multi-step scholarship application with atomic creation
+   * Submit new multi-step scholarship application with atomic creation & credential persistence
    */
   async submitApplication(formData, studentUserId = null) {
     // 1. Get active scheme
@@ -486,31 +486,120 @@ export const applicationService = {
       const { data: inst } = await supabase
         .from('institutions')
         .select('id')
-        .ilike('name', formData.institutionName)
+        .ilike('name', formData.institutionName.trim())
         .maybeSingle();
-      institutionId = inst?.id || null;
+
+      if (inst?.id) {
+        institutionId = inst.id;
+      } else {
+        // Register new institution automatically
+        const instCode = `INST-${(formData.district || 'MP').substring(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+        const { data: newInst } = await supabase
+          .from('institutions')
+          .insert({
+            name: formData.institutionName.trim(),
+            category: formData.classCourse?.toLowerCase().includes('school') || formData.classCourse?.toLowerCase().includes('10') || formData.classCourse?.toLowerCase().includes('12') ? 'School' : 'College',
+            code: instCode,
+            district_id: dist?.id,
+            block_id: blk?.id,
+            address: `${formData.district || 'Madhya Pradesh'}, India`
+          })
+          .select('id')
+          .maybeSingle();
+        institutionId = newInst?.id || null;
+      }
     }
 
-    // 4. Create or update Student record
-    const { data: student, error: studentError } = await supabase
-      .from('students')
-      .insert({
-        user_id: studentUserId,
-        full_name: formData.fullName || 'Student Applicant',
-        father_name: formData.fatherName || 'Guardian',
-        mother_name: formData.motherName || '',
-        dob: formData.dob || '2006-01-01',
-        gender: formData.gender || 'Male',
-        mobile: formData.mobile,
-        email: formData.email,
-        category: formData.category || 'General',
-        aadhaar_masked: formData.aadhaar ? `XXXX-XXXX-${formData.aadhaar.slice(-4)}` : null,
-        annual_income: formData.annualIncome ? parseFloat(formData.annualIncome.replace(/[^0-9.]/g, '')) : null
-      })
-      .select()
-      .single();
+    // 4. Create or update Student record with Login PIN & Credentials
+    let student = null;
+    const studentPassword = formData.password || '123456';
+    const studentEmail = formData.email || `student_${formData.mobile}@jankalyan.org`;
 
-    if (studentError) throw studentError;
+    if (formData.mobile) {
+      const { data: existingStudent } = await supabase
+        .from('students')
+        .select('*')
+        .eq('mobile', formData.mobile)
+        .maybeSingle();
+
+      if (existingStudent) {
+        student = existingStudent;
+        await supabase
+          .from('students')
+          .update({
+            user_id: studentUserId || student.user_id,
+            full_name: formData.fullName || student.full_name,
+            father_name: formData.fatherName || student.father_name,
+            mother_name: formData.motherName || student.mother_name,
+            dob: formData.dob || student.dob,
+            gender: formData.gender || student.gender,
+            email: studentEmail,
+            category: formData.category || student.category,
+            annual_income: formData.annualIncome ? parseFloat(formData.annualIncome.toString().replace(/[^0-9.]/g, '')) : student.annual_income,
+            login_pin: studentPassword,
+            samagra_id: formData.samagraId || student.samagra_id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', student.id);
+      }
+    }
+
+    if (!student) {
+      const { data: newStudent, error: studentError } = await supabase
+        .from('students')
+        .insert({
+          user_id: studentUserId,
+          full_name: formData.fullName || 'Student Applicant',
+          father_name: formData.fatherName || 'Guardian',
+          mother_name: formData.motherName || '',
+          dob: formData.dob || '2006-01-01',
+          gender: formData.gender || 'Male',
+          mobile: formData.mobile,
+          email: studentEmail,
+          category: formData.category || 'General',
+          aadhaar_masked: formData.aadhaar ? `XXXX-XXXX-${formData.aadhaar.slice(-4)}` : null,
+          annual_income: formData.annualIncome ? parseFloat(formData.annualIncome.toString().replace(/[^0-9.]/g, '')) : null,
+          login_pin: studentPassword,
+          samagra_id: formData.samagraId || null
+        })
+        .select()
+        .single();
+
+      if (studentError) throw studentError;
+      student = newStudent;
+    }
+
+    // 4b. Also register / link user in auth and profiles if possible
+    try {
+      const { data: signUpData } = await supabase.auth.signUp({
+        email: studentEmail,
+        password: studentPassword,
+        options: {
+          data: {
+            full_name: formData.fullName || 'Student Applicant',
+            mobile: formData.mobile,
+            role: 'STUDENT'
+          }
+        }
+      });
+      if (signUpData?.user?.id) {
+        await supabase.from('profiles').upsert({
+          id: signUpData.user.id,
+          email: studentEmail,
+          mobile: formData.mobile,
+          full_name: formData.fullName || 'Student Applicant',
+          is_active: true
+        });
+        await supabase.from('user_roles').upsert({
+          user_id: signUpData.user.id,
+          role_id: 'STUDENT'
+        });
+        await supabase.from('students').update({ user_id: signUpData.user.id }).eq('id', student.id);
+      }
+    } catch (authSilentErr) {
+      // Non-critical: auth user signup might fail due to rate-limiting or already existing, student table holds credentials
+      console.warn('Student auth sign-up note:', authSilentErr?.message);
+    }
 
     // 5. Insert Address
     await supabase.from('students_addresses').insert({
@@ -563,6 +652,12 @@ export const applicationService = {
       .single();
 
     if (appError) throw appError;
+
+    // Save immediate local reference for instant dashboard access
+    try {
+      localStorage.setItem('jmf_last_student_login', formData.mobile || newApp.id);
+      localStorage.setItem('jmf_active_app_id', newApp.id);
+    } catch (e) {}
 
     // 9. Upload Documents if files provided
     const docFiles = [
@@ -673,15 +768,18 @@ export const applicationService = {
       blockId: app.block_id,
       institution: app.institutions?.name || 'Educational Institution',
       institutionId: app.institution_id,
-      course: 'Academic Course',
+      course: app.academic_records?.[0]?.class_course || student.academic_records?.[0]?.class_course || app.course || '12th Standard / Degree',
+      bankName: app.bank_details?.[0]?.bank_name || student.bank_details?.[0]?.bank_name || 'State Bank of India',
+      accountNumber: app.bank_details?.[0]?.account_number_masked || student.bank_details?.[0]?.account_number_masked || 'XXXX-XXXX-1234',
+      ifsc: app.bank_details?.[0]?.ifsc_code || student.bank_details?.[0]?.ifsc_code || 'SBIN0001234',
       status: this.formatStatus(app.status),
       rawStatus: app.status,
-      stage: app.stage || 2,
+      stage: app.stage || (app.status === 'SCHOLARSHIP_RELEASED' ? 5 : app.status === 'APPROVED' ? 4 : app.status === 'INSTITUTION_RECOMMENDED' ? 3 : 2),
       submissionDate: app.submission_date || '-',
       approvalDate: app.approval_date || '-',
       paymentDate: app.payment_date || '-',
       utrNumber: app.utr_number || '-',
-      disbursedAmount: app.disbursed_amount ? `₹${app.disbursed_amount.toLocaleString('en-IN')}` : '[Scholarship Amount]',
+      disbursedAmount: app.disbursed_amount ? `₹${app.disbursed_amount.toLocaleString('en-IN')}` : '₹12,000',
       rejectionReason: app.rejection_reason,
       correctionRemarks: app.correction_remarks,
       verificationToken: app.verification_token,
@@ -694,6 +792,7 @@ export const applicationService = {
     switch (status) {
       case 'SCHOLARSHIP_RELEASED': return 'Scholarship Released';
       case 'APPROVED': return 'Approved';
+      case 'INSTITUTION_RECOMMENDED': return 'Bonafide Attested';
       case 'REJECTED': return 'Rejected';
       case 'CORRECTION_REQUESTED': return 'Correction Requested';
       case 'UNDER_VERIFICATION': return 'Under Verification';

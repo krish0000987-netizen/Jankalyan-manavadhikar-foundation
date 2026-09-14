@@ -420,9 +420,9 @@ export const AppProvider = ({ children }) => {
   // Update Application Status (Verification actions)
   const updateApplicationStatus = async (appId, newStatus, remarks = '', utr = '') => {
     try {
-      await scrutinyService.updateApplicationStatus(appId, newStatus, remarks, utr, authUser);
+      await scrutinyService.updateApplicationStatus(appId, newStatus, remarks, utr, { ...authUser, role: authRole, jurisdiction });
       // Refresh local applications state
-      await loadApplications();
+      await loadApplications(authRole, jurisdiction);
       loadLiveCounters();
     } catch (err) {
       console.warn('Scrutiny update fallback to state:', err);

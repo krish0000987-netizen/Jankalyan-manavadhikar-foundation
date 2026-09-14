@@ -1550,7 +1550,7 @@ export const Admin = () => {
             loadApplications();
             setActiveModalApp(null);
           }}
-          currentUser={authUser}
+          currentUser={{ ...authUser, role: authRole, jurisdiction }}
         />
       )}
 
