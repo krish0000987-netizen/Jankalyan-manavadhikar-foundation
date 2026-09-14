@@ -1,5 +1,5 @@
-import { supabase } from '../api/supabase';
-import { applicationService, FALLBACK_APPLICATIONS } from './applicationService';
+import { supabase } from '../api/supabase.js';
+import { applicationService, FALLBACK_APPLICATIONS } from './applicationService.js';
 
 export const DEMO_ACCOUNTS = {
   'admin@jankalyan.org': {
@@ -250,6 +250,214 @@ export const authService = {
       roles: ['STUDENT'],
       role: 'STUDENT',
       studentApp: match,
+      jurisdiction: {}
+    };
+  },
+
+  /**
+   * Create New Student Applicant Record & Instant Login Session
+   */
+  async createStudentApplicant({
+    fullName,
+    mobile,
+    email = '',
+    password = '123456',
+    district = 'Jabalpur',
+    districtId = 'a0000000-0000-0000-0000-000000000001',
+    block = 'Patan',
+    blockId = 'b0000000-0000-0000-0000-000000000001',
+    institutionName = 'Govt. Model Higher Secondary School',
+    institutionId = 'c0000000-0000-0000-0000-000000000001',
+    classCourse = 'Class 12th',
+    slab = 'slab-3',
+    scholarshipAmount = 12000
+  }) {
+    const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+    if (!cleanMobile || cleanMobile.length < 10) {
+      throw new Error('Please enter a valid 10-digit mobile number.');
+    }
+    const cleanName = (fullName || '').trim() || 'Student Applicant';
+    const cleanPassword = (password || '123456').trim();
+    const studentEmail = (email || '').trim() || `student_${cleanMobile}@jankalyan.org`;
+
+    // 1. Check if student already exists in DB
+    let studentRecord = null;
+    try {
+      const { data: existing } = await supabase
+        .from('students')
+        .select('*')
+        .eq('mobile', cleanMobile)
+        .maybeSingle();
+
+      if (existing) {
+        studentRecord = existing;
+        await supabase
+          .from('students')
+          .update({
+            full_name: cleanName,
+            login_pin: cleanPassword,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+      }
+    } catch (e) {
+      console.warn('Check existing student error:', e);
+    }
+
+    // 2. Insert new student if not existing
+    if (!studentRecord) {
+      try {
+        const { data: newStudent, error: stErr } = await supabase
+          .from('students')
+          .insert({
+            full_name: cleanName,
+            father_name: 'Parent / Guardian',
+            mother_name: '',
+            dob: '2006-01-01',
+            gender: 'Male',
+            mobile: cleanMobile,
+            email: studentEmail,
+            category: 'General',
+            login_pin: cleanPassword
+          })
+          .select()
+          .single();
+
+        if (!stErr && newStudent) {
+          studentRecord = newStudent;
+        }
+      } catch (err) {
+        console.warn('Insert student DB error:', err);
+      }
+    }
+
+    // Fallback in-memory student record if offline or DB error
+    if (!studentRecord) {
+      studentRecord = {
+        id: `stu-${Date.now()}`,
+        full_name: cleanName,
+        mobile: cleanMobile,
+        email: studentEmail,
+        login_pin: cleanPassword
+      };
+    }
+
+    // 3. Create or find initial application
+    let appRecord = null;
+    try {
+      // Check if application already exists for this student
+      const { data: existingApp } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          students (*),
+          institutions (*),
+          districts (*),
+          blocks (*),
+          application_documents (*)
+        `)
+        .eq('student_id', studentRecord.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingApp) {
+        appRecord = applicationService.normalizeApplication(existingApp);
+      } else {
+        // Create initial application
+        const { data: newApp, error: appErr } = await supabase
+          .from('applications')
+          .insert({
+            student_id: studentRecord.id,
+            scheme_id: 'd0000000-0000-0000-0000-000000000001',
+            institution_id: institutionId,
+            district_id: districtId,
+            block_id: blockId,
+            status: 'UNDER_VERIFICATION',
+            stage: 1,
+            submission_date: new Date().toISOString().split('T')[0],
+            disbursed_amount: scholarshipAmount || 12000.00
+          })
+          .select()
+          .single();
+
+        if (!appErr && newApp) {
+          // Add academic record
+          try {
+            await supabase.from('academic_records').insert({
+              student_id: studentRecord.id,
+              institution_id: institutionId,
+              institution_name: institutionName,
+              class_course: classCourse,
+              prev_percentage: 75.00
+            });
+          } catch (e) {}
+
+          const fullApp = await applicationService.getApplicationById(newApp.id);
+          appRecord = fullApp || applicationService.normalizeApplication(newApp);
+        }
+      }
+    } catch (appErr) {
+      console.warn('Application creation note:', appErr);
+    }
+
+    // Fallback application object if offline
+    if (!appRecord) {
+      const fallbackId = `JMF-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      appRecord = {
+        id: fallbackId,
+        studentName: cleanName,
+        fatherName: 'Parent / Guardian',
+        mobile: cleanMobile,
+        email: studentEmail,
+        dob: '2006-01-01',
+        gender: 'Male',
+        category: 'General',
+        annualIncome: '₹1,20,000',
+        district: district,
+        districtId: districtId,
+        block: block,
+        blockId: blockId,
+        institution: institutionName,
+        institutionId: institutionId,
+        course: classCourse,
+        status: 'Under Verification',
+        rawStatus: 'UNDER_VERIFICATION',
+        stage: 1,
+        submissionDate: new Date().toISOString().split('T')[0],
+        approvalDate: '-',
+        paymentDate: '-',
+        utrNumber: '-',
+        disbursedAmount: `₹${(scholarshipAmount || 12000).toLocaleString('en-IN')}`,
+        login_pin: cleanPassword,
+        documents: {},
+        history: []
+      };
+    }
+
+    try {
+      localStorage.setItem('jmf_last_student_login', cleanMobile);
+      localStorage.setItem('jmf_active_app_id', appRecord.id);
+    } catch (e) {}
+
+    const studentUser = {
+      id: studentRecord.id,
+      email: studentEmail,
+      user_metadata: {
+        full_name: cleanName,
+        role: 'STUDENT',
+        applicationId: appRecord.id,
+        mobile: cleanMobile
+      }
+    };
+
+    return {
+      user: studentUser,
+      session: { access_token: 'student-session-' + Date.now() },
+      roles: ['STUDENT'],
+      role: 'STUDENT',
+      studentApp: appRecord,
+      applicationId: appRecord.id,
       jurisdiction: {}
     };
   },

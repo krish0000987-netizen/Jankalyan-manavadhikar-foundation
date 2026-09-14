@@ -566,6 +566,22 @@ export const AppProvider = ({ children }) => {
     return result;
   };
 
+  // Create New Student Applicant & Auto-Login
+  const handleCreateStudentApplicant = async (applicantData) => {
+    const result = await authService.createStudentApplicant(applicantData);
+    setAuthUser(result.user);
+    setAuthRole('STUDENT');
+    setJurisdiction({});
+    if (result.studentApp) {
+      setActiveStudentApp(result.studentApp);
+      setApplications(prev => [result.studentApp, ...prev]);
+    }
+    localStorage.setItem('jmf_role', 'STUDENT');
+    localStorage.removeItem('jmf_jurisdiction');
+    await loadLiveCounters();
+    return result;
+  };
+
   // Explicit Role & Jurisdiction Switcher (For testing or demo selection)
   const switchRole = async (newRole, newJurisdiction = {}) => {
     setAuthRole(newRole);
@@ -617,6 +633,7 @@ export const AppProvider = ({ children }) => {
       setJurisdiction,
       login: handleLogin,
       loginStudent: handleStudentLogin,
+      createStudentApplicant: handleCreateStudentApplicant,
       logout: handleLogout,
       liveCounters
     }}>

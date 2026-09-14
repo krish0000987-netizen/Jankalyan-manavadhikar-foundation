@@ -570,13 +570,20 @@ export const applicationService = {
    * Submit new multi-step scholarship application with atomic creation & credential persistence
    */
   async submitApplication(formData, studentUserId = null) {
-    // 1. Get active scheme
-    const { data: scheme } = await supabase
-      .from('scholarship_schemes')
-      .select('id, grant_amount')
-      .eq('is_active', true)
-      .limit(1)
-      .single();
+    // 1. Get active scheme with reliable fallback
+    let schemeId = 'd0000000-0000-0000-0000-000000000001';
+    let schemeGrant = 12000.00;
+    try {
+      const { data: scheme } = await supabase
+        .from('scholarship_schemes')
+        .select('id, grant_amount')
+        .limit(1)
+        .maybeSingle();
+      if (scheme?.id) {
+        schemeId = scheme.id;
+        if (scheme.grant_amount) schemeGrant = scheme.grant_amount;
+      }
+    } catch (e) {}
 
     // 2. Find district and block IDs
     let distId = null;
@@ -799,14 +806,14 @@ export const applicationService = {
       .from('applications')
       .insert({
         student_id: student.id,
-        scheme_id: scheme?.id,
+        scheme_id: schemeId,
         institution_id: institutionId,
         district_id: distId,
         block_id: blkId,
         status: 'UNDER_VERIFICATION',
         stage: 2,
         submission_date: new Date().toISOString().split('T')[0],
-        disbursed_amount: formData.scholarshipAmount ? parseFloat(formData.scholarshipAmount) : (scheme?.grant_amount || 12000.00)
+        disbursed_amount: formData.scholarshipAmount ? parseFloat(formData.scholarshipAmount) : schemeGrant
       })
       .select()
       .single();

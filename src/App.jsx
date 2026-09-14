@@ -65,6 +65,7 @@ const MainRouter = () => {
       case '/login':
       case '/portal-login':
       case '/student-login':
+      case '/student-register':
       case '/school-login':
       case '/college-login':
       case '/institution-login':

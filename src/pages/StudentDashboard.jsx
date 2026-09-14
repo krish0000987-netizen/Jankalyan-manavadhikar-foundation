@@ -126,15 +126,20 @@ export const StudentDashboard = () => {
               </button>
             </form>
 
-            <div style={{ marginTop: '2rem', borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-              <button className="btn btn-outline btn-sm" onClick={() => {
-                setSearchQuery('JMF-2026-108234');
-              }}>
-                Try Demo: JMF-2026-108234
-              </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => navigate('/apply')}>
-                New Application
-              </button>
+            <div style={{ marginTop: '2rem', borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button className="btn btn-outline btn-sm" onClick={() => {
+                  setSearchQuery('JMF-2026-108234');
+                }}>
+                  Try Demo: JMF-2026-108234
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={() => navigate('/student-register')} style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700 }}>
+                  ✨ {lang === 'hi' ? 'नया आवेदक खाता बनाएं' : 'Create New Applicant'}
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/apply')}>
+                  {lang === 'hi' ? 'आवेदन फॉर्म भरें' : 'Fill Application Form'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
