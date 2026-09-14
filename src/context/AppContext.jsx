@@ -302,8 +302,30 @@ export const AppProvider = ({ children }) => {
     }
   });
 
-  // Active student application for tracking/dashboard
-  const [activeStudentApp, setActiveStudentApp] = useState(FALLBACK_APPLICATIONS[0]);
+  // Active student application for tracking/dashboard (restored from localStorage, null by default)
+  const [activeStudentApp, setActiveStudentApp] = useState(() => {
+    try {
+      const saved = localStorage.getItem('jmf_active_student_app');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  // Automatically keep localStorage in sync whenever activeStudentApp changes
+  useEffect(() => {
+    try {
+      if (activeStudentApp) {
+        localStorage.setItem('jmf_active_student_app', JSON.stringify(activeStudentApp));
+        if (activeStudentApp.id) {
+          localStorage.setItem('jmf_active_app_id', activeStudentApp.id);
+        }
+      } else {
+        localStorage.removeItem('jmf_active_student_app');
+        localStorage.removeItem('jmf_active_app_id');
+      }
+    } catch (e) {}
+  }, [activeStudentApp]);
 
   // Live Public Counters directly aggregated from Supabase
   const [liveCounters, setLiveCounters] = useState({
@@ -358,15 +380,12 @@ export const AppProvider = ({ children }) => {
       const data = await applicationService.getApplications({}, role, jur);
       if (data && data.length > 0) {
         setApplications(data);
-        if (!activeStudentApp) {
-          setActiveStudentApp(data[0]);
-        }
       }
       setAppsLoaded(true);
     } catch (err) {
       console.warn('Error loading Supabase applications:', err);
     }
-  }, [authRole, jurisdiction, activeStudentApp]);
+  }, [authRole, jurisdiction]);
 
   // Load Live Counters
   const loadLiveCounters = useCallback(async () => {
@@ -406,8 +425,67 @@ export const AppProvider = ({ children }) => {
           setAuthRole(current.role || 'SUPER_ADMIN');
           setJurisdiction(current.jurisdiction || {});
           localStorage.setItem('jmf_role', current.role || 'SUPER_ADMIN');
+
+          // If student is logged in, refresh active student record with live DB data
+          if (current.role === 'STUDENT') {
+            const appId = current.user?.user_metadata?.applicationId || localStorage.getItem('jmf_active_app_id');
+            const mobile = current.user?.user_metadata?.mobile || localStorage.getItem('jmf_last_student_login');
+            try {
+              let liveApp = null;
+              if (appId) {
+                liveApp = await applicationService.getApplicationById(appId);
+              } else if (mobile) {
+                const res = await authService.signInStudent(mobile);
+                liveApp = res?.studentApp;
+              }
+              if (liveApp) {
+                setActiveStudentApp(liveApp);
+                localStorage.setItem('jmf_active_student_app', JSON.stringify(liveApp));
+              } else if (current.studentApp) {
+                setActiveStudentApp(current.studentApp);
+              }
+            } catch (err) {
+              if (current.studentApp) setActiveStudentApp(current.studentApp);
+            }
+          }
+
           await loadApplications(current.role || 'SUPER_ADMIN', current.jurisdiction || {});
         } else {
+          // Check if student was previously logged in via localStorage keys
+          const savedRole = localStorage.getItem('jmf_role');
+          const savedAppId = localStorage.getItem('jmf_active_app_id');
+          const savedMobile = localStorage.getItem('jmf_last_student_login');
+          if (savedRole === 'STUDENT' && (savedAppId || savedMobile)) {
+            try {
+              let restoredApp = null;
+              if (savedAppId) {
+                restoredApp = await applicationService.getApplicationById(savedAppId);
+              } else if (savedMobile) {
+                const res = await authService.signInStudent(savedMobile);
+                restoredApp = res?.studentApp;
+              }
+              if (restoredApp) {
+                setActiveStudentApp(restoredApp);
+                localStorage.setItem('jmf_active_student_app', JSON.stringify(restoredApp));
+                const studentUser = {
+                  id: restoredApp.student_id || restoredApp.id,
+                  email: restoredApp.email,
+                  user_metadata: {
+                    full_name: restoredApp.studentName,
+                    role: 'STUDENT',
+                    applicationId: restoredApp.id,
+                    mobile: restoredApp.mobile
+                  }
+                };
+                setAuthUser(studentUser);
+                setAuthRole('STUDENT');
+                setJurisdiction({});
+                localStorage.setItem('jmf_student_user', JSON.stringify(studentUser));
+              }
+            } catch (e) {
+              console.warn('Student restore from storage error:', e);
+            }
+          }
           await loadApplications();
         }
       } catch (err) {
@@ -466,8 +544,27 @@ export const AppProvider = ({ children }) => {
       const record = await applicationService.submitApplication(formData, authUser?.id);
       setApplications(prev => [record, ...prev]);
       setActiveStudentApp(record);
+      const studentUser = {
+        id: record.student_id || record.id,
+        email: record.email,
+        user_metadata: {
+          full_name: record.studentName,
+          role: 'STUDENT',
+          applicationId: record.id,
+          mobile: record.mobile
+        }
+      };
+      setAuthUser(studentUser);
+      setAuthRole('STUDENT');
+      setJurisdiction({});
+      localStorage.setItem('jmf_role', 'STUDENT');
+      localStorage.removeItem('jmf_jurisdiction');
+      localStorage.setItem('jmf_active_student_app', JSON.stringify(record));
+      localStorage.setItem('jmf_active_app_id', record.id);
+      localStorage.setItem('jmf_last_student_login', record.mobile || record.id);
+      localStorage.setItem('jmf_student_user', JSON.stringify(studentUser));
       await loadLiveCounters();
-      await loadApplications(authRole, jurisdiction);
+      await loadApplications('STUDENT', {});
       return record;
     } catch (err) {
       console.error('Error submitting application to Supabase:', err);
@@ -560,6 +657,10 @@ export const AppProvider = ({ children }) => {
     setJurisdiction({});
     if (result.studentApp) {
       setActiveStudentApp(result.studentApp);
+      localStorage.setItem('jmf_active_student_app', JSON.stringify(result.studentApp));
+      localStorage.setItem('jmf_active_app_id', result.studentApp.id);
+      localStorage.setItem('jmf_last_student_login', result.studentApp.mobile || result.studentApp.id);
+      localStorage.setItem('jmf_student_user', JSON.stringify(result.user));
     }
     localStorage.setItem('jmf_role', 'STUDENT');
     localStorage.removeItem('jmf_jurisdiction');
@@ -575,6 +676,10 @@ export const AppProvider = ({ children }) => {
     if (result.studentApp) {
       setActiveStudentApp(result.studentApp);
       setApplications(prev => [result.studentApp, ...prev]);
+      localStorage.setItem('jmf_active_student_app', JSON.stringify(result.studentApp));
+      localStorage.setItem('jmf_active_app_id', result.studentApp.id);
+      localStorage.setItem('jmf_last_student_login', result.studentApp.mobile || result.studentApp.id);
+      localStorage.setItem('jmf_student_user', JSON.stringify(result.user));
     }
     localStorage.setItem('jmf_role', 'STUDENT');
     localStorage.removeItem('jmf_jurisdiction');
@@ -597,8 +702,13 @@ export const AppProvider = ({ children }) => {
     setAuthUser(null);
     setAuthRole('guest');
     setJurisdiction({});
+    setActiveStudentApp(null);
     localStorage.setItem('jmf_role', 'guest');
     localStorage.removeItem('jmf_jurisdiction');
+    localStorage.removeItem('jmf_active_student_app');
+    localStorage.removeItem('jmf_active_app_id');
+    localStorage.removeItem('jmf_student_user');
+    localStorage.removeItem('jmf_last_student_login');
     navigate('/');
   };
 

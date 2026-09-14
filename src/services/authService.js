@@ -240,8 +240,11 @@ export const authService = {
     };
 
     try {
+      localStorage.setItem('jmf_role', 'STUDENT');
       localStorage.setItem('jmf_last_student_login', cleanId);
       localStorage.setItem('jmf_active_app_id', match.id);
+      localStorage.setItem('jmf_active_student_app', JSON.stringify(match));
+      localStorage.setItem('jmf_student_user', JSON.stringify(studentUser));
     } catch (e) {}
 
     return {
@@ -435,11 +438,6 @@ export const authService = {
       };
     }
 
-    try {
-      localStorage.setItem('jmf_last_student_login', cleanMobile);
-      localStorage.setItem('jmf_active_app_id', appRecord.id);
-    } catch (e) {}
-
     const studentUser = {
       id: studentRecord.id,
       email: studentEmail,
@@ -450,6 +448,14 @@ export const authService = {
         mobile: cleanMobile
       }
     };
+
+    try {
+      localStorage.setItem('jmf_role', 'STUDENT');
+      localStorage.setItem('jmf_last_student_login', cleanMobile);
+      localStorage.setItem('jmf_active_app_id', appRecord.id);
+      localStorage.setItem('jmf_active_student_app', JSON.stringify(appRecord));
+      localStorage.setItem('jmf_student_user', JSON.stringify(studentUser));
+    } catch (e) {}
 
     return {
       user: studentUser,
@@ -572,7 +578,31 @@ export const authService = {
    */
   async getCurrentUser() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return null;
+    if (!session?.user) {
+      // Check for saved Student session in localStorage
+      try {
+        const savedRole = localStorage.getItem('jmf_role');
+        if (savedRole === 'STUDENT') {
+          const savedUser = localStorage.getItem('jmf_student_user');
+          const savedApp = localStorage.getItem('jmf_active_student_app');
+          if (savedUser) {
+            const parsedUser = JSON.parse(savedUser);
+            const parsedApp = savedApp ? JSON.parse(savedApp) : null;
+            return {
+              user: parsedUser,
+              session: { access_token: 'student-session' },
+              role: 'STUDENT',
+              roles: ['STUDENT'],
+              studentApp: parsedApp,
+              jurisdiction: {}
+            };
+          }
+        }
+      } catch (e) {
+        console.warn('Student session rehydration error:', e);
+      }
+      return null;
+    }
     const roleInfo = await this.getUserProfileAndRole(session.user.id);
     return {
       user: session.user,
@@ -585,7 +615,17 @@ export const authService = {
    * Sign out
    */
   async signOut() {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+    try {
+      localStorage.removeItem('jmf_role');
+      localStorage.removeItem('jmf_jurisdiction');
+      localStorage.removeItem('jmf_active_student_app');
+      localStorage.removeItem('jmf_active_app_id');
+      localStorage.removeItem('jmf_student_user');
+      localStorage.removeItem('jmf_last_student_login');
+    } catch (e) {}
   },
 
   /**

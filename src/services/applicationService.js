@@ -427,7 +427,7 @@ export const applicationService = {
         .from('applications')
         .select(`
           *,
-          students (*),
+          students (*, academic_records (*)),
           institutions (*),
           districts (*),
           blocks (*),

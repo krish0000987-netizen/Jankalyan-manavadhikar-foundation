@@ -18,10 +18,10 @@ import {
 import { applicationService } from '../services/applicationService';
 
 export const Track = () => {
-  const { lang, t, navigate, applications, setActiveStudentApp } = useApp();
+  const { lang, t, navigate, applications, activeStudentApp, setActiveStudentApp } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState(() => applications[0] || null);
+  const [searchResult, setSearchResult] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -143,6 +143,26 @@ export const Track = () => {
               </button>
             </div>
           </div>
+
+          {activeStudentApp && (
+            <div style={{ marginTop: '0.85rem', padding: '0.65rem 1rem', backgroundColor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.82rem', color: '#1E40AF' }}>
+                {lang === 'hi' ? 'आपका सक्रिय आवेदन:' : 'Your Active Application:'} <strong>{activeStudentApp.id}</strong> ({activeStudentApp.studentName})
+              </span>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  setSearchQuery(activeStudentApp.id);
+                  setSearchResult(activeStudentApp);
+                  setNotFound(false);
+                }}
+                style={{ padding: '0.25rem 0.75rem', fontSize: '0.78rem', backgroundColor: '#2563EB', borderColor: '#2563EB' }}
+              >
+                {lang === 'hi' ? 'स्थिति देखें' : 'Track Now'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Search Not Found Alert */}

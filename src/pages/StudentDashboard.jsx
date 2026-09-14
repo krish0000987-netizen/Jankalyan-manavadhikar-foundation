@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { applicationService } from '../services/applicationService';
+import { authService } from '../services/authService';
 import { grievanceService } from '../services/grievanceService';
 import { 
   User, 
@@ -46,37 +47,39 @@ export const StudentDashboard = () => {
 
   const handleLookup = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    const cleanQ = searchQuery.trim();
+    if (!cleanQ) return;
     setLoading(true);
     setSearchError('');
     try {
-      const result = await applicationService.trackApplication(searchQuery.trim());
-      if (result) {
-        // Find or build active app object
-        setActiveStudentApp({
-          id: result.id,
-          studentName: result.student_name || result.studentName,
-          mobile: result.mobile || searchQuery.trim(),
-          status: result.status,
-          stage: result.status === 'SCHOLARSHIP_RELEASED' ? 5 : result.status === 'APPROVED' ? 4 : result.status === 'UNDER_SCRUTINY' ? 2 : 1,
-          course: result.academic?.course || result.academic_record?.course || '10th Standard',
-          institution: result.institution?.name || 'Govt Excellence School',
-          district: result.address?.district || 'Jabalpur',
-          category: result.student?.social_category || 'OBC',
-          submissionDate: result.created_at ? new Date(result.created_at).toLocaleDateString() : '2026-09-02',
-          bankName: result.bank?.bank_name || 'State Bank of India',
-          disbursedAmount: result.payment?.amount ? `₹${result.payment.amount.toLocaleString('en-IN')}` : '₹12,000',
-          paymentDate: result.payment?.paid_at ? new Date(result.payment.paid_at).toLocaleDateString() : result.status === 'SCHOLARSHIP_RELEASED' ? 'Released' : 'In Verification',
-          utrNumber: result.payment?.utr_number || (result.status === 'SCHOLARSHIP_RELEASED' ? 'SBIN004829104829' : 'Pending Verification'),
-          documents: result.documents || {
-            marksheet: { status: 'Verified' },
-            aadhaar: { status: 'Verified' },
-            incomeCertificate: { status: 'Verified' },
-            bankPassbook: { status: 'Verified' }
+      // 1. If searching with JMF- Application ID, fetch full application dossier
+      let found = null;
+      if (cleanQ.toUpperCase().startsWith('JMF-')) {
+        found = await applicationService.getApplicationById(cleanQ.toUpperCase());
+      }
+
+      // 2. If not found or searching by mobile, attempt direct student lookup
+      if (!found) {
+        try {
+          const authRes = await authService.signInStudent(cleanQ);
+          if (authRes?.studentApp) {
+            found = authRes.studentApp;
           }
-        });
+        } catch (authErr) {}
+      }
+
+      // 3. Fallback to public trackApplication
+      if (!found) {
+        const result = await applicationService.trackApplication(cleanQ);
+        if (result?.id) {
+          found = await applicationService.getApplicationById(result.id);
+        }
+      }
+
+      if (found) {
+        setActiveStudentApp(found);
       } else {
-        setSearchError('No student application found matching this ID or Mobile number.');
+        setSearchError(lang === 'hi' ? 'इस आवेदन क्रमांक अथवा मोबाइल नंबर से कोई छात्रवृत्ति रिकॉर्ड नहीं मिला।' : 'No student application found matching this ID or Mobile number.');
       }
     } catch (err) {
       console.error('Lookup error:', err);
@@ -174,8 +177,13 @@ export const StudentDashboard = () => {
                 <span>View Certificate</span>
               </button>
             )}
-            <button className="btn btn-outline btn-sm" onClick={() => setActiveStudentApp(null)}>
-              <span>Switch / Search App</span>
+            <button className="btn btn-outline btn-sm" onClick={() => {
+              setActiveStudentApp(null);
+              localStorage.removeItem('jmf_active_student_app');
+              localStorage.removeItem('jmf_active_app_id');
+              localStorage.removeItem('jmf_student_user');
+            }}>
+              <span>{lang === 'hi' ? 'खाता बदलें / खोजें' : 'Switch / Search App'}</span>
             </button>
             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
               <Printer size={15} />

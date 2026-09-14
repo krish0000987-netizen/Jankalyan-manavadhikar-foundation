@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export const AdminLogin = ({ defaultRole = null }) => {
-  const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant } = useApp();
+  const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant, activeStudentApp, setActiveStudentApp, authRole } = useApp();
 
   // Role Types
   const ROLE_CONFIGS = [
@@ -596,6 +596,58 @@ export const AdminLogin = ({ defaultRole = null }) => {
               }}>
                 <CheckCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <span>{successMessage}</span>
+              </div>
+            )}
+
+            {/* Active Student Logged-In Indicator */}
+            {activeRole === 'STUDENT' && activeStudentApp && (
+              <div style={{
+                backgroundColor: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                borderRadius: '12px',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {lang === 'hi' ? 'वर्तमान में सक्रिय विद्यार्थी सत्र' : 'ACTIVE STUDENT SESSION'}
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
+                    {activeStudentApp.studentName}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                    Application ID: <strong style={{ color: '#1D4ED8' }}>{activeStudentApp.id}</strong> | Mobile: {activeStudentApp.mobile}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={() => navigate('/student-dashboard')}
+                    style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700 }}
+                  >
+                    <span>{lang === 'hi' ? 'डैशबोर्ड पर जाएं' : 'Go to Dashboard'}</span>
+                    <ArrowRight size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => {
+                      setActiveStudentApp(null);
+                      localStorage.removeItem('jmf_active_student_app');
+                      localStorage.removeItem('jmf_active_app_id');
+                      localStorage.removeItem('jmf_student_user');
+                    }}
+                    style={{ fontSize: '0.78rem' }}
+                  >
+                    <span>{lang === 'hi' ? 'अन्य खाता बदलें' : 'Switch Account'}</span>
+                  </button>
+                </div>
               </div>
             )}
 
