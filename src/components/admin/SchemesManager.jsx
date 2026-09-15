@@ -25,13 +25,13 @@ export const SchemesManager = () => {
 
   const [form, setForm] = useState({
     code: '',
-    name_en: '',
-    name_hi: '',
+    name: '',
+    description: '',
     academic_year: '2026-27',
     grant_amount: 12000,
     application_start_date: '2026-08-01',
     application_end_date: '2026-10-31',
-    max_beneficiaries: 1000,
+    application_fee: 211.30,
     is_active: true
   });
 
@@ -57,19 +57,20 @@ export const SchemesManager = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!form.name || !form.code) return;
     setSubmitting(true);
     try {
       if (editingScheme) {
         const { error } = await supabase
           .from('scholarship_schemes')
           .update({
-            name_en: form.name_en,
-            name_hi: form.name_hi,
-            grant_amount: parseFloat(form.grant_amount),
-            academic_year: form.academic_year,
+            name: form.name.trim(),
+            description: form.description?.trim() || '',
+            grant_amount: parseFloat(form.grant_amount) || 12000,
+            academic_year: form.academic_year.trim(),
             application_start_date: form.application_start_date,
             application_end_date: form.application_end_date,
-            max_beneficiaries: parseInt(form.max_beneficiaries),
+            application_fee: parseFloat(form.application_fee) || 211.30,
             is_active: form.is_active,
             updated_at: new Date().toISOString()
           })
@@ -81,9 +82,16 @@ export const SchemesManager = () => {
         const { error } = await supabase
           .from('scholarship_schemes')
           .insert([{
-            ...form,
-            grant_amount: parseFloat(form.grant_amount),
-            max_beneficiaries: parseInt(form.max_beneficiaries)
+            code: form.code.trim().toUpperCase(),
+            name: form.name.trim(),
+            description: form.description?.trim() || '',
+            academic_year: form.academic_year.trim(),
+            grant_amount: parseFloat(form.grant_amount) || 12000,
+            application_start_date: form.application_start_date,
+            application_end_date: form.application_end_date,
+            application_fee: parseFloat(form.application_fee) || 211.30,
+            is_fee_applicable: true,
+            is_active: form.is_active
           }]);
         if (error) throw error;
         setFeedback({ type: 'success', message: 'New scholarship scheme published successfully!' });
@@ -102,13 +110,13 @@ export const SchemesManager = () => {
     setEditingScheme(scheme);
     setForm({
       code: scheme.code,
-      name_en: scheme.name_en,
-      name_hi: scheme.name_hi || '',
+      name: scheme.name,
+      description: scheme.description || '',
       academic_year: scheme.academic_year,
       grant_amount: scheme.grant_amount,
-      application_start_date: scheme.application_start_date || '',
-      application_end_date: scheme.application_end_date || '',
-      max_beneficiaries: scheme.max_beneficiaries || 1000,
+      application_start_date: scheme.application_start_date || '2026-08-01',
+      application_end_date: scheme.application_end_date || '2026-10-31',
+      application_fee: scheme.application_fee || 211.30,
       is_active: scheme.is_active
     });
   };
@@ -135,14 +143,14 @@ export const SchemesManager = () => {
           <button className="btn btn-primary btn-sm" onClick={() => {
             setEditingScheme(null);
             setForm({
-              code: `SCHEME-${new Date().getFullYear()}`,
-              name_en: '',
-              name_hi: '',
+              code: `SCHEME-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`,
+              name: '',
+              description: '',
               academic_year: '2026-27',
               grant_amount: 12000,
               application_start_date: '2026-08-01',
               application_end_date: '2026-10-31',
-              max_beneficiaries: 1000,
+              application_fee: 211.30,
               is_active: true
             });
             setShowAddModal(true);
@@ -188,11 +196,11 @@ export const SchemesManager = () => {
                   <div>
                     <span className="badge badge-navy" style={{ marginBottom: '0.4rem' }}>{scheme.code}</span>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>
-                      {scheme.name_en}
+                      {scheme.name}
                     </h3>
-                    {scheme.name_hi && (
+                    {scheme.description && (
                       <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.2rem' }}>
-                        {scheme.name_hi}
+                        {scheme.description}
                       </div>
                     )}
                   </div>
@@ -208,7 +216,7 @@ export const SchemesManager = () => {
                     <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Grant Amount</div>
                     <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16A34A', display: 'flex', alignItems: 'center', marginTop: '0.1rem' }}>
                       <IndianRupee size={15} />
-                      <span>{Number(scheme.grant_amount).toLocaleString('en-IN')}</span>
+                      <span>{Number(scheme.grant_amount || 12000).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
@@ -220,9 +228,9 @@ export const SchemesManager = () => {
                   </div>
 
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Target Quota</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Registration Fee</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E40AF', marginTop: '0.1rem' }}>
-                      {scheme.max_beneficiaries || 1000} Students
+                      ₹{Number(scheme.application_fee || 211.30).toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -277,7 +285,7 @@ export const SchemesManager = () => {
               {editingScheme ? `Configure Scheme: ${editingScheme.code}` : 'Create New Scholarship Scheme'}
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '1.5rem' }}>
-              Adjust grant disbursal amount, academic session dates, and quota limits.
+              Adjust grant disbursal amount, academic session dates, and application parameters.
             </p>
 
             <form onSubmit={handleSave} className="space-y-4">
@@ -306,23 +314,25 @@ export const SchemesManager = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label required">Scheme Title (English)</label>
+                <label className="form-label required">Scheme Title</label>
                 <input 
                   type="text"
                   className="form-control"
                   required
-                  value={form.name_en}
-                  onChange={(e) => setForm({ ...form, name_en: e.target.value })}
+                  placeholder="e.g. Jankalyan Post-Matric Merit Scholarship Scheme"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Scheme Title (Hindi)</label>
-                <input 
-                  type="text"
+                <label className="form-label">Description / Scope</label>
+                <textarea 
                   className="form-control"
-                  value={form.name_hi}
-                  onChange={(e) => setForm({ ...form, name_hi: e.target.value })}
+                  rows={2}
+                  placeholder="Brief details about beneficiaries and qualification..."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
               </div>
 
@@ -338,13 +348,14 @@ export const SchemesManager = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label required">Max Beneficiary Quota</label>
+                  <label className="form-label required">Portal Application Fee (₹)</label>
                   <input 
                     type="number"
+                    step="0.01"
                     className="form-control"
                     required
-                    value={form.max_beneficiaries}
-                    onChange={(e) => setForm({ ...form, max_beneficiaries: e.target.value })}
+                    value={form.application_fee}
+                    onChange={(e) => setForm({ ...form, application_fee: e.target.value })}
                   />
                 </div>
               </div>

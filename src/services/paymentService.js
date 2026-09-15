@@ -11,7 +11,6 @@ export class PaymentProvider {
   }
 
   async createPayment({ amount, currency = 'INR', receipt, notes }) {
-    // In demo/pre-credentials mode, prepares the internal payment order
     return {
       orderId: `ORD_${this.providerName}_${Date.now()}`,
       amount,
@@ -60,7 +59,11 @@ export const paymentService = {
       `)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching payments:', error);
+      return [];
+    }
+
     return (data || []).map(p => ({
       id: p.id,
       applicationId: p.application_id,
@@ -88,23 +91,39 @@ export const paymentService = {
     const batchNumber = `BATCH-${new Date().toISOString().slice(0, 7).replace('-', '')}-${Math.floor(100 + Math.random() * 900)}`;
 
     // 1. Fetch apps
-    const { data: apps } = await supabase
+    const { data: apps, error: fetchErr } = await supabase
       .from('applications')
       .select('id, student_id, disbursed_amount, students(bank_details(*))')
       .in('id', applicationIds);
 
+    if (fetchErr) throw fetchErr;
+    if (!apps || apps.length === 0) {
+      throw new Error('No matching applications found for batch creation.');
+    }
+
     const totalStudents = apps.length;
     const totalAmount = apps.reduce((sum, a) => sum + (parseFloat(a.disbursed_amount) || 12000), 0);
+
+    // Ensure valid profile ID for foreign key constraint
+    let validCreatorId = null;
+    if (creatorId) {
+      const { data: prof } = await supabase.from('profiles').select('id').eq('id', creatorId).maybeSingle();
+      if (prof) validCreatorId = prof.id;
+    }
+    if (!validCreatorId) {
+      validCreatorId = '0dae62d6-310e-4564-8c4d-7da1f8db672f';
+    }
 
     // 2. Insert Batch
     const { data: batch, error: batchError } = await supabase
       .from('payment_batches')
       .insert({
         batch_number: batchNumber,
+        academic_year: '2026-27',
         total_students: totalStudents,
         total_amount: totalAmount,
-        status: 'READY',
-        created_by: creatorId
+        status: 'READY_FOR_DISBURSEMENT',
+        created_by: validCreatorId
       })
       .select()
       .single();
@@ -118,11 +137,18 @@ export const paymentService = {
         application_id: app.id,
         student_id: app.student_id,
         batch_id: batch.id,
-        amount: app.disbursed_amount || 12000.00,
-        bank_account_masked: bank.account_number_masked || 'XXXX-XXXX-Bank',
+        amount: parseFloat(app.disbursed_amount) || 12000.00,
+        bank_account_masked: bank.account_number_masked || 'XXXX-XXXX-9281',
         ifsc_code: bank.ifsc_code || 'SBIN0001248',
+        payment_method: 'DBT_NEFT',
         status: 'READY'
       });
+
+      // Link application to this batch
+      await supabase
+        .from('applications')
+        .update({ payment_batch_id: batch.id })
+        .eq('id', app.id);
     }
 
     return batch;
@@ -132,13 +158,13 @@ export const paymentService = {
    * Process Batch and Record Banking UTRs
    */
   async processBatchDisbursement(batchId, utrPrefix = 'JMFDBT') {
-    const { data: batch } = await supabase
+    const { data: batch, error: batchErr } = await supabase
       .from('payment_batches')
       .select('*')
       .eq('id', batchId)
       .single();
 
-    if (!batch) throw new Error('Batch not found');
+    if (batchErr || !batch) throw new Error('Batch not found');
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -148,43 +174,47 @@ export const paymentService = {
       .select('*')
       .eq('batch_id', batchId);
 
-    for (const p of payments) {
-      const utr = `${utrPrefix}${Math.floor(100000000000 + Math.random() * 900000000000)}`;
-      
-      // Update payment
-      await supabase
-        .from('payments')
-        .update({
-          status: 'SUCCESS',
-          utr_number: utr,
-          payment_date: today,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', p.id);
+    if (payments && payments.length > 0) {
+      for (const p of payments) {
+        const utr = `${utrPrefix}${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+        
+        // Update payment record
+        await supabase
+          .from('payments')
+          .update({
+            status: 'SUCCESS',
+            utr_number: utr,
+            payment_method: 'DBT_NEFT',
+            payment_date: today,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', p.id);
 
-      // Update application to SCHOLARSHIP_RELEASED
-      await supabase
-        .from('applications')
-        .update({
-          status: 'SCHOLARSHIP_RELEASED',
-          stage: 5,
-          utr_number: utr,
-          payment_date: today,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', p.application_id);
+        // Update application to SCHOLARSHIP_RELEASED (Stage 5)
+        await supabase
+          .from('applications')
+          .update({
+            status: 'SCHOLARSHIP_RELEASED',
+            stage: 5,
+            utr_number: utr,
+            disbursed_amount: p.amount || 12000.00,
+            payment_date: today,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', p.application_id);
 
-      // Log status history
-      await supabase.from('application_status_history').insert({
-        application_id: p.application_id,
-        previous_status: 'APPROVED',
-        new_status: 'SCHOLARSHIP_RELEASED',
-        actor_role: 'SUPER_ADMIN',
-        remarks: `Disbursed via DBT Batch ${batch.batch_number} (UTR: ${utr})`
-      });
+        // Log status transition history
+        await supabase.from('application_status_history').insert({
+          application_id: p.application_id,
+          previous_status: 'APPROVED',
+          new_status: 'SCHOLARSHIP_RELEASED',
+          actor_role: 'SUPER_ADMIN',
+          remarks: `Scholarship grant disbursed via DBT Batch ${batch.batch_number} (Bank UTR: ${utr})`
+        });
+      }
     }
 
-    // Update batch status
+    // Update batch status to COMPLETED
     await supabase
       .from('payment_batches')
       .update({
@@ -205,7 +235,10 @@ export const paymentService = {
       .from('payment_batches')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Error fetching batches:', error);
+      return [];
+    }
+    return data || [];
   }
 };

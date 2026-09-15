@@ -5,7 +5,7 @@ export const DEMO_ACCOUNTS = {
   'admin@jankalyan.org': {
     role: 'SUPER_ADMIN',
     roles: ['SUPER_ADMIN'],
-    user: { id: 'demo-admin-01', email: 'admin@jankalyan.org', user_metadata: { full_name: 'Super Administrator' } },
+    user: { id: '0dae62d6-310e-4564-8c4d-7da1f8db672f', email: 'admin@jankalyan.org', user_metadata: { full_name: 'Super Administrator' } },
     jurisdiction: {}
   },
   'school.model@jankalyan.org': {

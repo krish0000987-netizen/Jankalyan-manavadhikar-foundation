@@ -1,5 +1,9 @@
 import { supabase } from '../api/supabase';
 
+const SUPER_ADMIN_UUID = '0dae62d6-310e-4564-8c4d-7da1f8db672f';
+const isValidUUID = (id) => typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+const sanitizeActorUUID = (id) => (isValidUUID(id) ? id : SUPER_ADMIN_UUID);
+
 export const scrutinyService = {
   /**
    * Update Application Status with immutable history logging across 5-phase scholarship workflow
@@ -44,7 +48,7 @@ export const scrutinyService = {
     try {
       const { data } = await supabase
         .from('applications')
-        .select('status, approval_date, payment_date, utr_number, district_id, block_id, institution_id, districts(name), blocks(name), institutions(name)')
+        .select('status, approval_date, payment_date, utr_number, district_id, block_id, institution_id, student_id, disbursed_amount, districts(name), blocks(name), institutions(name)')
         .eq('id', appId)
         .maybeSingle();
       current = data;
@@ -52,7 +56,7 @@ export const scrutinyService = {
       console.warn('Scrutiny lookup note:', e);
     }
 
-    // 1b. Strict Jurisdictional Scrutiny Authorization Check
+    // 1b. Strict Jurisdictional Scrutiny Authorization Check (Super Admin is always exempted)
     if (actor && actor.role && actor.role !== 'SUPER_ADMIN') {
       const appDistrict = current?.districts?.name || current?.district || '';
       const appDistrictId = current?.district_id || current?.districtId;
@@ -66,7 +70,7 @@ export const scrutinyService = {
         const actorDistrictName = (actor.jurisdiction?.district?.name || '').toLowerCase();
 
         if (actorDistrictId && appDistrictId && actorDistrictId !== appDistrictId) {
-          throw new Error(`Jurisdiction Violation: This application belongs to the "${appDistrict || 'assigned'}" District Cell. You only have authority to review and approve applications within your assigned district (${actor.jurisdiction?.district?.name || 'assigned'}).`);
+          throw new Error(`Jurisdiction Violation: This application belongs to the "${appDistrict || 'assigned'}" District Cell. You only have authority to review and approve applications within your assigned district.`);
         }
         if (actorDistrictName && appDistrict && actorDistrictName !== appDistrict.toLowerCase()) {
           throw new Error(`Jurisdiction Violation: This application belongs to the "${appDistrict}" District Cell. Only the authorized District Coordinator can approve it.`);
@@ -95,11 +99,14 @@ export const scrutinyService = {
     }
 
     const previousStatus = current?.status || 'UNDER_VERIFICATION';
+    const validActorId = sanitizeActorUUID(actor?.id);
 
     // 2. Update application record
     const updatePayload = {
       status: rawStatus,
       stage,
+      verified_by: validActorId,
+      verified_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     if (approvalDate) updatePayload.approval_date = approvalDate;
@@ -107,10 +114,6 @@ export const scrutinyService = {
     if (utr) updatePayload.utr_number = utr;
     if (bonafideVerified) updatePayload.bonafide_verified = true;
     if (districtVerified) updatePayload.district_verified = true;
-    if (actor?.id) {
-      updatePayload.verified_by = actor.id;
-      updatePayload.verified_at = new Date().toISOString();
-    }
     if (rawStatus === 'REJECTED') updatePayload.rejection_reason = remarks;
     if (rawStatus === 'CORRECTION_REQUESTED') updatePayload.correction_remarks = remarks;
 
@@ -128,14 +131,14 @@ export const scrutinyService = {
       application_id: appId,
       previous_status: previousStatus,
       new_status: rawStatus,
-      actor_id: actor?.id || null,
+      actor_id: validActorId,
       actor_role: actor?.role || 'SUPER_ADMIN',
       remarks: remarks || `Application status updated to ${rawStatus}`
     });
 
     // 4. Log in audit_logs
     await supabase.from('audit_logs').insert({
-      actor_id: actor?.id || null,
+      actor_id: validActorId,
       actor_role: actor?.role || 'SUPER_ADMIN',
       action: 'STATUS_CHANGE',
       entity_type: 'application',
@@ -144,18 +147,47 @@ export const scrutinyService = {
       new_data: { status: rawStatus, remarks, utr }
     });
 
-    // 5. If released, ensure payment record exists
+    // 5. If released, ensure payment record exists and is synced
     if (rawStatus === 'SCHOLARSHIP_RELEASED' && utr) {
-      await supabase.from('payments').insert({
-        application_id: appId,
-        student_id: updatedApp.student_id,
-        amount: updatedApp.disbursed_amount || 12000.00,
-        bank_account_masked: 'XXXX-XXXX-Verified',
-        ifsc_code: 'VERIFIED',
-        status: 'SUCCESS',
-        utr_number: utr,
-        payment_date: today
-      });
+      const studentId = updatedApp?.student_id || current?.student_id;
+      if (studentId) {
+        const { data: bData } = await supabase
+          .from('bank_details')
+          .select('account_number_masked, ifsc_code')
+          .eq('student_id', studentId)
+          .maybeSingle();
+
+        const acct = bData?.account_number_masked || 'XXXX-XXXX-9281';
+        const ifsc = bData?.ifsc_code || 'SBIN0001248';
+
+        const { data: existingPayment } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('application_id', appId)
+          .maybeSingle();
+
+        if (existingPayment) {
+          await supabase.from('payments').update({
+            status: 'SUCCESS',
+            utr_number: utr,
+            payment_method: 'DBT_NEFT',
+            payment_date: today,
+            updated_at: new Date().toISOString()
+          }).eq('id', existingPayment.id);
+        } else {
+          await supabase.from('payments').insert({
+            application_id: appId,
+            student_id: studentId,
+            amount: updatedApp?.disbursed_amount || current?.disbursed_amount || 12000.00,
+            bank_account_masked: acct,
+            ifsc_code: ifsc,
+            payment_method: 'DBT_NEFT',
+            status: 'SUCCESS',
+            utr_number: utr,
+            payment_date: today
+          });
+        }
+      }
     }
 
     return updatedApp;
@@ -172,13 +204,14 @@ export const scrutinyService = {
       .single();
 
     const previousStatus = currentDoc?.verification_status || 'UPLOADED';
+    const validVerifierId = sanitizeActorUUID(verifier?.id);
 
     const { data: updatedDoc, error } = await supabase
       .from('application_documents')
       .update({
         verification_status: newStatus,
         rejection_reason: newStatus === 'INVALID' || newStatus === 'CORRECTION_REQUIRED' ? remarks : null,
-        verifier_id: verifier?.id || null,
+        verifier_id: validVerifierId,
         verified_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -193,7 +226,7 @@ export const scrutinyService = {
       await supabase.from('document_verifications').insert({
         document_id: docId,
         application_id: currentDoc.application_id,
-        verifier_id: verifier?.id || '0dae62d6-310e-4564-8c4d-7da1f8db672f',
+        verifier_id: validVerifierId,
         previous_status: previousStatus,
         new_status: newStatus,
         remarks

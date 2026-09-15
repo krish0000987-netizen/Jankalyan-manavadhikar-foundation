@@ -183,11 +183,11 @@ export const Admin = () => {
 
   // KPI Calculations strictly based on roleScopedApplications
   const totalCount = roleScopedApplications.length;
-  const approvedCount = roleScopedApplications.filter(a => a.status === 'Approved').length;
-  const releasedCount = roleScopedApplications.filter(a => a.status === 'Scholarship Released').length;
-  const underVerificationCount = roleScopedApplications.filter(a => a.status === 'Under Verification' || a.status === 'Re-Submitted').length;
-  const rejectedCount = roleScopedApplications.filter(a => a.status === 'Rejected').length;
-  const correctionCount = roleScopedApplications.filter(a => a.status === 'Correction Requested').length;
+  const approvedCount = roleScopedApplications.filter(a => a.status === 'Approved' || a.rawStatus === 'APPROVED').length;
+  const releasedCount = roleScopedApplications.filter(a => a.status === 'Scholarship Released' || a.rawStatus === 'SCHOLARSHIP_RELEASED').length;
+  const underVerificationCount = roleScopedApplications.filter(a => a.status === 'Under Verification' || a.rawStatus === 'UNDER_VERIFICATION' || a.status === 'Re-Submitted').length;
+  const rejectedCount = roleScopedApplications.filter(a => a.status === 'Rejected' || a.rawStatus === 'REJECTED').length;
+  const correctionCount = roleScopedApplications.filter(a => a.status === 'Correction Requested' || a.rawStatus === 'CORRECTION_REQUESTED').length;
 
   // Handle CMS Save
   const handleSaveCMS = async (e) => {
@@ -227,9 +227,11 @@ export const Admin = () => {
 
   // Create Payment Batch for selected approved students
   const handleCreateBatch = async () => {
-    const approvedIds = roleScopedApplications.filter(a => a.status === 'Approved').map(a => a.id);
+    const approvedIds = roleScopedApplications
+      .filter(a => (a.status === 'Approved' || a.rawStatus === 'APPROVED') && a.status !== 'Scholarship Released' && a.rawStatus !== 'SCHOLARSHIP_RELEASED')
+      .map(a => a.id);
     if (approvedIds.length === 0) {
-      alert('No approved applications available to batch.');
+      alert('No approved applications pending disbursement. All approved applications may already be in batches or released.');
       return;
     }
     try {

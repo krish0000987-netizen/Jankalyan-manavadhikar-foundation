@@ -50,8 +50,8 @@ export const InstitutionsManager = () => {
     setLoading(true);
     try {
       const [{ data: instData }, { data: distData }, { data: blkData }] = await Promise.all([
-        supabase.from('institutions').select('*, districts(name, name_en), blocks(name)').order('name', { ascending: true }),
-        supabase.from('districts').select('id, name_en, name').order('name_en', { ascending: true }),
+        supabase.from('institutions').select('*, districts(name), blocks(name)').order('name', { ascending: true }),
+        supabase.from('districts').select('id, name').order('name', { ascending: true }),
         supabase.from('blocks').select('id, name, district_id').order('name', { ascending: true })
       ]);
       setInstitutions(instData || []);
@@ -82,7 +82,20 @@ export const InstitutionsManager = () => {
     if (!form.name || !form.code || !form.district_id) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('institutions').insert([form]);
+      const payload = {
+        name: form.name.trim(),
+        code: form.code.trim().toUpperCase(),
+        category: form.type || 'School',
+        district_id: form.district_id,
+        block_id: form.block_id || null,
+        address: form.address || '',
+        principal_name: form.contact_person || form.principal_name || '',
+        contact_phone: form.mobile || form.contact_phone || '',
+        contact_email: form.email || form.contact_email || '',
+        verification_status: 'VERIFIED',
+        is_active: true
+      };
+      const { error } = await supabase.from('institutions').insert([payload]);
       if (error) throw error;
       setFeedback({ type: 'success', message: `Institution "${form.name}" registered successfully with assigned District & Block Cells!` });
       setShowAddModal(false);
@@ -111,9 +124,10 @@ export const InstitutionsManager = () => {
 
   const toggleVerify = async (inst) => {
     try {
+      const newStatus = (inst.verification_status === 'VERIFIED' || inst.is_verified) ? 'PENDING' : 'VERIFIED';
       const { error } = await supabase
         .from('institutions')
-        .update({ is_verified: !inst.is_verified })
+        .update({ verification_status: newStatus })
         .eq('id', inst.id);
       if (error) throw error;
       loadData();
@@ -234,7 +248,7 @@ export const InstitutionsManager = () => {
         >
           <option value="ALL">All Districts</option>
           {districts.map(d => (
-            <option key={d.id} value={d.id}>{d.name_en}</option>
+            <option key={d.id} value={d.id}>{d.name}</option>
           ))}
         </select>
       </div>
@@ -269,53 +283,51 @@ export const InstitutionsManager = () => {
                   </td>
                 </tr>
               ) : (
-                filtered.map(inst => (
-                  <tr key={inst.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontWeight: 800, color: '#1E40AF' }}>
-                      {inst.code}
-                    </td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ fontWeight: 800, color: '#0F172A' }}>{inst.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{inst.affiliation_board || 'State Board'}</div>
-                    </td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ fontWeight: 700, color: '#1E40AF', fontSize: '0.825rem' }}>
-                        📍 {inst.districts?.name_en || inst.districts?.name || 'District Cell'}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
-                        🏛️ {inst.blocks?.name || 'Assigned Block'}
-                      </div>
-                      {inst.csc_name && (
-                        <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
-                          💻 CSC: {inst.csc_name}
+                filtered.map(inst => {
+                  const isVerified = inst.verification_status === 'VERIFIED' || inst.is_verified;
+                  return (
+                    <tr key={inst.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontWeight: 800, color: '#1E40AF' }}>
+                        {inst.code}
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{inst.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{inst.affiliation_board || 'State Board'}</div>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <div style={{ fontWeight: 700, color: '#1E40AF', fontSize: '0.825rem' }}>
+                          📍 {inst.districts?.name || 'District Cell'}
                         </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <span className="badge badge-navy" style={{ fontSize: '0.7rem' }}>
-                        {inst.type || 'School'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ fontWeight: 600, color: '#0F172A' }}>{inst.contact_person || '-'}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{inst.mobile || inst.email || '-'}</div>
-                    </td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <span className={`badge ${inst.is_verified ? 'badge-green' : 'badge-yellow'}`} style={{ fontSize: '0.7rem' }}>
-                        {inst.is_verified ? 'Verified Nodal' : 'Pending Review'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => toggleVerify(inst)}
-                        className={`btn ${inst.is_verified ? 'btn-outline' : 'btn-primary'} btn-sm`}
-                        style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
-                      >
-                        {inst.is_verified ? 'Revoke Status' : 'Verify Nodal'}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                        <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                          🏛️ {inst.blocks?.name || 'Assigned Block'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span className="badge badge-navy" style={{ fontSize: '0.7rem' }}>
+                          {inst.category || inst.type || 'School'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <div style={{ fontWeight: 600, color: '#0F172A' }}>{inst.principal_name || inst.contact_person || '-'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{inst.contact_phone || inst.mobile || inst.contact_email || inst.email || '-'}</div>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span className={`badge ${isVerified ? 'badge-green' : 'badge-yellow'}`} style={{ fontSize: '0.7rem' }}>
+                          {isVerified ? 'Verified Nodal' : 'Pending Review'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                        <button 
+                          onClick={() => toggleVerify(inst)}
+                          className={`btn ${isVerified ? 'btn-outline' : 'btn-primary'} btn-sm`}
+                          style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
+                        >
+                          {isVerified ? 'Revoke Status' : 'Verify Nodal'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

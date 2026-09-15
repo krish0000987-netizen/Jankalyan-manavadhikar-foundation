@@ -17,7 +17,6 @@ import {
 
 export const DistrictsManager = () => {
   const [districts, setDistricts] = useState([]);
-  const [blocks, setBlocks] = useState([]);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,15 +29,13 @@ export const DistrictsManager = () => {
 
   // Form states
   const [districtForm, setDistrictForm] = useState({
-    name_en: '',
-    name_hi: '',
+    name: '',
     code: '',
     state: 'Madhya Pradesh'
   });
 
   const [blockForm, setBlockForm] = useState({
-    name_en: '',
-    name_hi: '',
+    name: '',
     code: ''
   });
 
@@ -48,7 +45,7 @@ export const DistrictsManager = () => {
       const { data: dData, error: dErr } = await supabase
         .from('districts')
         .select('*, blocks(*)')
-        .order('name_en', { ascending: true });
+        .order('name', { ascending: true });
       if (dErr) throw dErr;
       setDistricts(dData || []);
       if (dData?.length > 0 && !selectedDistrict) {
@@ -70,13 +67,18 @@ export const DistrictsManager = () => {
 
   const handleAddDistrict = async (e) => {
     e.preventDefault();
-    if (!districtForm.name_en || !districtForm.code) return;
+    if (!districtForm.name || !districtForm.code) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('districts').insert([districtForm]);
+      const { error } = await supabase.from('districts').insert([{
+        name: districtForm.name.trim(),
+        code: districtForm.code.trim().toUpperCase(),
+        state: districtForm.state.trim() || 'Madhya Pradesh',
+        is_active: true
+      }]);
       if (error) throw error;
-      setFeedback({ type: 'success', message: `District "${districtForm.name_en}" created successfully!` });
-      setDistrictForm({ name_en: '', name_hi: '', code: '', state: 'Madhya Pradesh' });
+      setFeedback({ type: 'success', message: `District "${districtForm.name}" created successfully!` });
+      setDistrictForm({ name: '', code: '', state: 'Madhya Pradesh' });
       setShowAddDistrictModal(false);
       loadData();
     } catch (err) {
@@ -89,16 +91,18 @@ export const DistrictsManager = () => {
 
   const handleAddBlock = async (e) => {
     e.preventDefault();
-    if (!blockForm.name_en || !blockForm.code || !selectedDistrict) return;
+    if (!blockForm.name || !blockForm.code || !selectedDistrict) return;
     setSubmitting(true);
     try {
       const { error } = await supabase.from('blocks').insert([{
-        ...blockForm,
-        district_id: selectedDistrict.id
+        name: blockForm.name.trim(),
+        code: blockForm.code.trim().toUpperCase(),
+        district_id: selectedDistrict.id,
+        is_active: true
       }]);
       if (error) throw error;
-      setFeedback({ type: 'success', message: `Block "${blockForm.name_en}" added to ${selectedDistrict.name_en}!` });
-      setBlockForm({ name_en: '', name_hi: '', code: '' });
+      setFeedback({ type: 'success', message: `Block "${blockForm.name}" added to ${selectedDistrict.name}!` });
+      setBlockForm({ name: '', code: '' });
       setShowAddBlockModal(false);
       loadData();
     } catch (err) {
@@ -123,9 +127,8 @@ export const DistrictsManager = () => {
   };
 
   const filteredDistricts = districts.filter(d => 
-    d.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (d.name_hi && d.name_hi.includes(searchQuery)) ||
-    d.code.toLowerCase().includes(searchQuery.toLowerCase())
+    (d.name && d.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (d.code && d.code.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -226,10 +229,10 @@ export const DistrictsManager = () => {
                   >
                     <div>
                       <div style={{ fontWeight: 800, color: isSelected ? '#1E40AF' : '#0F172A', fontSize: '0.95rem' }}>
-                        {district.name_en} {district.name_hi && <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 500 }}>({district.name_hi})</span>}
+                        {district.name}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.2rem' }}>
-                        Code: <strong style={{ color: '#1E293B' }}>{district.code}</strong> • {blockCount} Blocks • {district.state}
+                        Code: <strong style={{ color: '#1E293B' }}>{district.code || '-'}</strong> • {blockCount} Blocks • {district.state}
                       </div>
                     </div>
 
@@ -264,7 +267,7 @@ export const DistrictsManager = () => {
                     Selected District
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
-                    {selectedDistrict.name_en} ({selectedDistrict.code})
+                    {selectedDistrict.name} {selectedDistrict.code && `(${selectedDistrict.code})`}
                   </div>
                 </div>
 
@@ -281,9 +284,8 @@ export const DistrictsManager = () => {
                 <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B', textAlign: 'left' }}>
-                      <th style={{ padding: '0.6rem 0.75rem' }}>Block Name (English)</th>
-                      <th style={{ padding: '0.6rem 0.75rem' }}>Block Name (Hindi)</th>
-                      <th style={{ padding: '0.6rem 0.75rem' }}>Code</th>
+                      <th style={{ padding: '0.6rem 0.75rem' }}>Block / Tehsil Name</th>
+                      <th style={{ padding: '0.6rem 0.75rem' }}>Block Code</th>
                       <th style={{ padding: '0.6rem 0.75rem' }}>Status</th>
                     </tr>
                   </thead>
@@ -291,13 +293,10 @@ export const DistrictsManager = () => {
                     {(selectedDistrict.blocks || []).map(b => (
                       <tr key={b.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                         <td style={{ padding: '0.75rem', fontWeight: 700, color: '#0F172A' }}>
-                          {b.name_en}
-                        </td>
-                        <td style={{ padding: '0.75rem', color: '#475569' }}>
-                          {b.name_hi || '-'}
+                          {b.name}
                         </td>
                         <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontWeight: 600 }}>
-                          {b.code}
+                          {b.code || '-'}
                         </td>
                         <td style={{ padding: '0.75rem' }}>
                           <span className={`badge ${b.is_active ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.7rem' }}>
@@ -308,8 +307,8 @@ export const DistrictsManager = () => {
                     ))}
                     {(selectedDistrict.blocks || []).length === 0 && (
                       <tr>
-                        <td colSpan={4} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>
-                          No administrative blocks registered in this district yet.
+                        <td colSpan={3} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>
+                          No administrative blocks registered in this district yet. Click "Add Block" to create one.
                         </td>
                       </tr>
                     )}
@@ -348,25 +347,14 @@ export const DistrictsManager = () => {
 
             <form onSubmit={handleAddDistrict} className="space-y-4">
               <div className="form-group">
-                <label className="form-label required">District Name (English)</label>
+                <label className="form-label required">District Name</label>
                 <input 
                   type="text"
                   className="form-control"
                   required
-                  placeholder="e.g. Bhopal"
-                  value={districtForm.name_en}
-                  onChange={(e) => setDistrictForm({ ...districtForm, name_en: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">District Name (Hindi)</label>
-                <input 
-                  type="text"
-                  className="form-control"
-                  placeholder="उदा. भोपाल"
-                  value={districtForm.name_hi}
-                  onChange={(e) => setDistrictForm({ ...districtForm, name_hi: e.target.value })}
+                  placeholder="e.g. Bhopal / भोपाल"
+                  value={districtForm.name}
+                  onChange={(e) => setDistrictForm({ ...districtForm, name: e.target.value })}
                 />
               </div>
 
@@ -421,33 +409,22 @@ export const DistrictsManager = () => {
         }}>
           <div className="card" style={{ width: '460px', padding: '2rem' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem' }}>
-              Add Block to {selectedDistrict?.name_en}
+              Add Block to {selectedDistrict?.name}
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '1.25rem' }}>
-              Register a new administrative block / tehsil.
+              Register a new administrative block / tehsil under this district.
             </p>
 
             <form onSubmit={handleAddBlock} className="space-y-4">
               <div className="form-group">
-                <label className="form-label required">Block Name (English)</label>
+                <label className="form-label required">Block Name</label>
                 <input 
                   type="text"
                   className="form-control"
                   required
-                  placeholder="e.g. Berasia"
-                  value={blockForm.name_en}
-                  onChange={(e) => setBlockForm({ ...blockForm, name_en: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Block Name (Hindi)</label>
-                <input 
-                  type="text"
-                  className="form-control"
-                  placeholder="उदा. बैरसिया"
-                  value={blockForm.name_hi}
-                  onChange={(e) => setBlockForm({ ...blockForm, name_hi: e.target.value })}
+                  placeholder="e.g. Berasia / बैरसिया"
+                  value={blockForm.name}
+                  onChange={(e) => setBlockForm({ ...blockForm, name: e.target.value })}
                 />
               </div>
 

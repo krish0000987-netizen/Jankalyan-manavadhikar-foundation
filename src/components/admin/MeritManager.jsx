@@ -37,7 +37,7 @@ export const MeritManager = () => {
     try {
       const [lists, { data: schData }] = await Promise.all([
         meritService.getMeritLists(),
-        supabase.from('scholarship_schemes').select('id, name_en, code')
+        supabase.from('scholarship_schemes').select('id, name, code')
       ]);
       setMeritLists(lists || []);
       setSchemes(schData || []);
@@ -67,7 +67,7 @@ export const MeritManager = () => {
           *,
           applications (
             id,
-            students (full_name, mobile, social_category, annual_income, academic_records(prev_percentage))
+            students (full_name, mobile, category, annual_income, academic_records(prev_percentage))
           )
         `)
         .eq('merit_list_id', list.id)
@@ -346,7 +346,7 @@ export const MeritManager = () => {
                   onChange={(e) => setGenerateForm({ ...generateForm, schemeId: e.target.value })}
                 >
                   {schemes.map(s => (
-                    <option key={s.id} value={s.id}>{s.name_en} ({s.code})</option>
+                    <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
                   ))}
                 </select>
               </div>

@@ -23,15 +23,14 @@ export const DonorsManager = () => {
   const [feedback, setFeedback] = useState(null);
 
   const [form, setForm] = useState({
-    name: '',
-    organization: '',
-    pan_or_cin: '',
+    organization_name: '',
     contact_person: '',
-    email: '',
-    mobile: '',
+    pan_number: '',
+    contact_email: '',
+    contact_mobile: '',
     category: 'Corporate CSR',
     amount: 100000,
-    payment_reference: ''
+    reference_number: ''
   });
 
   const loadData = async () => {
@@ -52,18 +51,16 @@ export const DonorsManager = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.name && !form.organization) return;
+    if (!form.organization_name || !form.contact_person) return;
     setSubmitting(true);
     try {
       // 1. Create donor
       const donor = await donorService.createDonor({
-        name: form.name || form.organization,
-        organization: form.organization,
-        pan_or_cin: form.pan_or_cin,
-        contact_person: form.contact_person,
-        email: form.email,
-        mobile: form.mobile,
-        category: form.category
+        organization_name: form.organization_name.trim(),
+        contact_person: form.contact_person.trim(),
+        pan_number: form.pan_number?.trim().toUpperCase(),
+        contact_email: form.contact_email?.trim(),
+        contact_mobile: form.contact_mobile?.trim()
       });
 
       // 2. Add contribution if amount > 0
@@ -71,23 +68,21 @@ export const DonorsManager = () => {
         await donorService.addContribution({
           donor_id: donor.id,
           amount: parseFloat(form.amount),
-          payment_reference: form.payment_reference || `TXN-CSR-${Date.now()}`,
-          is_tax_exempt_issued: true
+          reference_number: form.reference_number || `TXN-CSR-${Date.now()}`
         });
       }
 
-      setFeedback({ type: 'success', message: `Donor "${form.organization || form.name}" registered with 80G tax receipt!` });
+      setFeedback({ type: 'success', message: `Donor "${form.organization_name}" registered with 80G tax receipt!` });
       setShowAddModal(false);
       setForm({
-        name: '',
-        organization: '',
-        pan_or_cin: '',
+        organization_name: '',
         contact_person: '',
-        email: '',
-        mobile: '',
+        pan_number: '',
+        contact_email: '',
+        contact_mobile: '',
         category: 'Corporate CSR',
         amount: 100000,
-        payment_reference: ''
+        reference_number: ''
       });
       loadData();
     } catch (err) {
@@ -104,9 +99,9 @@ export const DonorsManager = () => {
   }, 0);
 
   const filtered = donors.filter(d => 
-    (d.name && d.name.toLowerCase().includes(search.toLowerCase())) ||
-    (d.organization && d.organization.toLowerCase().includes(search.toLowerCase())) ||
-    (d.contact_person && d.contact_person.toLowerCase().includes(search.toLowerCase()))
+    (d.organization_name && d.organization_name.toLowerCase().includes(search.toLowerCase())) ||
+    (d.contact_person && d.contact_person.toLowerCase().includes(search.toLowerCase())) ||
+    (d.pan_number && d.pan_number.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -200,7 +195,6 @@ export const DonorsManager = () => {
             <thead>
               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B', textAlign: 'left' }}>
                 <th style={{ padding: '0.75rem 1rem' }}>Organization / Donor</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Category</th>
                 <th style={{ padding: '0.75rem 1rem' }}>PAN / CIN</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Total Contribution</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Contact Details</th>
@@ -210,14 +204,14 @@ export const DonorsManager = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>
                     <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem' }} />
                     <span>Loading donor records...</span>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>
                     No donor records registered yet. Click "Register Donor" to add CSR partners.
                   </td>
                 </tr>
@@ -228,27 +222,24 @@ export const DonorsManager = () => {
                   return (
                     <tr key={d.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{d.organization || d.name}</div>
-                        {d.name && d.organization && <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Rep: {d.name}</div>}
-                      </td>
-                      <td style={{ padding: '0.85rem 1rem' }}>
-                        <span className="badge badge-navy" style={{ fontSize: '0.7rem' }}>
-                          {d.category || 'Corporate CSR'}
-                        </span>
+                        <div style={{ fontWeight: 800, color: '#0F172A' }}>{d.organization_name}</div>
+                        {d.csr_registration_number && (
+                          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>CSR Reg: {d.csr_registration_number}</div>
+                        )}
                       </td>
                       <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontWeight: 700 }}>
-                        {d.pan_or_cin || '-'}
+                        {d.pan_number || '-'}
                       </td>
                       <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#16A34A' }}>
                         ₹{sum > 0 ? sum.toLocaleString('en-IN') : '1,00,000'}
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ color: '#0F172A', fontWeight: 600 }}>{d.contact_person || d.name || '-'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{d.mobile || d.email || '-'}</div>
+                        <div style={{ color: '#0F172A', fontWeight: 600 }}>{d.contact_person}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{d.contact_mobile || d.contact_email || '-'}</div>
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>
-                          Receipt Issued
+                          80G Issued
                         </span>
                       </td>
                     </tr>
@@ -282,52 +273,50 @@ export const DonorsManager = () => {
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="form-group">
-                <label className="form-label required">Company / Trust / Individual Name</label>
+                <label className="form-label required">Company / Trust / Foundation Name</label>
                 <input 
                   type="text"
                   className="form-control"
                   required
                   placeholder="e.g. Tata Trusts / Reliance Foundation"
-                  value={form.organization}
-                  onChange={(e) => setForm({ ...form, organization: e.target.value, name: e.target.value })}
+                  value={form.organization_name}
+                  onChange={(e) => setForm({ ...form, organization_name: e.target.value })}
                 />
               </div>
 
               <div className="form-row-2">
                 <div className="form-group">
-                  <label className="form-label required">Category</label>
-                  <select 
+                  <label className="form-label required">Contact Person / CSR Head</label>
+                  <input 
+                    type="text"
                     className="form-control"
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  >
-                    <option value="Corporate CSR">Corporate CSR</option>
-                    <option value="Philanthropic Trust">Philanthropic Trust</option>
-                    <option value="Individual Donor">Individual Donor</option>
-                    <option value="International Grant">International Grant</option>
-                  </select>
+                    required
+                    placeholder="e.g. Rajesh Sharma"
+                    value={form.contact_person}
+                    onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
+                  />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">PAN / CIN Number</label>
+                  <label className="form-label">PAN Number</label>
                   <input 
                     type="text"
                     className="form-control"
                     placeholder="AAAAA0000A"
-                    value={form.pan_or_cin}
-                    onChange={(e) => setForm({ ...form, pan_or_cin: e.target.value.toUpperCase() })}
+                    value={form.pan_number}
+                    onChange={(e) => setForm({ ...form, pan_number: e.target.value.toUpperCase() })}
                   />
                 </div>
               </div>
 
               <div className="form-row-2">
                 <div className="form-group">
-                  <label className="form-label">Contact Person</label>
+                  <label className="form-label">Email Address</label>
                   <input 
-                    type="text"
+                    type="email"
                     className="form-control"
-                    placeholder="CSR Head / Director"
-                    value={form.contact_person}
-                    onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
+                    placeholder="csr@organization.org"
+                    value={form.contact_email}
+                    onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
@@ -336,8 +325,9 @@ export const DonorsManager = () => {
                     type="tel"
                     className="form-control"
                     maxLength={10}
-                    value={form.mobile}
-                    onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                    placeholder="98XXXXXXXX"
+                    value={form.contact_mobile}
+                    onChange={(e) => setForm({ ...form, contact_mobile: e.target.value })}
                   />
                 </div>
               </div>
@@ -354,13 +344,13 @@ export const DonorsManager = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Payment Ref / Cheque No</label>
+                  <label className="form-label">Bank Reference / UTR Number</label>
                   <input 
                     type="text"
                     className="form-control"
                     placeholder="e.g. UTR / NEFT Reference"
-                    value={form.payment_reference}
-                    onChange={(e) => setForm({ ...form, payment_reference: e.target.value })}
+                    value={form.reference_number}
+                    onChange={(e) => setForm({ ...form, reference_number: e.target.value })}
                   />
                 </div>
               </div>
