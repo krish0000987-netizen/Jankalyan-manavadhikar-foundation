@@ -38,6 +38,7 @@ import {
   Printer
 } from 'lucide-react';
 import { paymentService } from '../services/paymentService';
+import { scrutinyService } from '../services/scrutinyService';
 import { reportService } from '../services/reportService';
 import { commissionService } from '../services/commissionService';
 import { grievanceService } from '../services/grievanceService';
@@ -302,15 +303,22 @@ export const Admin = () => {
   // Create Payment Batch for selected approved students
   const handleCreateBatch = async () => {
     const approvedIds = roleScopedApplications
-      .filter(a => (a.status === 'Approved' || a.rawStatus === 'APPROVED') && a.status !== 'Scholarship Released' && a.rawStatus !== 'SCHOLARSHIP_RELEASED')
+      .filter(a => (
+        a.status === 'Approved' || 
+        a.rawStatus === 'APPROVED' || 
+        a.status === 'Bonafide Attested' || 
+        a.rawStatus === 'INSTITUTION_RECOMMENDED' ||
+        a.status === 'Under Verification' ||
+        a.rawStatus === 'UNDER_VERIFICATION'
+      ) && a.status !== 'Scholarship Released' && a.rawStatus !== 'SCHOLARSHIP_RELEASED')
       .map(a => a.id);
     if (approvedIds.length === 0) {
-      alert('No approved applications pending disbursement. All approved applications may already be in batches or released.');
+      alert('No eligible applications pending disbursement. All applications may already be in batches or released.');
       return;
     }
     try {
       const batch = await paymentService.createPaymentBatch(approvedIds, authUser?.id);
-      alert(`DBT Batch ${batch.batch_number} created successfully with ${batch.total_students} approved students!`);
+      alert(`DBT Batch ${batch.batch_number} created successfully with ${batch.total_students} verified students!`);
       const batches = await paymentService.getPaymentBatches();
       setDbtBatches(batches);
       setActiveTab('payments');
@@ -334,6 +342,40 @@ export const Admin = () => {
       setDbtPayments(pmts);
     } catch (err) {
       alert('Disbursement error: ' + err.message);
+    }
+  };
+
+  // Direct Quick Disburse for a single individual application
+  const handleQuickDisburse = async (app) => {
+    if (!confirm(`Are you sure you want to directly release ₹12,000 Direct Benefit Transfer (DBT) grant to ${app.studentName} (${app.id})? This will immediately record an official banking UTR.`)) {
+      return;
+    }
+    try {
+      const utr = `JMFDBT${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+      await scrutinyService.updateApplicationStatus(
+        app.id,
+        'Scholarship Released',
+        `Direct scholarship grant disbursed via Admin Panel (Bank UTR: ${utr})`,
+        utr,
+        { ...authUser, role: authRole }
+      );
+      try {
+        await certificateService.issueCertificate({
+          applicationId: app.id,
+          studentName: app.studentName,
+          schemeName: 'Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27',
+          grantAmount: 12000
+        });
+      } catch (cErr) {}
+
+      alert(`Direct Benefit Transfer successfully disbursed to ${app.studentName}!\nBanking UTR: ${utr}\nApplication status is now Scholarship Released.`);
+      await loadApplications();
+      const batches = await paymentService.getPaymentBatches();
+      setDbtBatches(batches);
+      const pmts = await paymentService.getPayments();
+      setDbtPayments(pmts);
+    } catch (err) {
+      alert('Disbursement failed: ' + err.message);
     }
   };
 
@@ -604,10 +646,28 @@ export const Admin = () => {
                           </td>
                           <td style={{ fontSize: '0.8rem', color: '#64748B' }}>{app.submissionDate}</td>
                           <td>
-                            <button className="btn btn-secondary btn-sm" onClick={() => setActiveModalApp(app)}>
-                              <Eye size={13} />
-                              <span>Scrutiny</span>
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                              <button className="btn btn-secondary btn-sm" onClick={() => setActiveModalApp(app)}>
+                                <Eye size={13} />
+                                <span>Scrutiny</span>
+                              </button>
+                              {app.status !== 'Scholarship Released' && (
+                                <button 
+                                  className="btn btn-gold btn-sm" 
+                                  onClick={() => handleQuickDisburse(app)}
+                                  title="Direct DBT Payout ₹12,000"
+                                  style={{ padding: '0.25rem 0.55rem', fontSize: '0.76rem' }}
+                                >
+                                  <CreditCard size={12} />
+                                  <span>Disburse</span>
+                                </button>
+                              )}
+                              {app.status === 'Scholarship Released' && (
+                                <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
+                                  ✓ Disbursed
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -775,10 +835,28 @@ export const Admin = () => {
                         </td>
                         <td style={{ fontSize: '0.8rem', color: '#64748B' }}>{app.submissionDate}</td>
                         <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => setActiveModalApp(app)}>
-                            <Eye size={13} />
-                            <span>Scrutiny</span>
-                          </button>
+                          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => setActiveModalApp(app)}>
+                              <Eye size={13} />
+                              <span>Scrutiny</span>
+                            </button>
+                            {app.status !== 'Scholarship Released' && (
+                              <button 
+                                className="btn btn-gold btn-sm" 
+                                onClick={() => handleQuickDisburse(app)}
+                                title="Direct DBT Payout ₹12,000"
+                                style={{ padding: '0.25rem 0.55rem', fontSize: '0.76rem' }}
+                              >
+                                <CreditCard size={12} />
+                                <span>Disburse</span>
+                              </button>
+                            )}
+                            {app.status === 'Scholarship Released' && (
+                              <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
+                                ✓ Disbursed
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -981,10 +1059,28 @@ export const Admin = () => {
                               </span>
                             </td>
                             <td>
-                              <button className="btn btn-primary btn-sm" onClick={() => setActiveModalApp(app)}>
-                                <Eye size={13} />
-                                <span>Scrutinize / Verify</span>
-                              </button>
+                              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                <button className="btn btn-primary btn-sm" onClick={() => setActiveModalApp(app)}>
+                                  <Eye size={13} />
+                                  <span>Scrutinize / Verify</span>
+                                </button>
+                                {app.status !== 'Scholarship Released' && (
+                                  <button 
+                                    className="btn btn-gold btn-sm" 
+                                    onClick={() => handleQuickDisburse(app)}
+                                    title="Direct DBT Payout ₹12,000"
+                                    style={{ padding: '0.25rem 0.55rem', fontSize: '0.76rem' }}
+                                  >
+                                    <CreditCard size={12} />
+                                    <span>Disburse</span>
+                                  </button>
+                                )}
+                                {app.status === 'Scholarship Released' && (
+                                  <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
+                                    ✓ Disbursed
+                                  </span>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );

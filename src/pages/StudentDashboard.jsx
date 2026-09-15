@@ -38,6 +38,8 @@ export const StudentDashboard = () => {
   const [studentGrievances, setStudentGrievances] = useState([]);
   const [payingFee, setPayingFee] = useState(false);
 
+  const [allStudentApps, setAllStudentApps] = useState([]);
+
   // Default to activeStudentApp or search
   const student = activeStudentApp;
 
@@ -58,6 +60,10 @@ export const StudentDashboard = () => {
       if (fresh && fresh.id) {
         setActiveStudentApp(fresh);
       }
+      if (student.mobile) {
+        const all = await applicationService.getApplicationsByMobile(student.mobile);
+        if (all && all.length > 0) setAllStudentApps(all);
+      }
     } catch (err) {
       console.warn('Dashboard sync error:', err);
     } finally {
@@ -65,12 +71,20 @@ export const StudentDashboard = () => {
     }
   };
 
-  // Sync on mount or when student id changes
+  // Sync on mount or when student id/mobile changes
   useEffect(() => {
     if (student?.id || student?.mobile) {
       refreshStudentApplication(true);
     }
-  }, [student?.id]);
+  }, [student?.id, student?.mobile]);
+
+  useEffect(() => {
+    if (student?.mobile) {
+      applicationService.getApplicationsByMobile(student.mobile).then(apps => {
+        if (apps && apps.length > 0) setAllStudentApps(apps);
+      }).catch(err => console.warn('Error fetching all apps for student:', err));
+    }
+  }, [student?.mobile]);
 
   useEffect(() => {
     if (student?.id || student?.mobile) {
@@ -249,6 +263,51 @@ export const StudentDashboard = () => {
             </button>
           </div>
         </div>
+
+        {/* Multi-application dossier switcher if student has multiple applications */}
+        {allStudentApps.length > 1 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.85rem 1.25rem',
+            backgroundColor: '#EFF6FF',
+            borderRadius: '12px',
+            border: '1px solid #BFDBFE',
+            marginBottom: '1.75rem',
+            flexWrap: 'wrap'
+          }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1E40AF' }}>
+              {lang === 'hi' ? 'आपके पंजीकृत आवेदन पत्र:' : 'Your Registered Applications:'}
+            </span>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {allStudentApps.map(a => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveStudentApp(a);
+                    localStorage.setItem('jmf_active_app_id', a.id);
+                    localStorage.setItem('jmf_active_student_app', JSON.stringify(a));
+                  }}
+                  className={`btn btn-sm ${a.id === student.id ? 'btn-primary' : 'btn-outline'}`}
+                  style={{
+                    fontSize: '0.82rem',
+                    padding: '0.35rem 0.85rem',
+                    fontWeight: 700,
+                    backgroundColor: a.id === student.id ? '#1E40AF' : '#FFFFFF',
+                    borderColor: a.id === student.id ? '#1E40AF' : '#93C5FD'
+                  }}
+                >
+                  <span>{a.id}</span>
+                  <span className={`badge ${a.status === 'Scholarship Released' ? 'badge-green' : 'badge-navy'}`} style={{ fontSize: '0.7rem', marginLeft: '0.4rem', padding: '0.15rem 0.4rem' }}>
+                    {a.status === 'Scholarship Released' ? '✓ Disbursed' : a.status}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Dashboard Grid */}
         <div className="grid-editorial" style={{ gap: '2rem' }}>

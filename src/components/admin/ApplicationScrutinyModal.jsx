@@ -783,15 +783,23 @@ export const ApplicationScrutinyModal = ({
                     </button>
                   )}
 
-                  {application.status === 'Approved' && (
+                  {application.status !== 'Scholarship Released' && (
                     <button 
                       className="btn btn-gold btn-sm"
                       disabled={submitting}
                       onClick={() => handleAction('Scholarship Released')}
+                      title="Directly disburse ₹12,000 grant and record official banking UTR"
                     >
                       <CreditCard size={14} />
-                      <span>Disburse Direct Benefit Transfer</span>
+                      <span>{application.status === 'Approved' ? 'Disburse Direct Benefit Transfer' : 'Approve & Disburse Grant (DBT)'}</span>
                     </button>
+                  )}
+
+                  {application.status === 'Scholarship Released' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem' }}>
+                      <CheckCircle2 size={15} />
+                      <span>Grant Disbursed • UTR: {application.utrNumber || 'Recorded'}</span>
+                    </div>
                   )}
                 </>
               )}

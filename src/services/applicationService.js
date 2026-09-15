@@ -447,6 +447,42 @@ export const applicationService = {
   },
 
   /**
+   * Fetch all applications submitted by a student's mobile number
+   */
+  async getApplicationsByMobile(mobile) {
+    if (!mobile) return [];
+    try {
+      const cleanMobile = mobile.replace(/[^0-9]/g, '');
+      const { data: students } = await supabase
+        .from('students')
+        .select('id')
+        .eq('mobile', cleanMobile);
+      if (!students || students.length === 0) return [];
+      
+      const { data: apps, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          students (*, academic_records (*), bank_details (*)),
+          institutions (*),
+          districts (*),
+          blocks (*),
+          application_documents (*),
+          payments (*)
+        `)
+        .in('student_id', students.map(s => s.id))
+        .order('created_at', { ascending: false });
+
+      if (!error && apps) {
+        return apps.map(a => this.normalizeApplication(a));
+      }
+    } catch (e) {
+      console.warn('Error fetching apps by mobile:', e);
+    }
+    return [];
+  },
+
+  /**
    * Public tracking (Application ID or Mobile Number) without exposing full sensitive identity
    */
   async trackApplication(queryStr) {
