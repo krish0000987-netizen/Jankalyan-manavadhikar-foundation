@@ -448,6 +448,7 @@ export const Admin = () => {
         role={authRole} 
         sidebarOpen={sidebarOpen} 
         setSidebarOpen={setSidebarOpen}
+        readyCount={readyBeneficiariesCount}
         onLogout={logout}
       />
 
@@ -465,6 +466,9 @@ export const Admin = () => {
           onExitPublic={() => navigate('/')}
           onSearchChange={setGlobalSearch}
           searchValue={globalSearch}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          readyCount={readyBeneficiariesCount}
         />
 
         {/* Content Body */}
@@ -517,12 +521,15 @@ export const Admin = () => {
                     <span>Verification Queue ({underVerificationCount})</span>
                   </button>
 
-                  {authRole === 'SUPER_ADMIN' && (
-                    <button className="btn btn-gold btn-sm" onClick={handleCreateBatch}>
-                      <CreditCard size={15} />
-                      <span>Create DBT Batch</span>
-                    </button>
-                  )}
+                  <button 
+                    className="btn btn-gold btn-sm" 
+                    onClick={() => setActiveTab('payments')}
+                    style={{ fontWeight: 800, backgroundColor: '#D97706', color: '#FFFFFF', borderColor: '#D97706' }}
+                    title="View verified students ready for manual scholarship bank transfer"
+                  >
+                    <CreditCard size={15} />
+                    <span>Beneficiary Bank Records ({approvedBeneficiaries.length} Ready)</span>
+                  </button>
 
                   <button className="btn btn-outline btn-sm" onClick={handleExportApplications}>
                     <Download size={15} />
@@ -533,28 +540,38 @@ export const Admin = () => {
 
               {/* KPI Cards Grid */}
               <div className="grid-5" style={{ marginBottom: '2rem' }}>
-                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #1E40AF' }}>
+                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #1E40AF', cursor: 'pointer' }} onClick={() => setActiveTab('applications')}>
                   <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>TOTAL APPLICATIONS</div>
                   <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0F172A', margin: '0.2rem 0' }}>{totalCount}</div>
                   <div style={{ fontSize: '0.7rem', color: '#1E40AF' }}>All Registered Applicants</div>
                 </div>
 
-                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #D97706' }}>
+                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #D97706', cursor: 'pointer' }} onClick={() => setActiveTab('verification')}>
                   <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>UNDER SCRUTINY</div>
                   <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#D97706', margin: '0.2rem 0' }}>{underVerificationCount}</div>
                   <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Pending Verification</div>
                 </div>
 
-                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563EB' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>APPROVED BY BOARD</div>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#2563EB', margin: '0.2rem 0' }}>{approvedCount}</div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Ready for DBT Release</div>
+                <div 
+                  className="card" 
+                  style={{ padding: '1.25rem', borderLeft: '4px solid #2563EB', cursor: 'pointer', transition: 'all 0.2s ease', backgroundColor: '#F8FAFC' }}
+                  onClick={() => setActiveTab('payments')}
+                  title="Click to view Beneficiary Bank Records"
+                >
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>APPROVED BENEFICIARIES</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#2563EB', margin: '0.2rem 0' }}>{approvedBeneficiaries.length}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#1E40AF', fontWeight: 700 }}>Open Bank Records &rarr;</div>
                 </div>
 
-                <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16A34A' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>DBT RELEASED</div>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16A34A', margin: '0.2rem 0' }}>{releasedCount}</div>
-                  <div style={{ fontSize: '0.7rem', color: '#16A34A' }}>₹{(releasedCount * 12000).toLocaleString('en-IN')} Disbursed</div>
+                <div 
+                  className="card" 
+                  style={{ padding: '1.25rem', borderLeft: '4px solid #16A34A', cursor: 'pointer' }}
+                  onClick={() => setActiveTab('payments')}
+                  title="Click to view Transferred Records"
+                >
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>TRANSFERRED (OFFLINE)</div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16A34A', margin: '0.2rem 0' }}>{transferredBeneficiariesCount}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#16A34A' }}>₹{(transferredBeneficiariesCount * 12000).toLocaleString('en-IN')} Transferred</div>
                 </div>
 
                 <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #DC2626' }}>
@@ -754,7 +771,18 @@ export const Admin = () => {
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button 
+                    type="button"
+                    className="btn btn-gold btn-sm" 
+                    onClick={() => setActiveTab('payments')}
+                    style={{ fontWeight: 800, backgroundColor: '#D97706', color: '#FFFFFF', borderColor: '#D97706', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    title="Open Beneficiary Bank Records for manual scholarship bank transfers"
+                  >
+                    <CreditCard size={14} />
+                    <span>Beneficiary Bank Records ({readyBeneficiariesCount} Ready)</span>
+                  </button>
+
                   <button className="btn btn-outline btn-sm" onClick={handleExportApplications}>
                     <Download size={14} />
                     <span>Export CSV</span>
@@ -941,7 +969,18 @@ export const Admin = () => {
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button 
+                    type="button"
+                    className="btn btn-gold btn-sm" 
+                    onClick={() => setActiveTab('payments')}
+                    style={{ fontWeight: 800, backgroundColor: '#D97706', color: '#FFFFFF', borderColor: '#D97706', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    title="Open Beneficiary Bank Records for manual scholarship bank transfers"
+                  >
+                    <CreditCard size={15} />
+                    <span>Beneficiary Bank Records ({readyBeneficiariesCount} Ready)</span>
+                  </button>
+
                   <button className="btn btn-primary btn-sm" onClick={() => loadApplications()}>
                     <RefreshCw size={14} />
                     <span>Refresh Queue</span>
@@ -1118,9 +1157,16 @@ export const Admin = () => {
                                   <span>Scrutinize / Verify</span>
                                 </button>
                                 {(app.status === 'Approved' || app.rawStatus === 'APPROVED') && (
-                                  <span className="badge badge-blue" style={{ fontSize: '0.72rem' }}>
-                                    ✓ In Beneficiary Records
-                                  </span>
+                                  <button 
+                                    type="button"
+                                    className="btn btn-outline btn-sm"
+                                    onClick={() => setActiveTab('payments')}
+                                    style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', color: '#1E40AF', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                                    title="Open student in Beneficiary Bank Records"
+                                  >
+                                    <CreditCard size={12} />
+                                    <span>Bank Record</span>
+                                  </button>
                                 )}
                                 {(app.status === 'Scholarship Released' || app.rawStatus === 'SCHOLARSHIP_RELEASED') && (
                                   <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
@@ -2121,6 +2167,10 @@ export const Admin = () => {
           onClose={() => setActiveViewApp(null)}
           readOnly={true}
           currentUser={{ ...authUser, role: authRole, jurisdiction }}
+          onOpenBankRecords={() => {
+            setActiveViewApp(null);
+            setActiveTab('payments');
+          }}
         />
       )}
 
@@ -2130,6 +2180,10 @@ export const Admin = () => {
           application={activeModalApp}
           onClose={() => setActiveModalApp(null)}
           readOnly={false}
+          onOpenBankRecords={() => {
+            setActiveModalApp(null);
+            setActiveTab('payments');
+          }}
           onStatusUpdated={(appId, newStatus, utr) => {
             loadApplications();
             setActiveModalApp(null);

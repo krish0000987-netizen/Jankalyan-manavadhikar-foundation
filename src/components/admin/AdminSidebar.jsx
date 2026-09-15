@@ -32,16 +32,17 @@ export const AdminSidebar = ({
   role = 'SUPER_ADMIN', 
   sidebarOpen, 
   setSidebarOpen,
+  readyCount = 0,
   onLogout 
 }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'] },
     { id: 'applications', label: 'Applications', icon: Users, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'] },
     { id: 'verification', label: 'Verification Queue', icon: CheckSquare, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION'] },
+    { id: 'payments', label: 'Beneficiary Bank Records', icon: CreditCard, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION'] },
     { id: 'institutions', label: 'Institutions', icon: Building2, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR'] },
     { id: 'districts', label: 'Districts & Blocks', icon: MapPin, roles: ['SUPER_ADMIN'] },
     { id: 'schemes', label: 'Scholarship Schemes', icon: GraduationCap, roles: ['SUPER_ADMIN'] },
-    { id: 'payments', label: 'Beneficiary Bank Records', icon: CreditCard, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR'] },
     { id: 'commissions', label: 'Commissions', icon: Percent, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'] },
     { id: 'reports', label: 'Reports & MIS', icon: BarChart3, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR'] },
     { id: 'merit', label: 'Merit Lists', icon: Award, roles: ['SUPER_ADMIN'] },
@@ -117,6 +118,8 @@ export const AdminSidebar = ({
             {visibleItems.map(item => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const isPayments = item.id === 'payments';
+
               return (
                 <button
                   key={item.id}
@@ -130,33 +133,55 @@ export const AdminSidebar = ({
                     justifyContent: 'space-between',
                     padding: '0.65rem 0.85rem',
                     borderRadius: '8px',
-                    backgroundColor: isActive ? '#1E40AF' : 'transparent',
-                    color: isActive ? '#FFFFFF' : '#94A3B8',
-                    border: 'none',
+                    backgroundColor: isActive 
+                      ? '#1E40AF' 
+                      : (isPayments ? 'rgba(217, 119, 6, 0.15)' : 'transparent'),
+                    color: isActive 
+                      ? '#FFFFFF' 
+                      : (isPayments ? '#FBBF24' : '#94A3B8'),
+                    border: isPayments && !isActive 
+                      ? '1px solid rgba(217, 119, 6, 0.45)' 
+                      : '1px solid transparent',
                     textAlign: 'left',
                     cursor: 'pointer',
                     fontSize: '0.85rem',
-                    fontWeight: isActive ? 700 : 500,
+                    fontWeight: isActive || isPayments ? 700 : 500,
                     transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#1E293B';
+                      e.currentTarget.style.backgroundColor = isPayments ? 'rgba(217, 119, 6, 0.25)' : '#1E293B';
                       e.currentTarget.style.color = '#FFFFFF';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = '#94A3B8';
+                      e.currentTarget.style.backgroundColor = isPayments ? 'rgba(217, 119, 6, 0.15)' : 'transparent';
+                      e.currentTarget.style.color = isPayments ? '#FBBF24' : '#94A3B8';
                     }
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Icon size={17} color={isActive ? '#FEF08A' : '#94A3B8'} />
+                    <Icon size={17} color={isActive ? '#FEF08A' : (isPayments ? '#F59E0B' : '#94A3B8')} />
                     <span>{item.label}</span>
                   </div>
-                  {isActive && <ChevronRight size={14} color="#FEF08A" />}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {isPayments && (
+                      <span style={{
+                        backgroundColor: isActive ? '#FEF08A' : '#D97706',
+                        color: isActive ? '#1E40AF' : '#FFFFFF',
+                        fontSize: '0.68rem',
+                        fontWeight: 800,
+                        padding: '0.12rem 0.45rem',
+                        borderRadius: '999px',
+                        lineHeight: 1
+                      }}>
+                        {readyCount > 0 ? `${readyCount} Ready` : 'Records'}
+                      </span>
+                    )}
+                    {isActive && <ChevronRight size={14} color="#FEF08A" />}
+                  </div>
                 </button>
               );
             })}

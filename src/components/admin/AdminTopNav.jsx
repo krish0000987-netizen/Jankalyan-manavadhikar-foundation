@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   Menu, 
   Search, 
@@ -6,7 +5,8 @@ import {
   ExternalLink, 
   Shield, 
   User, 
-  Globe 
+  Globe,
+  CreditCard
 } from 'lucide-react';
 
 export const AdminTopNav = ({ 
@@ -19,7 +19,10 @@ export const AdminTopNav = ({
   onExitPublic,
   unreadNotificationsCount = 2,
   onSearchChange,
-  searchValue = ''
+  searchValue = '',
+  activeTab,
+  setActiveTab,
+  readyCount = 0
 }) => {
   const isSuperAdminUser = user?.email === 'admin@jankalyan.org' || user?.user_metadata?.role === 'SUPER_ADMIN' || !user;
 
@@ -85,6 +88,43 @@ export const AdminTopNav = ({
       {/* Right: Role Switcher / Jurisdiction Scope Badge, Public Link & User Profile */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         
+        {/* Direct Beneficiary Bank Records Desk Button */}
+        {setActiveTab && (
+          <button 
+            type="button"
+            onClick={() => setActiveTab('payments')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.45rem 0.9rem',
+              borderRadius: '8px',
+              backgroundColor: activeTab === 'payments' ? '#D97706' : '#FEF3C7',
+              border: activeTab === 'payments' ? '1px solid #B45309' : '1px solid #FCD34D',
+              color: activeTab === 'payments' ? '#FFFFFF' : '#92400E',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
+            }}
+            title="Open Beneficiary Bank Records to view verified students ready for manual scholarship transfer"
+          >
+            <CreditCard size={15} color={activeTab === 'payments' ? '#FEF08A' : '#D97706'} />
+            <span>Beneficiary Bank Records</span>
+            <span style={{
+              backgroundColor: activeTab === 'payments' ? '#FEF08A' : '#D97706',
+              color: activeTab === 'payments' ? '#92400E' : '#FFFFFF',
+              borderRadius: '999px',
+              padding: '0.12rem 0.5rem',
+              fontSize: '0.72rem',
+              fontWeight: 900
+            }}>
+              {readyCount > 0 ? `${readyCount} Ready` : 'Records'}
+            </span>
+          </button>
+        )}
+
         {/* Official Super Administrator Statewide Governance Badge */}
         <div style={{
           display: 'flex',

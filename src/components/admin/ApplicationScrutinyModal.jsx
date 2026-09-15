@@ -25,6 +25,7 @@ export const ApplicationScrutinyModal = ({
   onClose, 
   onStatusUpdated,
   onDocumentVerified,
+  onOpenBankRecords,
   currentUser,
   readOnly = false
 }) => {
@@ -823,9 +824,23 @@ export const ApplicationScrutinyModal = ({
                       )}
 
                       {application.status === 'Approved' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem', border: '1px solid #BFDBFE' }}>
-                          <CheckCircle2 size={15} color="#2563EB" />
-                          <span>Approved • Ready in Beneficiary Bank Records</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem', border: '1px solid #BFDBFE' }}>
+                            <CheckCircle2 size={15} color="#2563EB" />
+                            <span>Approved • Ready in Bank Records</span>
+                          </div>
+                          {onOpenBankRecords && (
+                            <button 
+                              type="button"
+                              className="btn btn-gold btn-sm"
+                              onClick={onOpenBankRecords}
+                              style={{ fontWeight: 800, backgroundColor: '#D97706', color: '#FFFFFF', borderColor: '#D97706', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                              title="Go directly to Beneficiary Bank Records ledger"
+                            >
+                              <CreditCard size={14} />
+                              <span>Go to Beneficiary Bank Records</span>
+                            </button>
+                          )}
                         </div>
                       )}
 
