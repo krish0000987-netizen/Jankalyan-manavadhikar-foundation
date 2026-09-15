@@ -89,6 +89,11 @@ export const Admin = () => {
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [tableSearch, setTableSearch] = useState('');
 
+  // Verification Queue State
+  const [verificationFilter, setVerificationFilter] = useState('all'); // 'all' | 'pending' | 'correction' | 'approved' | 'rejected'
+  const [verificationSearch, setVerificationSearch] = useState('');
+  const [verificationDistrict, setVerificationDistrict] = useState('All');
+
   // Scrutiny Modal
   const [activeModalApp, setActiveModalApp] = useState(null);
 
@@ -188,6 +193,75 @@ export const Admin = () => {
   const underVerificationCount = roleScopedApplications.filter(a => a.status === 'Under Verification' || a.rawStatus === 'UNDER_VERIFICATION' || a.status === 'Re-Submitted').length;
   const rejectedCount = roleScopedApplications.filter(a => a.status === 'Rejected' || a.rawStatus === 'REJECTED').length;
   const correctionCount = roleScopedApplications.filter(a => a.status === 'Correction Requested' || a.rawStatus === 'CORRECTION_REQUESTED').length;
+
+  // Verification Queue Calculations & Scoped Dataset
+  const queueTotalCount = roleScopedApplications.length;
+  const queuePendingCount = roleScopedApplications.filter(a => 
+    a.status === 'Under Verification' || a.status === 'Under Scrutiny' || a.status === 'Submitted' || a.status === 'Re-Submitted' || a.status === 'Bonafide Attested' || a.rawStatus === 'UNDER_VERIFICATION' || a.rawStatus === 'SUBMITTED' || a.rawStatus === 'RE_SUBMITTED' || a.rawStatus === 'INSTITUTION_RECOMMENDED'
+  ).length;
+  const queueCorrectionCount = roleScopedApplications.filter(a => 
+    a.status === 'Correction Requested' || a.rawStatus === 'CORRECTION_REQUESTED'
+  ).length;
+  const queueApprovedCount = roleScopedApplications.filter(a => 
+    a.status === 'Approved' || a.status === 'Scholarship Released' || a.rawStatus === 'APPROVED' || a.rawStatus === 'SCHOLARSHIP_RELEASED' || a.stage === 5
+  ).length;
+  const queueRejectedCount = roleScopedApplications.filter(a => 
+    a.status === 'Rejected' || a.rawStatus === 'REJECTED'
+  ).length;
+
+  const verificationQueueApplications = roleScopedApplications.filter(app => {
+    // 1. District filter
+    if (verificationDistrict !== 'All' && app.district !== verificationDistrict) {
+      return false;
+    }
+
+    // 2. Search filter
+    if (verificationSearch.trim()) {
+      const q = verificationSearch.toLowerCase();
+      const matchId = (app.id || '').toLowerCase().includes(q);
+      const matchName = (app.studentName || '').toLowerCase().includes(q);
+      const matchMobile = (app.mobile || '').includes(q);
+      const matchInst = (app.institution || '').toLowerCase().includes(q);
+      const matchCourse = (app.course || '').toLowerCase().includes(q);
+      if (!matchId && !matchName && !matchMobile && !matchInst && !matchCourse) {
+        return false;
+      }
+    }
+
+    // 3. Status filter tab
+    const status = app.status;
+    const raw = app.rawStatus || '';
+    if (verificationFilter === 'pending') {
+      return (
+        status === 'Under Verification' ||
+        status === 'Under Scrutiny' ||
+        status === 'Submitted' ||
+        status === 'Re-Submitted' ||
+        status === 'Bonafide Attested' ||
+        raw === 'UNDER_VERIFICATION' ||
+        raw === 'SUBMITTED' ||
+        raw === 'RE_SUBMITTED' ||
+        raw === 'INSTITUTION_RECOMMENDED'
+      );
+    }
+    if (verificationFilter === 'correction') {
+      return status === 'Correction Requested' || raw === 'CORRECTION_REQUESTED';
+    }
+    if (verificationFilter === 'approved') {
+      return (
+        status === 'Approved' ||
+        status === 'Scholarship Released' ||
+        raw === 'APPROVED' ||
+        raw === 'SCHOLARSHIP_RELEASED' ||
+        app.stage === 5
+      );
+    }
+    if (verificationFilter === 'rejected') {
+      return status === 'Rejected' || raw === 'REJECTED';
+    }
+
+    return true; // 'all' displays every student!
+  });
 
   // Handle CMS Save
   const handleSaveCMS = async (e) => {
@@ -716,62 +790,206 @@ export const Admin = () => {
           )}
 
           {/* ====================================================================
-              MODULE 3: VERIFICATION QUEUE (Focused for Verifiers)
+              MODULE 3: VERIFICATION QUEUE (Complete Multi-Tier Scrutiny)
               ==================================================================== */}
           {activeTab === 'verification' && (
             <div className="animate-fade-in">
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
-                  {authRole === 'INSTITUTION' 
-                    ? `${jurisdiction?.institution?.name || 'School / College'} — Institutional Verification Queue` 
-                    : authRole === 'DISTRICT_COORDINATOR'
-                    ? `${jurisdiction?.district?.name || 'District'} — Verification Queue`
-                    : 'Pending Verification Queue'}
-                </h2>
-                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                  {authRole === 'INSTITUTION'
-                    ? 'Verify enrolled students, review marksheets and attest institutional bonafide before forwarding to District Cell'
-                    : 'Applications requiring institutional, block, or district verification scrutiny'}
-                </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
+                    {authRole === 'INSTITUTION' 
+                      ? `${jurisdiction?.institution?.name || 'School / College'} — Institutional Verification Queue` 
+                      : authRole === 'DISTRICT_COORDINATOR'
+                      ? `${jurisdiction?.district?.name || 'District'} — Verification Queue`
+                      : 'Verification & Document Scrutiny Master Queue'}
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
+                    {authRole === 'INSTITUTION'
+                      ? 'Verify enrolled students, review uploaded documents, and attest institutional bonafide before forwarding to District Cell'
+                      : 'Comprehensive verification ledger: inspect student dossiers, validate photos & certificates in-place, and record decisions'}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button className="btn btn-primary btn-sm" onClick={() => loadApplications()}>
+                    <RefreshCw size={14} />
+                    <span>Refresh Queue</span>
+                  </button>
+                </div>
               </div>
 
+              {/* Status Filter Tabs */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${verificationFilter === 'all' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setVerificationFilter('all')}
+                  style={{ fontWeight: 700 }}
+                >
+                  All Students ({queueTotalCount})
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${verificationFilter === 'pending' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setVerificationFilter('pending')}
+                  style={{ fontWeight: 700 }}
+                >
+                  Pending Scrutiny ({queuePendingCount})
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${verificationFilter === 'correction' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setVerificationFilter('correction')}
+                  style={{ fontWeight: 700, borderColor: '#F59E0B', color: verificationFilter === 'correction' ? '#FFFFFF' : '#D97706' }}
+                >
+                  Correction Requested ({queueCorrectionCount})
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${verificationFilter === 'approved' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setVerificationFilter('approved')}
+                  style={{ fontWeight: 700, borderColor: '#16A34A', color: verificationFilter === 'approved' ? '#FFFFFF' : '#16A34A' }}
+                >
+                  Approved / Ready ({queueApprovedCount})
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${verificationFilter === 'rejected' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setVerificationFilter('rejected')}
+                  style={{ fontWeight: 700, borderColor: '#DC2626', color: verificationFilter === 'rejected' ? '#FFFFFF' : '#DC2626' }}
+                >
+                  Rejected ({queueRejectedCount})
+                </button>
+              </div>
+
+              {/* Search and District Filter Toolbar */}
+              <div className="card" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ position: 'relative' }}>
+                      <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                      <input 
+                        type="text"
+                        className="form-control"
+                        placeholder="Search by student name, ID, phone, institution or course..."
+                        value={verificationSearch}
+                        onChange={(e) => setVerificationSearch(e.target.value)}
+                        style={{ paddingLeft: '2.4rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ minWidth: '160px' }}>
+                    <select 
+                      className="form-control"
+                      value={verificationDistrict}
+                      onChange={(e) => setVerificationDistrict(e.target.value)}
+                    >
+                      <option value="All">All Districts</option>
+                      <option value="Jabalpur">Jabalpur</option>
+                      <option value="Bhopal">Bhopal</option>
+                      <option value="Indore">Indore</option>
+                      <option value="Rewa">Rewa</option>
+                      <option value="Mandla">Mandla</option>
+                      <option value="Gwalior">Gwalior</option>
+                    </select>
+                  </div>
+
+                  {(verificationSearch || verificationDistrict !== 'All' || verificationFilter !== 'all') && (
+                    <button 
+                      className="btn btn-outline btn-sm"
+                      onClick={() => { setVerificationFilter('all'); setVerificationSearch(''); setVerificationDistrict('All'); }}
+                    >
+                      <RefreshCw size={13} />
+                      <span>Reset Filters</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Verification Table */}
               <div className="data-table-container">
                 <table className="data-table">
                   <thead>
                     <tr>
                       <th>Application ID</th>
-                      <th>Applicant Name</th>
-                      <th>Institution</th>
+                      <th>Applicant Name & Mobile</th>
+                      <th>Institution & Course</th>
                       <th>District / Block</th>
-                      <th>Uploaded Docs</th>
-                      <th>Status</th>
+                      <th>Uploaded Docs Status</th>
+                      <th>Current Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {roleScopedApplications
-                      .filter(a => a.status === 'Under Verification' || a.status === 'Correction Requested' || a.status === 'Re-Submitted')
-                      .map(app => (
-                        <tr key={app.id}>
-                          <td style={{ fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>{app.id}</td>
-                          <td>
-                            <div style={{ fontWeight: 700 }}>{app.studentName}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.mobile}</div>
-                          </td>
-                          <td>{app.institution}</td>
-                          <td>{app.district} / {app.block}</td>
-                          <td>{Object.keys(app.documents || {}).length} Documents</td>
-                          <td>
-                            <span className="badge badge-yellow">{app.status}</span>
-                          </td>
-                          <td>
-                            <button className="btn btn-primary btn-sm" onClick={() => setActiveModalApp(app)}>
-                              <Eye size={13} />
-                              <span>Scrutinize</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                    {verificationQueueApplications.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+                          <div style={{ color: '#64748B', marginBottom: '0.5rem', fontWeight: 600 }}>
+                            No student applications match the current filters.
+                          </div>
+                          <button 
+                            className="btn btn-outline btn-sm" 
+                            onClick={() => { setVerificationFilter('all'); setVerificationSearch(''); setVerificationDistrict('All'); }}
+                          >
+                            Reset All Filters
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      verificationQueueApplications.map(app => {
+                        const docs = Object.values(app.documents || {});
+                        const verifiedDocsCount = docs.filter(d => d.status === 'Verified' || d.status === 'VALID').length;
+                        const totalDocsCount = Math.max(docs.length, 1);
+
+                        return (
+                          <tr key={app.id}>
+                            <td style={{ fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>
+                              {app.id}
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 700, color: '#0F172A' }}>{app.studentName}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                                {app.mobile} {app.fatherName ? `• S/O ${app.fatherName}` : ''}
+                              </div>
+                            </td>
+                            <td>
+                              <div style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                                {app.institution}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.course}</div>
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 600 }}>{app.district}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.block}</div>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span className={`badge ${verifiedDocsCount === totalDocsCount && totalDocsCount > 0 ? 'badge-green' : 'badge-navy'}`} style={{ fontSize: '0.75rem' }}>
+                                  {verifiedDocsCount}/{totalDocsCount} Verified
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`badge ${
+                                app.status === 'Scholarship Released' || app.rawStatus === 'SCHOLARSHIP_RELEASED' ? 'badge-green' :
+                                app.status === 'Approved' || app.rawStatus === 'APPROVED' ? 'badge-blue' :
+                                app.status === 'Rejected' || app.rawStatus === 'REJECTED' ? 'badge-red' :
+                                app.status === 'Correction Requested' || app.rawStatus === 'CORRECTION_REQUESTED' ? 'badge-yellow' : 'badge-navy'
+                              }`}>
+                                {app.status}
+                              </span>
+                            </td>
+                            <td>
+                              <button className="btn btn-primary btn-sm" onClick={() => setActiveModalApp(app)}>
+                                <Eye size={13} />
+                                <span>Scrutinize / Verify</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1564,6 +1782,21 @@ export const Admin = () => {
           onStatusUpdated={(appId, newStatus, utr) => {
             loadApplications();
             setActiveModalApp(null);
+          }}
+          onDocumentVerified={(appId, docKey, newStatus, reason) => {
+            setActiveModalApp(prev => {
+              if (!prev || prev.id !== appId) return prev;
+              const updatedDocs = {
+                ...(prev.documents || {}),
+                [docKey]: {
+                  ...(prev.documents?.[docKey] || {}),
+                  status: newStatus,
+                  reason: reason
+                }
+              };
+              return { ...prev, documents: updatedDocs };
+            });
+            loadApplications();
           }}
           currentUser={{ ...authUser, role: authRole, jurisdiction }}
         />

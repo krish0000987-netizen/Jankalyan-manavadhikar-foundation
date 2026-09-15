@@ -26,10 +26,13 @@ export const Track = () => {
   const [notFound, setNotFound] = useState(false);
   const [searching, setSearching] = useState(false);
 
-  const handleSearch = async (e) => {
+  const handleSearch = async (e, customQuery = null) => {
     e?.preventDefault();
-    const query = searchQuery.trim();
+    const query = (customQuery !== null ? customQuery : searchQuery).trim();
     if (!query) return;
+    if (customQuery !== null) {
+      setSearchQuery(customQuery);
+    }
 
     setHasSearched(true);
     setSearching(true);
@@ -109,9 +112,9 @@ export const Track = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ fontSize: '1rem' }}
             />
-            <button className="btn btn-primary" type="submit">
+            <button className="btn btn-primary" type="submit" disabled={searching}>
               <Search size={18} />
-              <span>{t.btnSearchTrack}</span>
+              <span>{searching ? '...' : t.btnSearchTrack}</span>
             </button>
           </form>
 
@@ -120,24 +123,24 @@ export const Track = () => {
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button 
                 type="button" 
-                onClick={() => { setSearchQuery('JMF-2026-108234'); setSearchResult(applications[0]); setNotFound(false); }}
-                style={{ color: '#1E40AF', textDecoration: 'underline' }}
+                onClick={() => handleSearch(null, 'JMF-2026-108234')}
+                style={{ color: '#1E40AF', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Released Demo
               </button>
               <span>•</span>
               <button 
                 type="button" 
-                onClick={() => { setSearchQuery('JMF-2026-109482'); setSearchResult(applications[1]); setNotFound(false); }}
-                style={{ color: '#1E40AF', textDecoration: 'underline' }}
+                onClick={() => handleSearch(null, 'JMF-2026-100001')}
+                style={{ color: '#1E40AF', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Under Verification
               </button>
               <span>•</span>
               <button 
                 type="button" 
-                onClick={() => { setSearchQuery('JMF-2026-112048'); setSearchResult(applications[3]); setNotFound(false); }}
-                style={{ color: '#DC2626', textDecoration: 'underline' }}
+                onClick={() => handleSearch(null, 'JMF-2026-112048')}
+                style={{ color: '#DC2626', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Correction Required
               </button>
@@ -200,7 +203,7 @@ export const Track = () => {
 
               <div style={{ textAlign: 'right' }}>
                 <span className={`badge ${
-                  searchResult.status === 'Scholarship Released' ? 'badge-green' :
+                  searchResult.status === 'Scholarship Released' || searchResult.rawStatus === 'SCHOLARSHIP_RELEASED' || searchResult.stage === 5 ? 'badge-green' :
                   searchResult.status === 'Approved' ? 'badge-blue' :
                   searchResult.status === 'Rejected' ? 'badge-red' :
                   searchResult.status === 'Correction Requested' ? 'badge-yellow' : 'badge-navy'
@@ -307,7 +310,7 @@ export const Track = () => {
             </div>
 
             {/* Payment & Banking Status if Released or Approved */}
-            {(searchResult.status === 'Scholarship Released' || searchResult.status === 'Approved') && (
+            {(searchResult.status === 'Scholarship Released' || searchResult.rawStatus === 'SCHOLARSHIP_RELEASED' || searchResult.stage === 5 || searchResult.status === 'Approved' || searchResult.rawStatus === 'APPROVED') && (
               <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '16px', padding: '1.75rem', marginBottom: '2.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
                   <CreditCard size={22} color="#16A34A" />

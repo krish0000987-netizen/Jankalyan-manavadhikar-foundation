@@ -23,6 +23,7 @@ export const ApplicationScrutinyModal = ({
   application, 
   onClose, 
   onStatusUpdated,
+  onDocumentVerified,
   currentUser 
 }) => {
   const [activeTab, setActiveTab] = useState('dossier'); // 'dossier' | 'documents' | 'history' | 'payment'
@@ -30,6 +31,15 @@ export const ApplicationScrutinyModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [certIssued, setCertIssued] = useState(false);
+  const [docsState, setDocsState] = useState(application?.documents || {});
+  const [docFeedback, setDocFeedback] = useState(null);
+  const [rejectingDocKey, setRejectingDocKey] = useState(null);
+  const [rejectReasonInput, setRejectReasonInput] = useState('');
+  const [previewDoc, setPreviewDoc] = useState(null);
+
+  useEffect(() => {
+    setDocsState(application?.documents || {});
+  }, [application]);
 
   if (!application) return null;
 
@@ -126,14 +136,40 @@ export const ApplicationScrutinyModal = ({
 
   const handleDocumentVerify = async (docKey, status, reason = '') => {
     try {
-      const doc = application.documents?.[docKey];
+      const doc = docsState[docKey] || application.documents?.[docKey];
       if (doc?.id) {
         await scrutinyService.verifyDocument(doc.id, status, reason, currentUser);
-        alert(`Document marked as ${status}`);
-        if (onStatusUpdated) onStatusUpdated(application.id, application.status);
+      }
+
+      const newStatusLabel = status === 'VALID' ? 'Verified' : status === 'INVALID' ? 'Rejected' : 'Correction Requested';
+
+      setDocsState(prev => ({
+        ...prev,
+        [docKey]: {
+          ...(prev[docKey] || {}),
+          status: newStatusLabel,
+          reason: status === 'VALID' ? null : reason
+        }
+      }));
+
+      setDocFeedback({
+        type: status === 'VALID' ? 'success' : 'warning',
+        message: `✓ ${docKey.replace('_', ' ').toUpperCase()} marked as ${newStatusLabel}!`
+      });
+      setTimeout(() => setDocFeedback(null), 3000);
+
+      setRejectingDocKey(null);
+      setRejectReasonInput('');
+
+      if (onDocumentVerified) {
+        onDocumentVerified(application.id, docKey, newStatusLabel, reason);
       }
     } catch (err) {
-      alert('Error updating document: ' + err.message);
+      setDocFeedback({
+        type: 'error',
+        message: 'Failed to update document: ' + err.message
+      });
+      setTimeout(() => setDocFeedback(null), 4000);
     }
   };
 
@@ -421,68 +457,175 @@ export const ApplicationScrutinyModal = ({
           {/* TAB 2: DOCUMENTS */}
           {activeTab === 'documents' && (
             <div>
-              <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '1rem' }}>
-                Applicant Uploaded Documents Scrutiny
-              </h4>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div>
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A' }}>
+                    Applicant Uploaded Documents & Photographs Scrutiny
+                  </h4>
+                  <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '2px' }}>
+                    Review candidate photo, marksheets, and identity proof. Click "Valid" to immediately approve without leaving this screen.
+                  </p>
+                </div>
+              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {Object.entries(application.documents || {}).map(([key, doc]) => (
-                  <div key={key} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '1rem',
-                    backgroundColor: '#F8FAFC',
-                    borderRadius: '10px',
-                    border: '1px solid #E2E8F0',
-                    flexWrap: 'wrap',
-                    gap: '0.75rem'
-                  }}>
-                    <div>
-                      <div style={{ fontWeight: 700, textTransform: 'capitalize', color: '#0F172A' }}>
-                        {key.replace('_', ' ')}
+              {docFeedback && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  marginBottom: '1rem',
+                  backgroundColor: docFeedback.type === 'success' ? '#DCFCE7' : docFeedback.type === 'warning' ? '#FEF3C7' : '#FEE2E2',
+                  border: `1px solid ${docFeedback.type === 'success' ? '#86EFAC' : docFeedback.type === 'warning' ? '#FCD34D' : '#FCA5A5'}`,
+                  color: docFeedback.type === 'success' ? '#166534' : docFeedback.type === 'warning' ? '#92400E' : '#991B1B',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  {docFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                  <span>{docFeedback.message}</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {Object.entries(docsState || {}).map(([key, doc]) => {
+                  const isRejecting = rejectingDocKey === key;
+                  const isVerified = doc.status === 'Verified' || doc.status === 'VALID';
+                  const isRejected = doc.status === 'Rejected' || doc.status === 'INVALID';
+
+                  return (
+                    <div key={key} style={{
+                      backgroundColor: '#F8FAFC',
+                      borderRadius: '10px',
+                      border: `1.5px solid ${isVerified ? '#86EFAC' : isRejected ? '#FCA5A5' : '#E2E8F0'}`,
+                      padding: '1rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontWeight: 800, textTransform: 'capitalize', color: '#0F172A', fontSize: '0.95rem' }}>
+                              {key.replace('_', ' ')}
+                            </span>
+                            <span className={`badge ${
+                              isVerified ? 'badge-green' :
+                              isRejected ? 'badge-red' :
+                              doc.status === 'Correction Requested' || doc.status === 'CORRECTION_REQUIRED' ? 'badge-yellow' : 'badge-navy'
+                            }`} style={{ fontSize: '0.7rem' }}>
+                              {doc.status || 'UPLOADED'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '3px' }}>
+                            File: <strong style={{ color: '#1E293B' }}>{doc.file || `${key}_document.pdf`}</strong>
+                          </div>
+                          {doc.reason && (
+                            <div style={{ fontSize: '0.78rem', color: '#DC2626', marginTop: '4px', fontWeight: 600 }}>
+                              Defect Remark: {doc.reason}
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {doc.filePath && (
+                            <a
+                              href={doc.filePath}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="btn btn-outline btn-sm"
+                              style={{ color: '#2563EB', borderColor: '#BFDBFE' }}
+                              title="Open original file in new tab"
+                            >
+                              <ExternalLink size={13} />
+                              <span>View File</span>
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            style={{
+                              backgroundColor: isVerified ? '#16A34A' : '#FFFFFF',
+                              color: isVerified ? '#FFFFFF' : '#16A34A',
+                              border: '1.5px solid #16A34A',
+                              fontWeight: 700
+                            }}
+                            onClick={() => handleDocumentVerify(key, 'VALID')}
+                          >
+                            <Check size={13} />
+                            <span>{isVerified ? 'Valid ✓' : 'Mark Valid'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            style={{
+                              backgroundColor: isRejected ? '#DC2626' : '#FFFFFF',
+                              color: isRejected ? '#FFFFFF' : '#DC2626',
+                              border: '1.5px solid #DC2626',
+                              fontWeight: 700
+                            }}
+                            onClick={() => {
+                              if (isRejecting) {
+                                setRejectingDocKey(null);
+                              } else {
+                                setRejectingDocKey(key);
+                                setRejectReasonInput(doc.reason || '');
+                              }
+                            }}
+                          >
+                            <X size={13} />
+                            <span>{isRejected ? 'Defective' : 'Reject'}</span>
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
-                        File: {doc.file}
-                      </div>
-                      {doc.reason && (
-                        <div style={{ fontSize: '0.78rem', color: '#DC2626', marginTop: '2px' }}>
-                          Reason: {doc.reason}
+
+                      {/* Inline Rejection Reason Panel */}
+                      {isRejecting && (
+                        <div style={{
+                          backgroundColor: '#FEF2F2',
+                          border: '1px solid #FECACA',
+                          borderRadius: '8px',
+                          padding: '0.85rem',
+                          marginTop: '0.25rem'
+                        }}>
+                          <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#991B1B', display: 'block', marginBottom: '0.4rem' }}>
+                            Specify Reason for Rejection / Correction Request:
+                          </label>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <input
+                              type="text"
+                              className="form-control"
+                              style={{ fontSize: '0.85rem', height: '34px' }}
+                              placeholder="e.g. Blurry photo, mismatched marks, missing signature"
+                              value={rejectReasonInput}
+                              onChange={(e) => setRejectReasonInput(e.target.value)}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              style={{ backgroundColor: '#DC2626', color: '#FFFFFF', whiteSpace: 'nowrap' }}
+                              onClick={() => {
+                                handleDocumentVerify(key, 'INVALID', rejectReasonInput.trim() || 'Defective document copy');
+                              }}
+                            >
+                              Confirm Reject
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-sm"
+                              onClick={() => setRejectingDocKey(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span className={`badge ${
-                        doc.status === 'Verified' || doc.status === 'VALID' ? 'badge-green' :
-                        doc.status === 'Rejected' || doc.status === 'INVALID' ? 'badge-red' :
-                        doc.status === 'Correction Requested' || doc.status === 'CORRECTION_REQUIRED' ? 'badge-yellow' : 'badge-navy'
-                      }`}>
-                        {doc.status}
-                      </span>
-
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => handleDocumentVerify(key, 'VALID')}
-                      >
-                        <Check size={12} />
-                        <span>Valid</span>
-                      </button>
-
-                      <button
-                        className="btn btn-outline btn-sm"
-                        style={{ color: '#DC2626', borderColor: '#FECACA' }}
-                        onClick={() => {
-                          const reason = prompt('Enter rejection reason for this document:');
-                          if (reason) handleDocumentVerify(key, 'INVALID', reason);
-                        }}
-                      >
-                        <X size={12} />
-                        <span>Reject</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

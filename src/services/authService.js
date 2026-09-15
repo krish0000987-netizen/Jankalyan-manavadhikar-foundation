@@ -156,11 +156,12 @@ export const authService = {
         .from('applications')
         .select(`
           *,
-          students (*),
+          students (*, bank_details (*), academic_records (*)),
           institutions (id, name, code),
           districts (id, name),
           blocks (id, name),
-          application_documents (*)
+          application_documents (*),
+          payments (*)
         `)
         .ilike('id', cleanId)
         .maybeSingle();
@@ -186,11 +187,12 @@ export const authService = {
             .from('applications')
             .select(`
               *,
-              students (*),
+              students (*, bank_details (*), academic_records (*)),
               institutions (id, name, code),
               districts (id, name),
               blocks (id, name),
-              application_documents (*)
+              application_documents (*),
+              payments (*)
             `)
             .eq('student_id', studentData.id)
             .order('created_at', { ascending: false })

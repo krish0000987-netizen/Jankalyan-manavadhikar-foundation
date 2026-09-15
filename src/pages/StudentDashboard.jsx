@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   Upload,
   CheckCircle,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { initiateScholarshipFeePayment } from '../services/razorpayService';
 
@@ -32,12 +33,44 @@ export const StudentDashboard = () => {
   const { lang, t, navigate, activeStudentApp, setActiveStudentApp, updateStudentFeePayment, cms, grievances } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [studentGrievances, setStudentGrievances] = useState([]);
   const [payingFee, setPayingFee] = useState(false);
 
   // Default to activeStudentApp or search
   const student = activeStudentApp;
+
+  // Refresh active student application record directly from Supabase
+  const refreshStudentApplication = async (silent = false) => {
+    const targetId = student?.id || student?.mobile;
+    if (!targetId) return;
+    if (!silent) setRefreshing(true);
+    try {
+      let fresh = null;
+      if (student.id) {
+        fresh = await applicationService.getApplicationById(student.id);
+      }
+      if (!fresh && student.mobile) {
+        const authRes = await authService.signInStudent(student.mobile);
+        if (authRes?.studentApp) fresh = authRes.studentApp;
+      }
+      if (fresh && fresh.id) {
+        setActiveStudentApp(fresh);
+      }
+    } catch (err) {
+      console.warn('Dashboard sync error:', err);
+    } finally {
+      if (!silent) setRefreshing(false);
+    }
+  };
+
+  // Sync on mount or when student id changes
+  useEffect(() => {
+    if (student?.id || student?.mobile) {
+      refreshStudentApplication(true);
+    }
+  }, [student?.id]);
 
   useEffect(() => {
     if (student?.id || student?.mobile) {
@@ -153,7 +186,8 @@ export const StudentDashboard = () => {
     );
   }
 
-  const isApproved = student.status === 'Approved' || student.status === 'APPROVED' || student.status === 'Scholarship Released' || student.status === 'SCHOLARSHIP_RELEASED';
+  const isApproved = student.status === 'Approved' || student.status === 'APPROVED' || student.status === 'Scholarship Released' || student.status === 'SCHOLARSHIP_RELEASED' || student.stage === 5;
+  const isReleased = student.status === 'Scholarship Released' || student.status === 'SCHOLARSHIP_RELEASED' || student.rawStatus === 'SCHOLARSHIP_RELEASED' || student.stage === 5;
 
   return (
     <div className="section-py" style={{ backgroundColor: '#F8FAFC', minHeight: '85vh' }}>
@@ -174,6 +208,10 @@ export const StudentDashboard = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-outline btn-sm" onClick={() => refreshStudentApplication(false)} title="Check latest updates from scrutiny officer">
+              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+              <span>{refreshing ? 'Updating...' : (lang === 'hi' ? 'लाइव स्थिति रीफ्रेश करें' : 'Refresh Status')}</span>
+            </button>
             {isApproved && (
               <button className="btn btn-gold btn-sm" onClick={() => navigate(`/certificate/${student.id}`)}>
                 <Award size={15} />
@@ -223,7 +261,7 @@ export const StudentDashboard = () => {
             )}
 
             {/* Phase 4 Banner: Scholarship Released & UTR Confirmation */}
-            {student.status === 'Scholarship Released' && (
+            {isReleased && (
               <div style={{ backgroundColor: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <CheckCircle size={28} color="#16A34A" />
@@ -250,10 +288,10 @@ export const StudentDashboard = () => {
                   {t.dashAppDetails}
                 </h3>
                 <span className={`badge ${
-                  student.status === 'Scholarship Released' ? 'badge-green' :
-                  student.status === 'Approved' ? 'badge-blue' :
-                  student.status === 'Rejected' ? 'badge-red' :
-                  student.status === 'Correction Requested' ? 'badge-yellow' : 'badge-navy'
+                  isReleased ? 'badge-green' :
+                  student.status === 'Approved' || student.rawStatus === 'APPROVED' ? 'badge-blue' :
+                  student.status === 'Rejected' || student.rawStatus === 'REJECTED' ? 'badge-red' :
+                  student.status === 'Correction Requested' || student.rawStatus === 'CORRECTION_REQUESTED' ? 'badge-yellow' : 'badge-navy'
                 }`}>
                   {student.status}
                 </span>
