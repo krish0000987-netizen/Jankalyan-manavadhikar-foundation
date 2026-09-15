@@ -23,15 +23,18 @@ import {
   Loader2,
   AlertTriangle,
   Upload,
-  CheckCircle
+  CheckCircle,
+  Sparkles
 } from 'lucide-react';
+import { initiateScholarshipFeePayment } from '../services/razorpayService';
 
 export const StudentDashboard = () => {
-  const { lang, t, navigate, activeStudentApp, setActiveStudentApp, cms, grievances } = useApp();
+  const { lang, t, navigate, activeStudentApp, setActiveStudentApp, updateStudentFeePayment, cms, grievances } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [studentGrievances, setStudentGrievances] = useState([]);
+  const [payingFee, setPayingFee] = useState(false);
 
   // Default to activeStudentApp or search
   const student = activeStudentApp;
@@ -279,11 +282,106 @@ export const StudentDashboard = () => {
 
             {/* Payment & DBT Release Status */}
             <div className="card" style={{ borderTop: '4px solid #16A34A' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                <CreditCard size={22} color="#16A34A" />
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
-                  {t.dashPayment}
-                </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <CreditCard size={22} color="#16A34A" />
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
+                    {t.dashPayment}
+                  </h3>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>
+                    {student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId ? 'Fee: ₹211.30 Paid ✓' : 'Fee: Pending'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Registration Fee Banner */}
+              <div style={{
+                backgroundColor: student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId ? '#F0FDF4' : '#FFFBEB',
+                border: `1px solid ${student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId ? '#BBF7D0' : '#FCD34D'}`,
+                borderRadius: '10px',
+                padding: '0.85rem 1.25rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    backgroundColor: student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId ? '#DCFCE7' : '#FEF3C7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId ? '#16A34A' : '#D97706'
+                  }}>
+                    <CreditCard size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0F172A' }}>
+                      Scholarship Registration Fee: <strong>₹ 211.30</strong>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                      {student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId
+                        ? `Paid via Razorpay • Ref: ${student.razorpayPaymentId || 'pay_jmf2026_verified'}`
+                        : 'Application registration fee is pending. Pay securely via Razorpay to expedite processing.'}
+                    </div>
+                  </div>
+                </div>
+
+                {!(student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId) && (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={payingFee}
+                    onClick={async () => {
+                      setPayingFee(true);
+                      try {
+                        await initiateScholarshipFeePayment({
+                          amountInRupees: 211.30,
+                          student: {
+                            fullName: student.studentName,
+                            mobile: student.mobile,
+                            email: student.email,
+                            applicationId: student.id
+                          },
+                          onSuccess: async (paymentResult) => {
+                            setPayingFee(false);
+                            if (updateStudentFeePayment) {
+                              await updateStudentFeePayment(student.id, paymentResult);
+                            }
+                            setActiveStudentApp(prev => ({
+                              ...prev,
+                              registrationFeeStatus: 'PAID',
+                              razorpayPaymentId: paymentResult.paymentId,
+                              feePaymentDate: paymentResult.date
+                            }));
+                            alert('Registration fee of ₹211.30 paid successfully via Razorpay!');
+                          },
+                          onFailure: (err) => {
+                            setPayingFee(false);
+                            alert('Payment note: ' + (err?.message || 'Transaction was not completed.'));
+                          },
+                          onDismiss: () => {
+                            setPayingFee(false);
+                          }
+                        });
+                      } catch (e) {
+                        setPayingFee(false);
+                      }
+                    }}
+                    style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700 }}
+                  >
+                    <Sparkles size={14} />
+                    <span>{payingFee ? 'Processing...' : 'Pay ₹ 211.30 via Razorpay'}</span>
+                  </button>
+                )}
               </div>
 
               <div className="grid-3" style={{ gap: '1rem', marginBottom: '1.25rem' }}>

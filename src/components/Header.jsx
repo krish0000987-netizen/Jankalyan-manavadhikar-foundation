@@ -88,10 +88,6 @@ export const Header = () => {
   const roles = [
     { id: 'guest', labelEn: 'Public View', labelHi: 'सामान्य दृश्य' },
     { id: 'student', labelEn: 'Student Portal', labelHi: 'विद्यार्थी पोर्टल' },
-    { id: 'district', labelEn: 'District Coordinator', labelHi: 'जिला समन्वयक' },
-    { id: 'block', labelEn: 'Block Coordinator', labelHi: 'ब्लॉक समन्वयक' },
-    { id: 'institution', labelEn: 'School / College', labelHi: 'विद्यालय / कॉलेज' },
-    { id: 'center', labelEn: 'Online Center (CSC)', labelHi: 'ऑनलाइन केंद्र' },
     { id: 'admin', labelEn: 'Super Admin', labelHi: 'सुपर एडमिन' }
   ];
 
@@ -99,14 +95,6 @@ export const Header = () => {
     setRoleDropdownOpen(false);
     if (roleId === 'student') {
       navigate('/student-login');
-    } else if (roleId === 'institution') {
-      navigate('/school-login');
-    } else if (roleId === 'district') {
-      navigate('/district-login');
-    } else if (roleId === 'block') {
-      navigate('/block-login');
-    } else if (roleId === 'center') {
-      navigate('/login');
     } else if (roleId === 'admin') {
       navigate('/admin/login');
     } else {
@@ -252,7 +240,7 @@ export const Header = () => {
                         }}
                       >
                         <Shield size={14} color="#DC2626" />
-                        <span>{lang === 'hi' ? 'अधिकारी लॉगिन (Password)' : 'Official Staff Login'}</span>
+                        <span>{lang === 'hi' ? 'सुपर एडमिन लॉगिन' : 'Super Admin Login'}</span>
                       </button>
                     </div>
                   </div>

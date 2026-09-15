@@ -58,8 +58,8 @@ export const AdminSidebar = ({
     { id: 'settings', label: 'System Settings', icon: Settings, roles: ['SUPER_ADMIN'] },
   ];
 
-  // Filter items visible to current role
-  const visibleItems = menuItems.filter(item => item.roles.includes(role));
+  // Super Admin manages all modules directly
+  const visibleItems = menuItems;
 
   return (
     <>
@@ -97,21 +97,15 @@ export const AdminSidebar = ({
         {/* Brand Header */}
         <div style={{ padding: '1.5rem', borderBottom: '1px solid #1E293B' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#1E40AF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Sparkles size={20} color="#FEF08A" />
             </div>
             <div>
               <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
-                {role === 'INSTITUTION' ? 'School / College' : 
-                 role === 'DISTRICT_COORDINATOR' ? 'District Cell' : 
-                 role === 'BLOCK_COORDINATOR' ? 'Block Cell' : 
-                 role === 'ONLINE_CENTER' ? 'CSC Center' : 'Jankalyan Portal'}
+                Jankalyan Mission
               </div>
-              <div style={{ fontSize: '0.68rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {role === 'INSTITUTION' ? 'INSTITUTIONAL NODAL DESK' : 
-                 role === 'DISTRICT_COORDINATOR' ? 'DISTRICT GOVERNANCE' : 
-                 role === 'BLOCK_COORDINATOR' ? 'BLOCK COORDINATION' : 
-                 role === 'ONLINE_CENTER' ? 'FACILITATION PORTAL' : 'ADMINISTRATION & CMS'}
+              <div style={{ fontSize: '0.68rem', color: '#F87171', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
+                SUPER ADMIN DIRECTORATE
               </div>
             </div>
           </div>

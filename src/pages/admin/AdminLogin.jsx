@@ -28,121 +28,44 @@ import {
 export const AdminLogin = ({ defaultRole = null }) => {
   const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant, activeStudentApp, setActiveStudentApp, authRole } = useApp();
 
-  // Role Types
+  // Role Types - Only Student and Super Admin
   const ROLE_CONFIGS = [
     {
       id: 'STUDENT',
-      labelEn: 'Student',
-      labelHi: 'विद्यार्थी',
+      labelEn: 'Student Portal',
+      labelHi: 'विद्यार्थी पोर्टल',
       icon: GraduationCap,
       badgeEn: 'Student Applicant Portal',
       badgeHi: 'विद्यार्थी आवेदन पोर्टल',
       color: '#2563EB',
       bgLight: '#EFF6FF',
-      descriptionEn: 'Access scholarship status, DBT payment timeline, verify documents, and download certificates.',
-      descriptionHi: 'छात्रवृत्ति आवेदन स्थिति, डीबीटी भुगतान, दस्तावेज़ सत्यापन एवं प्रमाण पत्र डाउनलोड करें।',
+      descriptionEn: 'Access scholarship status, pay registration fee ₹ 211.30 via Razorpay, track DBT payment timeline, verify documents, and download certificates.',
+      descriptionHi: 'छात्रवृत्ति आवेदन स्थिति, रेजरपे द्वारा ₹ 211.30 पंजीकरण शुल्क भुगतान, डीबीटी स्थिति एवं प्रमाण पत्र देखें।',
       inputLabel: lang === 'hi' ? 'आवेदन क्रमांक / मोबाइल नंबर' : 'Application ID / Registered Mobile',
       inputPlaceholder: 'JMF-2026-108234 or 9826112233',
       identifierType: 'student',
       demoChips: [
-        { label: 'Pooja Sharma (Released)', id: 'JMF-2026-108234', pin: 'pooja123', subtitle: 'Class 12th • Jabalpur' },
+        { label: 'Pooja Sharma (Released)', id: 'JMF-2026-108234', pin: 'pooja123', subtitle: 'Class 12th • Jabalpur • Fee Paid' },
         { label: 'Rahul Verma (Verification)', id: 'JMF-2026-109482', pin: 'rahul123', subtitle: 'Excellence School • Bhopal' },
         { label: 'Ananya Patel (Approved)', id: 'JMF-2026-110294', pin: 'ananya123', subtitle: 'Holkar College • Indore' }
       ]
     },
     {
-      id: 'INSTITUTION',
-      labelEn: 'School / College',
-      labelHi: 'स्कूल / कॉलेज',
-      icon: Building2,
-      badgeEn: 'Institutional Nodal Portal',
-      badgeHi: 'संस्थागत नोडल पोर्टल',
-      color: '#0D9488',
-      bgLight: '#F0FDFA',
-      descriptionEn: 'Verify student bonafides, review applications enrolled in your institution, and track school grants.',
-      descriptionHi: 'अपने विद्यालय/कॉलेज के छात्रों के बोनाफाइड सत्यापित करें और संस्थागत प्रगति देखें।',
-      inputLabel: lang === 'hi' ? 'संस्थान ईमेल / कोड' : 'Official Institution Email / Code',
-      inputPlaceholder: 'school.model@jankalyan.org or SCH-JBP-01',
-      identifierType: 'email',
-      demoChips: [
-        { label: 'Govt. Model School (Jabalpur)', email: 'school.model@jankalyan.org', pass: 'School@JMF2026!', code: 'SCH-JBP-01' },
-        { label: 'Holkar Science College (Indore)', email: 'college.holkar@jankalyan.org', pass: 'College@JMF2026!', code: 'COL-IND-03' },
-        { label: 'Barkatullah Univ. College (Bhopal)', email: 'college.barkatullah@jankalyan.org', pass: 'College@JMF2026!', code: 'COL-BPL-02' }
-      ]
-    },
-    {
-      id: 'DISTRICT_COORDINATOR',
-      labelEn: 'District Cell',
-      labelHi: 'जिला समन्वयक',
-      icon: MapPin,
-      badgeEn: 'District Governance Cell',
-      badgeHi: 'जिला प्रशासनिक प्रकोष्ठ',
-      color: '#D97706',
-      bgLight: '#FFFBEB',
-      descriptionEn: 'Second-tier district scrutiny, block oversight, certificate approvals, and district commission reports.',
-      descriptionHi: 'द्वितीय-स्तरीय जिला संवीक्षा, ब्लॉक पर्यवेक्षण एवं जिला रिपोर्टिंग।',
-      inputLabel: lang === 'hi' ? 'जिला अधिकारी ईमेल' : 'District Official Email',
-      inputPlaceholder: 'district.jabalpur@jankalyan.org',
-      identifierType: 'email',
-      demoChips: [
-        { label: 'Jabalpur District Cell', email: 'district.jabalpur@jankalyan.org', pass: 'District@JMF2026!' },
-        { label: 'Bhopal District Cell', email: 'district.bhopal@jankalyan.org', pass: 'District@JMF2026!' }
-      ]
-    },
-    {
-      id: 'BLOCK_COORDINATOR',
-      labelEn: 'Block Cell',
-      labelHi: 'ब्लॉक समन्वयक',
-      icon: Layers,
-      badgeEn: 'Block Coordination Desk',
-      badgeHi: 'ब्लॉक समन्वय प्रकोष्ठ',
-      color: '#7C3AED',
-      bgLight: '#F5F3FF',
-      descriptionEn: 'Grassroots block verification, school-level liaison, and cluster documentation support.',
-      descriptionHi: 'जमीनी स्तर पर ब्लॉक सत्यापन एवं स्थानीय विद्यालयों से समन्वय।',
-      inputLabel: lang === 'hi' ? 'ब्लॉक अधिकारी ईमेल' : 'Block Official Email',
-      inputPlaceholder: 'block.patan@jankalyan.org',
-      identifierType: 'email',
-      demoChips: [
-        { label: 'Patan Block Desk (Jabalpur)', email: 'block.patan@jankalyan.org', pass: 'Block@JMF2026!' },
-        { label: 'Berasia Block Desk (Bhopal)', email: 'block.berasia@jankalyan.org', pass: 'Block@JMF2026!' }
-      ]
-    },
-    {
-      id: 'ONLINE_CENTER',
-      labelEn: 'CSC / Center',
-      labelHi: 'सुविधा केंद्र',
-      icon: Laptop,
-      badgeEn: 'Facilitation Center Desk',
-      badgeHi: 'नागरिक सुविधा केंद्र',
-      color: '#059669',
-      bgLight: '#ECFDF5',
-      descriptionEn: 'Assisted application registration, high-speed document scanning, and local student helpdesk.',
-      descriptionHi: 'छात्रों के लिए ऑनलाइन आवेदन, दस्तावेज़ स्कैनिंग एवं सहायता केंद्र।',
-      inputLabel: lang === 'hi' ? 'केंद्र आईडी / ईमेल' : 'CSC Center ID / Email',
-      inputPlaceholder: 'csc.jabalpur01@jankalyan.org',
-      identifierType: 'email',
-      demoChips: [
-        { label: 'Dixit Colony Facilitation Desk', email: 'csc.jabalpur01@jankalyan.org', pass: 'CSC@JMF2026!' },
-        { label: 'MP Nagar Bhopal Center', email: 'csc.bhopal01@jankalyan.org', pass: 'CSC@JMF2026!' }
-      ]
-    },
-    {
       id: 'SUPER_ADMIN',
-      labelEn: 'Head Office',
-      labelHi: 'मुख्यालय एडमिन',
+      labelEn: 'Super Admin Portal',
+      labelHi: 'सुपर एडमिन पोर्टल',
       icon: Shield,
       badgeEn: 'Central Mission Directorate',
       badgeHi: 'केंद्रीय मिशन निदेशालय',
       color: '#DC2626',
       bgLight: '#FEF2F2',
-      descriptionEn: 'System-wide policy enforcement, live audit logs, disbursement authorizations, and grievance resolution.',
-      descriptionHi: 'समग्र प्रणाली नियंत्रण, डीबीटी संवितरण अनुमोदन, सीएमएस संपादन एवं शिकायत निवारण।',
-      inputLabel: lang === 'hi' ? 'मुख्यालय एडमिन ईमेल' : 'Head Office Admin Email',
+      descriptionEn: 'Central statewide governance: complete application approvals, Razorpay transaction management, CMS content, grievance resolution, and system audit logs.',
+      descriptionHi: 'केंद्रीकृत प्रशासन: आवेदन अनुमोदन, रेजरपे भुगतान प्रबंधन, सीएमएस संपादन एवं संपूर्ण पोर्टल नियंत्रण।',
+      inputLabel: lang === 'hi' ? 'सुपर एडमिन ईमेल' : 'Super Admin Email',
       inputPlaceholder: 'admin@jankalyan.org',
       identifierType: 'email',
       demoChips: [
-        { label: 'Head Office Super Admin', email: 'admin@jankalyan.org', pass: 'Admin@JMF2026!' }
+        { label: 'Super Administrator', email: 'admin@jankalyan.org', pass: 'Admin@JMF2026!', subtitle: 'Full Statewide Governance' }
       ]
     }
   ];
@@ -150,10 +73,6 @@ export const AdminLogin = ({ defaultRole = null }) => {
   // Derive initial selected role from route or prop
   const getInitialRole = () => {
     if (defaultRole) return defaultRole;
-    if (currentRoute === '/student-login' || currentRoute === '/student-register') return 'STUDENT';
-    if (currentRoute === '/school-login' || currentRoute === '/college-login' || currentRoute === '/institution-login') return 'INSTITUTION';
-    if (currentRoute === '/district-login') return 'DISTRICT_COORDINATOR';
-    if (currentRoute === '/block-login') return 'BLOCK_COORDINATOR';
     if (currentRoute === '/admin/login' || currentRoute === '/admin') return 'SUPER_ADMIN';
     return 'STUDENT'; // default to student friendly view
   };
@@ -210,20 +129,11 @@ export const AdminLogin = ({ defaultRole = null }) => {
 
   // Update active role if route changes
   useEffect(() => {
-    if (currentRoute === '/student-login') {
-      setActiveRole('STUDENT');
-      setStudentMode('login');
-    } else if (currentRoute === '/student-register') {
-      setActiveRole('STUDENT');
-      setStudentMode('register');
-    } else if (currentRoute === '/school-login' || currentRoute === '/college-login' || currentRoute === '/institution-login') {
-      setActiveRole('INSTITUTION');
-    } else if (currentRoute === '/district-login') {
-      setActiveRole('DISTRICT_COORDINATOR');
-    } else if (currentRoute === '/block-login') {
-      setActiveRole('BLOCK_COORDINATOR');
-    } else if (currentRoute === '/admin/login') {
+    if (currentRoute === '/admin/login' || currentRoute === '/admin') {
       setActiveRole('SUPER_ADMIN');
+    } else {
+      setActiveRole('STUDENT');
+      setStudentMode(currentRoute === '/student-register' ? 'register' : 'login');
     }
   }, [currentRoute]);
 
@@ -386,17 +296,17 @@ export const AdminLogin = ({ defaultRole = null }) => {
           </h1>
           <p style={{ color: '#94A3B8', fontSize: '1rem', maxWidth: '620px', margin: '0 auto' }}>
             {lang === 'hi' 
-              ? 'कृपया अपनी निर्धारित भूमिका चुनें और पोर्टल में प्रवेश करें।' 
-              : 'Select your designated institutional or applicant role to sign in to your authorized workspace.'}
+              ? 'कृपया अपना अधिकृत पोर्टल चुनें — विद्यार्थी पोर्टल या केंद्रीय सुपर एडमिनिस्ट्रेटर।' 
+              : 'Select your designated portal to continue — Student Applicant Portal or Super Administrator.'}
           </p>
         </div>
 
-        {/* Role Tabs Strip */}
+        {/* Dual Portal Switcher: Student vs Super Admin */}
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
-          gap: '0.6rem', 
-          marginBottom: '1.75rem' 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+          gap: '1rem', 
+          marginBottom: '2rem' 
         }}>
           {ROLE_CONFIGS.map(roleItem => {
             const Icon = roleItem.icon;
@@ -405,6 +315,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
               <button
                 key={roleItem.id}
                 type="button"
+                id={`portal-tab-${roleItem.id.toLowerCase()}`}
                 onClick={() => {
                   setActiveRole(roleItem.id);
                   setErrorMessage('');
@@ -414,34 +325,66 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 }}
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.85rem 0.6rem',
-                  borderRadius: '12px',
-                  border: isSelected ? `2px solid ${roleItem.color}` : '1px solid rgba(255, 255, 255, 0.1)',
-                  backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.6)',
-                  color: isSelected ? '#FFFFFF' : '#94A3B8',
+                  gap: '1rem',
+                  padding: '1.25rem 1.5rem',
+                  borderRadius: '16px',
+                  border: isSelected ? `2.5px solid ${roleItem.color}` : '1px solid rgba(255, 255, 255, 0.12)',
+                  backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.65)',
+                  color: '#FFFFFF',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: isSelected ? `0 8px 24px ${roleItem.color}33` : 'none'
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isSelected ? `0 12px 28px ${roleItem.color}35` : 'none',
+                  textAlign: 'left',
+                  position: 'relative'
                 }}
               >
                 <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  backgroundColor: isSelected ? roleItem.color : 'rgba(255, 255, 255, 0.05)',
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '14px',
+                  backgroundColor: isSelected ? roleItem.color : 'rgba(255, 255, 255, 0.06)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: isSelected ? '#FFFFFF' : '#94A3B8'
+                  color: isSelected ? '#FFFFFF' : '#94A3B8',
+                  flexShrink: 0,
+                  transition: 'all 0.2s ease'
                 }}>
-                  <Icon size={20} />
+                  <Icon size={26} />
                 </div>
-                <span style={{ fontSize: '0.825rem', fontWeight: isSelected ? 700 : 500, textAlign: 'center', lineHeight: 1.2 }}>
-                  {lang === 'hi' ? roleItem.labelHi : roleItem.labelEn}
-                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: isSelected ? roleItem.color : '#94A3B8',
+                    marginBottom: '2px'
+                  }}>
+                    {lang === 'hi' ? roleItem.badgeHi : roleItem.badgeEn}
+                  </div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF' }}>
+                    {lang === 'hi' ? roleItem.labelHi : roleItem.labelEn}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '3px' }}>
+                    {roleItem.id === 'STUDENT'
+                      ? (lang === 'hi' ? 'आवेदन, रेजरपे शुल्क एवं स्थिति ट्रैकिंग' : 'Applications, Razorpay fee & DBT status')
+                      : (lang === 'hi' ? 'केंद्रीकृत राज्यव्यापी प्रशासन एवं नियंत्रण' : 'Statewide mission governance & control')}
+                  </div>
+                </div>
+                {isSelected && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: roleItem.color,
+                    boxShadow: `0 0 10px ${roleItem.color}`
+                  }} />
+                )}
               </button>
             );
           })}

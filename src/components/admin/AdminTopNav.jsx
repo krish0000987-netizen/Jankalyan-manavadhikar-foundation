@@ -85,49 +85,22 @@ export const AdminTopNav = ({
       {/* Right: Role Switcher / Jurisdiction Scope Badge, Public Link & User Profile */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         
-        {/* If Super Admin, show preview switcher; if scoped user, show official jurisdiction badge */}
-        {isSuperAdminUser ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Shield size={16} color="#1E40AF" />
-            <select
-              className="form-control"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              title="Super Admin Perspective Switcher"
-              style={{
-                height: '36px',
-                padding: '0 0.75rem',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                backgroundColor: '#EFF6FF',
-                borderColor: '#BFDBFE',
-                color: '#1E40AF'
-              }}
-            >
-              <option value="SUPER_ADMIN">Super Admin (Statewide)</option>
-              <option value="INSTITUTION">School / College Nodal</option>
-              <option value="DISTRICT_COORDINATOR">District Coordinator</option>
-              <option value="BLOCK_COORDINATOR">Block Coordinator</option>
-              <option value="ONLINE_CENTER">Online Center (CSC)</option>
-            </select>
-          </div>
-        ) : (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.35rem 0.75rem',
-            borderRadius: '6px',
-            backgroundColor: role === 'INSTITUTION' ? '#F0FDFA' : '#EFF6FF',
-            border: `1px solid ${role === 'INSTITUTION' ? '#99F6E4' : '#BFDBFE'}`,
-            color: role === 'INSTITUTION' ? '#0F766E' : '#1E40AF',
-            fontSize: '0.78rem',
-            fontWeight: 700
-          }}>
-            <Shield size={14} />
-            <span>{jurisdictionLabel || (role || '').replace('_', ' ')}</span>
-          </div>
-        )}
+        {/* Official Super Administrator Statewide Governance Badge */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.45rem',
+          padding: '0.4rem 0.85rem',
+          borderRadius: '8px',
+          backgroundColor: '#FEF2F2',
+          border: '1px solid #FECACA',
+          color: '#DC2626',
+          fontSize: '0.8rem',
+          fontWeight: 800
+        }}>
+          <Shield size={15} color="#DC2626" />
+          <span>Super Admin (Statewide Authority)</span>
+        </div>
 
         {/* Notifications Icon */}
         <div style={{ position: 'relative' }}>
@@ -181,7 +154,7 @@ export const AdminTopNav = ({
             width: '36px', 
             height: '36px', 
             borderRadius: '50%', 
-            backgroundColor: role === 'INSTITUTION' ? '#0D9488' : '#1E40AF', 
+            backgroundColor: '#DC2626', 
             color: '#FFFFFF', 
             display: 'flex', 
             alignItems: 'center', 
@@ -189,14 +162,14 @@ export const AdminTopNav = ({
             fontWeight: 800, 
             fontSize: '0.85rem' 
           }}>
-            {user?.email?.[0]?.toUpperCase() || 'A'}
+            A
           </div>
           <div className="admin-user-info" style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>
-              {user?.user_metadata?.full_name || (user?.email === 'admin@jankalyan.org' ? 'Super Administrator' : user?.email?.split('@')[0]) || 'Administrator'}
+              Super Administrator
             </span>
-            <span style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {jurisdiction?.institution?.name || (role || 'SUPER_ADMIN').replace('_', ' ')}
+            <span style={{ fontSize: '0.68rem', color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+              Central Directorate
             </span>
           </div>
         </div>

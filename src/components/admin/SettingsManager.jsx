@@ -25,6 +25,8 @@ export const SettingsManager = () => {
   const [settings, setSettings] = useState({
     academicSession: '2026-27',
     grantAmount: 12000,
+    registrationFeeAmount: 211.30,
+    razorpayKeyId: 'rzp_test_51PLACEHOLDER',
     applicationStartDate: '2026-08-01',
     applicationClosingDate: '2026-10-31',
     officialMobile: '+91 761 2400123',
@@ -219,6 +221,48 @@ export const SettingsManager = () => {
               <option value="CASHFREE">Cashfree AutoCollect / Payouts</option>
               <option value="PAYU">PayU Direct Transfer</option>
             </select>
+          </div>
+        </div>
+
+        {/* Section 2B: Student Registration Fee & Razorpay Gateway Configuration */}
+        <div className="card" style={{ padding: '1.75rem', borderLeft: '4px solid #2563EB' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <IndianRupee size={18} color="#2563EB" />
+            <span>Student Registration Fee & Razorpay Payment Gateway</span>
+          </h3>
+          <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '1.25rem' }}>
+            Configure the mandatory scholarship application registration fee and Razorpay merchant key.
+          </p>
+
+          <div className="grid-editorial" style={{ gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label required">Scholarship Registration Fee (₹ INR)</label>
+              <input 
+                type="number"
+                step="0.01"
+                className="form-control"
+                required
+                value={settings.registrationFeeAmount}
+                onChange={(e) => setSettings({ ...settings, registrationFeeAmount: parseFloat(e.target.value) || 0 })}
+              />
+              <span style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '3px', display: 'block' }}>
+                Standard foundation registration fee is ₹ 211.30 per student application.
+              </span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label required">Razorpay Key ID</label>
+              <input 
+                type="text"
+                className="form-control"
+                placeholder="rzp_test_... or rzp_live_..."
+                value={settings.razorpayKeyId}
+                onChange={(e) => setSettings({ ...settings, razorpayKeyId: e.target.value })}
+              />
+              <span style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '3px', display: 'block' }}>
+                Public Key ID from your Razorpay Dashboard (API Keys).
+              </span>
+            </div>
           </div>
         </div>
 

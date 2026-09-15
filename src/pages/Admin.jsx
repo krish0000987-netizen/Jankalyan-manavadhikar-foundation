@@ -655,6 +655,7 @@ export const Admin = () => {
                       <th>District / Block</th>
                       <th>Institution & Course</th>
                       <th>Category</th>
+                      <th>Reg. Fee (₹ 211.30)</th>
                       <th>Status</th>
                       <th>Date</th>
                       <th>Actions</th>
@@ -674,6 +675,18 @@ export const Admin = () => {
                           <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{app.course}</div>
                         </td>
                         <td><span className="badge badge-navy">{app.category}</span></td>
+                        <td>
+                          <div>
+                            <span className={`badge ${app.registrationFeeStatus === 'PAID' ? 'badge-green' : 'badge-yellow'}`}>
+                              {app.registrationFeeStatus === 'PAID' ? '✓ PAID ₹211.30' : 'PENDING'}
+                            </span>
+                            {app.razorpayPaymentId && (
+                              <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: '#2563EB', marginTop: '3px' }}>
+                                {app.razorpayPaymentId}
+                              </div>
+                            )}
+                          </div>
+                        </td>
                         <td>
                           <span className={`badge ${
                             app.status === 'Scholarship Released' ? 'badge-green' :

@@ -813,7 +813,11 @@ export const applicationService = {
         status: 'UNDER_VERIFICATION',
         stage: 2,
         submission_date: new Date().toISOString().split('T')[0],
-        disbursed_amount: formData.scholarshipAmount ? parseFloat(formData.scholarshipAmount) : schemeGrant
+        disbursed_amount: formData.scholarshipAmount ? parseFloat(formData.scholarshipAmount) : schemeGrant,
+        registration_fee_status: formData.registrationFeeStatus || 'PAID',
+        registration_fee_amount: formData.registrationFeeAmount || 211.30,
+        razorpay_payment_id: formData.razorpayPaymentId || null,
+        fee_payment_date: formData.feePaymentDate || new Date().toISOString()
       })
       .select()
       .single();
@@ -966,9 +970,40 @@ export const applicationService = {
       rejectionReason: app.rejection_reason,
       correctionRemarks: app.correction_remarks,
       verificationToken: app.verification_token,
+      registrationFeeStatus: app.registration_fee_status || 'PAID',
+      registrationFeeAmount: app.registration_fee_amount ? parseFloat(app.registration_fee_amount) : 211.30,
+      razorpayPaymentId: app.razorpay_payment_id || null,
+      feePaymentDate: app.fee_payment_date || app.created_at || null,
       documents: docs,
       history: app.application_status_history || []
     };
+  },
+
+  /**
+   * Record or update fee payment for an application via Razorpay
+   */
+  async updateFeePayment(appId, paymentData = {}) {
+    try {
+      const paymentDate = paymentData.date || new Date().toISOString();
+      const { data, error } = await supabase
+        .from('applications')
+        .update({
+          registration_fee_status: 'PAID',
+          registration_fee_amount: paymentData.amount || 211.30,
+          razorpay_payment_id: paymentData.paymentId,
+          fee_payment_date: paymentDate
+        })
+        .eq('id', appId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return this.normalizeApplication(data);
+      }
+    } catch (err) {
+      console.warn('updateFeePayment live DB update warning:', err);
+    }
+    return null;
   },
 
   formatStatus(status) {
@@ -986,3 +1021,4 @@ export const applicationService = {
     }
   }
 };
+

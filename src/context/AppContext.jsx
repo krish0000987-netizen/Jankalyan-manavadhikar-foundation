@@ -497,7 +497,7 @@ export const AppProvider = ({ children }) => {
     loadCmsData();
     loadLiveCounters();
     loadGrievances();
-  }, [loadCmsData, loadApplications, loadLiveCounters, loadGrievances]);
+  }, []);
 
   // Navigation Helper
   const navigate = (route) => {
@@ -687,6 +687,22 @@ export const AppProvider = ({ children }) => {
     return result;
   };
 
+  // Update Student Fee Payment via Razorpay
+  const updateStudentFeePayment = async (appId, paymentData) => {
+    try {
+      const updated = await applicationService.updateFeePayment(appId, paymentData);
+      if (updated) {
+        setActiveStudentApp(updated);
+        setApplications(prev => prev.map(a => a.id === appId ? updated : a));
+        localStorage.setItem('jmf_active_student_app', JSON.stringify(updated));
+        return updated;
+      }
+    } catch (err) {
+      console.error('Error updating fee payment:', err);
+    }
+    return null;
+  };
+
   // Explicit Role & Jurisdiction Switcher (For testing or demo selection)
   const switchRole = async (newRole, newJurisdiction = {}) => {
     setAuthRole(newRole);
@@ -731,6 +747,7 @@ export const AppProvider = ({ children }) => {
       appsLoaded,
       submitNewApplication,
       updateApplicationStatus,
+      updateStudentFeePayment,
       activeStudentApp,
       setActiveStudentApp,
       grievances,
