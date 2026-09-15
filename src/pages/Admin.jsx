@@ -139,8 +139,6 @@ export const Admin = () => {
   useEffect(() => {
     loadApplications(authRole, jurisdiction);
     reportService.getDashboardSummary().then(setMisSummary);
-    paymentService.getPaymentBatches().then(setDbtBatches);
-    paymentService.getPayments().then(setDbtPayments);
     commissionService.getCommissionRates().then(setCommissionRates);
     commissionService.getCommissions().then(setCommissionsList);
     auditService.getAuditLogs().then(setAuditLogs);
