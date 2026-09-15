@@ -25,7 +25,8 @@ export const ApplicationScrutinyModal = ({
   onClose, 
   onStatusUpdated,
   onDocumentVerified,
-  currentUser 
+  currentUser,
+  readOnly = false
 }) => {
   const [activeTab, setActiveTab] = useState('dossier'); // 'dossier' | 'documents' | 'history' | 'payment'
   const [actionRemarks, setActionRemarks] = useState('');
@@ -223,7 +224,7 @@ export const ApplicationScrutinyModal = ({
               </span>
             </div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFFFFF' }}>
-              Verification Dossier: {application.studentName}
+              {readOnly ? `Application Master Record: ${application.studentName}` : `Verification Dossier: ${application.studentName}`}
             </h2>
           </div>
 
@@ -543,42 +544,46 @@ export const ApplicationScrutinyModal = ({
                             </a>
                           )}
 
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            style={{
-                              backgroundColor: isVerified ? '#16A34A' : '#FFFFFF',
-                              color: isVerified ? '#FFFFFF' : '#16A34A',
-                              border: '1.5px solid #16A34A',
-                              fontWeight: 700
-                            }}
-                            onClick={() => handleDocumentVerify(key, 'VALID')}
-                          >
-                            <Check size={13} />
-                            <span>{isVerified ? 'Valid ✓' : 'Mark Valid'}</span>
-                          </button>
+                          {!readOnly && (
+                            <>
+                              <button
+                                type="button"
+                                className="btn btn-sm"
+                                style={{
+                                  backgroundColor: isVerified ? '#16A34A' : '#FFFFFF',
+                                  color: isVerified ? '#FFFFFF' : '#16A34A',
+                                  border: '1.5px solid #16A34A',
+                                  fontWeight: 700
+                                }}
+                                onClick={() => handleDocumentVerify(key, 'VALID')}
+                              >
+                                <Check size={13} />
+                                <span>{isVerified ? 'Valid ✓' : 'Mark Valid'}</span>
+                              </button>
 
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            style={{
-                              backgroundColor: isRejected ? '#DC2626' : '#FFFFFF',
-                              color: isRejected ? '#FFFFFF' : '#DC2626',
-                              border: '1.5px solid #DC2626',
-                              fontWeight: 700
-                            }}
-                            onClick={() => {
-                              if (isRejecting) {
-                                setRejectingDocKey(null);
-                              } else {
-                                setRejectingDocKey(key);
-                                setRejectReasonInput(doc.reason || '');
-                              }
-                            }}
-                          >
-                            <X size={13} />
-                            <span>{isRejected ? 'Defective' : 'Reject'}</span>
-                          </button>
+                              <button
+                                type="button"
+                                className="btn btn-sm"
+                                style={{
+                                  backgroundColor: isRejected ? '#DC2626' : '#FFFFFF',
+                                  color: isRejected ? '#FFFFFF' : '#DC2626',
+                                  border: '1.5px solid #DC2626',
+                                  fontWeight: 700
+                                }}
+                                onClick={() => {
+                                  if (isRejecting) {
+                                    setRejectingDocKey(null);
+                                  } else {
+                                    setRejectingDocKey(key);
+                                    setRejectReasonInput(doc.reason || '');
+                                  }
+                                }}
+                              >
+                                <X size={13} />
+                                <span>{isRejected ? 'Defective' : 'Reject'}</span>
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -686,126 +691,160 @@ export const ApplicationScrutinyModal = ({
           flexDirection: 'column',
           gap: '0.75rem'
         }}>
-          <div>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>
-              Verifier Scrutiny Remarks / Action Justification:
-            </label>
-            <input 
-              type="text"
-              className="form-control"
-              placeholder="e.g. Approved after institutional bonafide verification / Blurry income certificate, please re-upload"
-              value={actionRemarks}
-              onChange={(e) => setActionRemarks(e.target.value)}
-              style={{ fontSize: '0.85rem' }}
-            />
-          </div>
-
-          {!isJurisdictionAuthorized && (
-            <div style={{ color: '#DC2626', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#FEF2F2', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
-              <AlertTriangle size={15} />
-              <span>Approval Locked: You are authorized only for your assigned jurisdiction ({currentUser.jurisdiction?.district?.name || currentUser.jurisdiction?.institution?.name || currentUser.role}).</span>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-            
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button 
-                className="btn btn-outline btn-sm"
-                style={{ color: '#DC2626', borderColor: '#FECACA' }}
-                disabled={submitting || !isJurisdictionAuthorized}
-                onClick={() => handleAction('Rejected')}
-              >
-                <XCircle size={14} />
-                <span>{currentUser?.role === 'INSTITUTION' ? 'Reject Bonafide' : 'Reject Application'}</span>
-              </button>
-
-              <button 
-                className="btn btn-outline btn-sm"
-                style={{ color: '#D97706', borderColor: '#FDE68A' }}
-                disabled={submitting || !isJurisdictionAuthorized}
-                onClick={() => handleAction('Correction Requested')}
-              >
-                <AlertTriangle size={14} />
-                <span>Request Correction</span>
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {/* Institution Nodal Action: Phase 2 Institutional Bonafide Attestation */}
-              {currentUser?.role === 'INSTITUTION' && (
-                <button 
-                  className="btn btn-primary btn-sm"
-                  style={{ backgroundColor: '#0D9488', borderColor: '#0D9488', color: '#FFFFFF' }}
-                  disabled={submitting || !isJurisdictionAuthorized || application.status === 'Bonafide Attested' || application.status === 'Approved' || application.status === 'Scholarship Released'}
-                  onClick={() => handleAction('Bonafide Attested')}
-                >
-                  <ShieldCheck size={14} />
-                  <span>{application.status === 'Bonafide Attested' ? 'Bonafide Already Attested' : 'Sign & Attest Bonafide (Tier 1)'}</span>
+          {readOnly ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <span className="badge badge-navy" style={{ fontSize: '0.8rem' }}>Master Registry Dossier</span>
+                <span style={{ fontSize: '0.85rem', color: '#475569' }}>
+                  Registration Fee: <strong style={{ color: application.registrationFeeStatus === 'PAID' ? '#16A34A' : '#D97706' }}>
+                    {application.registrationFeeStatus === 'PAID' ? '✓ ₹ 211.30 Paid' : 'Pending'}
+                  </strong>
+                  {application.razorpayPaymentId && (
+                    <span style={{ fontFamily: 'monospace', marginLeft: '0.5rem', color: '#2563EB' }}>
+                      ({application.razorpayPaymentId})
+                    </span>
+                  )}
+                </span>
+                {application.status === 'Scholarship Released' && (
+                  <span className="badge badge-green" style={{ fontSize: '0.78rem' }}>
+                    DBT Released • UTR: {application.utrNumber}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
+                  <Printer size={14} />
+                  <span>Print Application</span>
                 </button>
+                <button className="btn btn-outline btn-sm" onClick={onClose}>
+                  Close
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem' }}>
+                  Verifier Scrutiny Remarks / Action Justification:
+                </label>
+                <input 
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. Approved after institutional bonafide verification / Blurry income certificate, please re-upload"
+                  value={actionRemarks}
+                  onChange={(e) => setActionRemarks(e.target.value)}
+                  style={{ fontSize: '0.85rem' }}
+                />
+              </div>
+
+              {!isJurisdictionAuthorized && (
+                <div style={{ color: '#DC2626', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#FEF2F2', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+                  <AlertTriangle size={15} />
+                  <span>Approval Locked: You are authorized only for your assigned jurisdiction ({currentUser.jurisdiction?.district?.name || currentUser.jurisdiction?.institution?.name || currentUser.role}).</span>
+                </div>
               )}
 
-              {/* District / Block Coordinator Action: Phase 3 District Scrutiny Approval */}
-              {(currentUser?.role === 'DISTRICT_COORDINATOR' || currentUser?.role === 'BLOCK_COORDINATOR') && (
-                <button 
-                  className="btn btn-secondary btn-sm"
-                  disabled={submitting || !isJurisdictionAuthorized || application.status === 'Approved' || application.status === 'Scholarship Released'}
-                  onClick={() => handleAction('Approved')}
-                >
-                  <CheckCircle2 size={14} />
-                  <span>{application.status === 'Approved' ? 'Already Approved' : 'Approve Application (Tier 2)'}</span>
-                </button>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    className="btn btn-outline btn-sm"
+                    style={{ color: '#DC2626', borderColor: '#FECACA' }}
+                    disabled={submitting || !isJurisdictionAuthorized}
+                    onClick={() => handleAction('Rejected')}
+                  >
+                    <XCircle size={14} />
+                    <span>{currentUser?.role === 'INSTITUTION' ? 'Reject Bonafide' : 'Reject Application'}</span>
+                  </button>
 
-              {/* Super Admin Actions: Complete Statewide Access */}
-              {(!currentUser?.role || currentUser?.role === 'SUPER_ADMIN') && (
-                <>
-                  {application.status === 'Under Verification' && (
+                  <button 
+                    className="btn btn-outline btn-sm"
+                    style={{ color: '#D97706', borderColor: '#FDE68A' }}
+                    disabled={submitting || !isJurisdictionAuthorized}
+                    onClick={() => handleAction('Correction Requested')}
+                  >
+                    <AlertTriangle size={14} />
+                    <span>Request Correction</span>
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {/* Institution Nodal Action: Phase 2 Institutional Bonafide Attestation */}
+                  {currentUser?.role === 'INSTITUTION' && (
                     <button 
-                      className="btn btn-outline btn-sm"
-                      style={{ color: '#0D9488', borderColor: '#99F6E4' }}
-                      disabled={submitting}
+                      className="btn btn-primary btn-sm"
+                      style={{ backgroundColor: '#0D9488', borderColor: '#0D9488', color: '#FFFFFF' }}
+                      disabled={submitting || !isJurisdictionAuthorized || application.status === 'Bonafide Attested' || application.status === 'Approved' || application.status === 'Scholarship Released'}
                       onClick={() => handleAction('Bonafide Attested')}
                     >
                       <ShieldCheck size={14} />
-                      <span>Attest Bonafide</span>
+                      <span>{application.status === 'Bonafide Attested' ? 'Bonafide Already Attested' : 'Sign & Attest Bonafide (Tier 1)'}</span>
                     </button>
                   )}
 
-                  {application.status !== 'Approved' && application.status !== 'Scholarship Released' && (
+                  {/* District / Block Coordinator Action: Phase 3 District Scrutiny Approval */}
+                  {(currentUser?.role === 'DISTRICT_COORDINATOR' || currentUser?.role === 'BLOCK_COORDINATOR') && (
                     <button 
                       className="btn btn-secondary btn-sm"
-                      disabled={submitting}
+                      disabled={submitting || !isJurisdictionAuthorized || application.status === 'Approved' || application.status === 'Scholarship Released'}
                       onClick={() => handleAction('Approved')}
                     >
                       <CheckCircle2 size={14} />
-                      <span>Approve Application</span>
+                      <span>{application.status === 'Approved' ? 'Already Approved' : 'Approve Application (Tier 2)'}</span>
                     </button>
                   )}
 
-                  {application.status !== 'Scholarship Released' && (
-                    <button 
-                      className="btn btn-gold btn-sm"
-                      disabled={submitting}
-                      onClick={() => handleAction('Scholarship Released')}
-                      title="Directly disburse ₹12,000 grant and record official banking UTR"
-                    >
-                      <CreditCard size={14} />
-                      <span>{application.status === 'Approved' ? 'Disburse Direct Benefit Transfer' : 'Approve & Disburse Grant (DBT)'}</span>
-                    </button>
-                  )}
+                  {/* Super Admin Actions: Complete Statewide Access */}
+                  {(!currentUser?.role || currentUser?.role === 'SUPER_ADMIN') && (
+                    <>
+                      {application.status === 'Under Verification' && (
+                        <button 
+                          className="btn btn-outline btn-sm"
+                          style={{ color: '#0D9488', borderColor: '#99F6E4' }}
+                          disabled={submitting}
+                          onClick={() => handleAction('Bonafide Attested')}
+                        >
+                          <ShieldCheck size={14} />
+                          <span>Attest Bonafide</span>
+                        </button>
+                      )}
 
-                  {application.status === 'Scholarship Released' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem' }}>
-                      <CheckCircle2 size={15} />
-                      <span>Grant Disbursed • UTR: {application.utrNumber || 'Recorded'}</span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                      {application.status !== 'Approved' && application.status !== 'Scholarship Released' && (
+                        <button 
+                          className="btn btn-secondary btn-sm"
+                          disabled={submitting}
+                          onClick={() => handleAction('Approved')}
+                        >
+                          <CheckCircle2 size={14} />
+                          <span>Approve Application</span>
+                        </button>
+                      )}
 
-          </div>
+                      {application.status !== 'Scholarship Released' && (
+                        <button 
+                          className="btn btn-gold btn-sm"
+                          disabled={submitting}
+                          onClick={() => handleAction('Scholarship Released')}
+                          title="Directly disburse ₹12,000 grant and record official banking UTR"
+                        >
+                          <CreditCard size={14} />
+                          <span>{application.status === 'Approved' ? 'Disburse Direct Benefit Transfer' : 'Approve & Disburse Grant (DBT)'}</span>
+                        </button>
+                      )}
+
+                      {application.status === 'Scholarship Released' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem' }}>
+                          <CheckCircle2 size={15} />
+                          <span>Grant Disbursed • UTR: {application.utrNumber || 'Recorded'}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+              </div>
+            </>
+          )}
         </div>
 
       </div>

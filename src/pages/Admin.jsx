@@ -95,8 +95,9 @@ export const Admin = () => {
   const [verificationSearch, setVerificationSearch] = useState('');
   const [verificationDistrict, setVerificationDistrict] = useState('All');
 
-  // Scrutiny Modal
+  // Scrutiny & View Modals
   const [activeModalApp, setActiveModalApp] = useState(null);
+  const [activeViewApp, setActiveViewApp] = useState(null);
 
   // Live MIS Summary
   const [misSummary, setMisSummary] = useState(null);
@@ -689,15 +690,15 @@ export const Admin = () => {
                 <div>
                   <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
                     {authRole === 'INSTITUTION' 
-                      ? `${jurisdiction?.institution?.name || 'School / College'} — Enrolled Applications` 
+                      ? `${jurisdiction?.institution?.name || 'School / College'} — Enrolled Applications Master` 
                       : authRole === 'DISTRICT_COORDINATOR'
-                      ? `${jurisdiction?.district?.name || 'District'} — District Applications`
-                      : 'Application Master Management'}
+                      ? `${jurisdiction?.district?.name || 'District'} — District Applications Master`
+                      : 'Application Master Registry & Fee Ledger'}
                   </h2>
                   <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
                     {authRole === 'INSTITUTION'
-                      ? `Enrolled student records and bonafide verification ledger for ${jurisdiction?.institution?.name || 'this institution'}`
-                      : 'Complete applicant records, multi-tier scrutiny dossier, and status transition ledger'}
+                      ? `Master database of enrolled students and official application forms for ${jurisdiction?.institution?.name || 'this institution'}`
+                      : 'Official applicant master database: view student details, fee reconciliation ledger (Razorpay ₹211.30), printable forms, and CSV data export'}
                   </p>
                 </div>
 
@@ -835,22 +836,22 @@ export const Admin = () => {
                         </td>
                         <td style={{ fontSize: '0.8rem', color: '#64748B' }}>{app.submissionDate}</td>
                         <td>
-                          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                            <button className="btn btn-secondary btn-sm" onClick={() => setActiveModalApp(app)}>
-                              <Eye size={13} />
-                              <span>Scrutiny</span>
+                          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                            <button 
+                              className="btn btn-secondary btn-sm" 
+                              onClick={() => setActiveViewApp(app)}
+                              title="View full application form and fee payment details"
+                            >
+                              <FileText size={13} />
+                              <span>View Form</span>
                             </button>
-                            {app.status !== 'Scholarship Released' && (
-                              <button 
-                                className="btn btn-gold btn-sm" 
-                                onClick={() => handleQuickDisburse(app)}
-                                title="Direct DBT Payout ₹12,000"
-                                style={{ padding: '0.25rem 0.55rem', fontSize: '0.76rem' }}
-                              >
-                                <CreditCard size={12} />
-                                <span>Disburse</span>
-                              </button>
-                            )}
+                            <button 
+                              className="btn btn-outline btn-sm" 
+                              onClick={() => window.open(`/certificate/${app.id}`, '_blank')}
+                              title="View / Download Award Certificate"
+                            >
+                              <Award size={13} />
+                            </button>
                             {app.status === 'Scholarship Released' && (
                               <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
                                 ✓ Disbursed
@@ -876,15 +877,15 @@ export const Admin = () => {
                 <div>
                   <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
                     {authRole === 'INSTITUTION' 
-                      ? `${jurisdiction?.institution?.name || 'School / College'} — Institutional Verification Queue` 
+                      ? `${jurisdiction?.institution?.name || 'School / College'} — Institutional Verification Desk` 
                       : authRole === 'DISTRICT_COORDINATOR'
-                      ? `${jurisdiction?.district?.name || 'District'} — Verification Queue`
-                      : 'Verification & Document Scrutiny Master Queue'}
+                      ? `${jurisdiction?.district?.name || 'District'} — District Scrutiny Desk`
+                      : 'Verification & Document Scrutiny Desk'}
                   </h2>
                   <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
                     {authRole === 'INSTITUTION'
-                      ? 'Verify enrolled students, review uploaded documents, and attest institutional bonafide before forwarding to District Cell'
-                      : 'Comprehensive verification ledger: inspect student dossiers, validate photos & certificates in-place, and record decisions'}
+                      ? 'Actionable scrutiny queue: inspect student documents, validate uploaded photos, and attest institutional bonafide'
+                      : 'Operational decision queue: audit candidate marksheets & income certificates, request corrections, and approve scholarship grants'}
                   </p>
                 </div>
 
@@ -1870,11 +1871,22 @@ export const Admin = () => {
         </main>
       </div>
 
-      {/* Scrutiny Modal */}
+      {/* View-Only Application Master Dossier Modal */}
+      {activeViewApp && (
+        <ApplicationScrutinyModal 
+          application={activeViewApp}
+          onClose={() => setActiveViewApp(null)}
+          readOnly={true}
+          currentUser={{ ...authUser, role: authRole, jurisdiction }}
+        />
+      )}
+
+      {/* Operational Scrutiny & Approval Modal */}
       {activeModalApp && (
         <ApplicationScrutinyModal 
           application={activeModalApp}
           onClose={() => setActiveModalApp(null)}
+          readOnly={false}
           onStatusUpdated={(appId, newStatus, utr) => {
             loadApplications();
             setActiveModalApp(null);
