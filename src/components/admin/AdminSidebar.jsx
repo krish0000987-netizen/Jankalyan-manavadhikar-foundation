@@ -41,7 +41,7 @@ export const AdminSidebar = ({
     { id: 'institutions', label: 'Institutions', icon: Building2, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR'] },
     { id: 'districts', label: 'Districts & Blocks', icon: MapPin, roles: ['SUPER_ADMIN'] },
     { id: 'schemes', label: 'Scholarship Schemes', icon: GraduationCap, roles: ['SUPER_ADMIN'] },
-    { id: 'payments', label: 'Payments & DBT', icon: CreditCard, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR'] },
+    { id: 'payments', label: 'Beneficiary Bank Records', icon: CreditCard, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR'] },
     { id: 'commissions', label: 'Commissions', icon: Percent, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'] },
     { id: 'reports', label: 'Reports & MIS', icon: BarChart3, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR'] },
     { id: 'merit', label: 'Merit Lists', icon: Award, roles: ['SUPER_ADMIN'] },

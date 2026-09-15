@@ -315,7 +315,7 @@ export const Track = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
                   <CreditCard size={22} color="#16A34A" />
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#166534' }}>
-                    {t.paymentDetailsTitle}
+                    {searchResult.status === 'Approved' || searchResult.rawStatus === 'APPROVED' ? 'Sanctioned Grant & Target Bank Account' : t.paymentDetailsTitle}
                   </h3>
                 </div>
 
@@ -326,11 +326,15 @@ export const Track = () => {
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.disbursementDateLabel}</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A' }}>{searchResult.paymentDate}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A' }}>
+                      {searchResult.paymentDate && searchResult.paymentDate !== '-' ? searchResult.paymentDate : 'Pending Manual Transfer'}
+                    </div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>{t.utrNumberLabel}</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>{searchResult.utrNumber}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1E40AF', fontFamily: 'monospace' }}>
+                      {searchResult.utrNumber && searchResult.utrNumber !== '-' ? searchResult.utrNumber : 'In Payout Queue'}
+                    </div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Target Bank</div>

@@ -336,6 +336,29 @@ export const StudentDashboard = () => {
               </div>
             )}
 
+            {/* Approved & Sanctioned Banner */}
+            {!isReleased && (student.status === 'Approved' || student.rawStatus === 'APPROVED') && (
+              <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <CheckCircle size={28} color="#2563EB" />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1E40AF' }}>
+                      {lang === 'hi' ? 'आवेदन स्वीकृत - छात्रवृत्ति राशि ₹12,000 स्वीकृत' : 'Application Approved - Scholarship Grant Sanctioned (₹12,000)'}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#1E3A8A', marginTop: '2px' }}>
+                      {lang === 'hi' 
+                        ? `दस्तावेज़ सत्यापन पूर्ण। ट्रस्ट प्रशासन द्वारा आपके बैंक खाते (${student.bankName || 'SBI'}, खाता: ${student.accountNumber || 'दर्ज'}, IFSC: ${student.ifsc || 'SBIN0001234'}) में राशि सीधे स्थानांतरित की जा रही है।`
+                        : `Document scrutiny verified. Scholarship amount of ₹12,000 will be manually transferred by trust administration to your verified account (${student.bankName || 'SBI'}, A/c: ${student.accountNumber || 'Recorded'}, IFSC: ${student.ifsc || 'SBIN0001234'}).`}
+                    </div>
+                  </div>
+                </div>
+                <button className="btn btn-sm" style={{ backgroundColor: '#2563EB', color: '#FFFFFF', borderColor: '#2563EB' }} onClick={() => navigate(`/certificate/${student.id}`)}>
+                  <Award size={14} />
+                  <span>{lang === 'hi' ? 'स्वीकृति प्रमाण पत्र देखें' : 'View Sanction Certificate'}</span>
+                </button>
+              </div>
+            )}
+
             {/* Phase 4 Banner: Scholarship Released & UTR Confirmation */}
             {isReleased && (
               <div style={{ backgroundColor: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>

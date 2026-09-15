@@ -811,31 +811,28 @@ export const ApplicationScrutinyModal = ({
 
                       {application.status !== 'Approved' && application.status !== 'Scholarship Released' && (
                         <button 
-                          className="btn btn-secondary btn-sm"
+                          className="btn btn-primary btn-sm"
+                          style={{ backgroundColor: '#1E40AF', borderColor: '#1E40AF', color: '#FFFFFF' }}
                           disabled={submitting}
                           onClick={() => handleAction('Approved')}
+                          title="Verify documents and move applicant to Beneficiary Records for manual bank transfer"
                         >
                           <CheckCircle2 size={14} />
-                          <span>Approve Application</span>
+                          <span>Approve & Sanction Scholarship (₹12,000)</span>
                         </button>
                       )}
 
-                      {application.status !== 'Scholarship Released' && (
-                        <button 
-                          className="btn btn-gold btn-sm"
-                          disabled={submitting}
-                          onClick={() => handleAction('Scholarship Released')}
-                          title="Directly disburse ₹12,000 grant and record official banking UTR"
-                        >
-                          <CreditCard size={14} />
-                          <span>{application.status === 'Approved' ? 'Disburse Direct Benefit Transfer' : 'Approve & Disburse Grant (DBT)'}</span>
-                        </button>
+                      {application.status === 'Approved' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem', border: '1px solid #BFDBFE' }}>
+                          <CheckCircle2 size={15} color="#2563EB" />
+                          <span>Approved • Ready in Beneficiary Bank Records</span>
+                        </div>
                       )}
 
                       {application.status === 'Scholarship Released' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem' }}>
-                          <CheckCircle2 size={15} />
-                          <span>Grant Disbursed • UTR: {application.utrNumber || 'Recorded'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem', border: '1px solid #BBF7D0' }}>
+                          <CheckCircle2 size={15} color="#16A34A" />
+                          <span>Scholarship Transferred • {application.paymentDate || 'Recorded'}</span>
                         </div>
                       )}
                     </>

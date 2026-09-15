@@ -17,6 +17,7 @@ import {
   Filter, 
   Eye, 
   Check, 
+  Copy,
   X, 
   AlertTriangle, 
   Download, 
@@ -102,10 +103,18 @@ export const Admin = () => {
   // Live MIS Summary
   const [misSummary, setMisSummary] = useState(null);
 
-  // Payments / DBT state
-  const [dbtBatches, setDbtBatches] = useState([]);
-  const [dbtPayments, setDbtPayments] = useState([]);
-  const [selectedForBatch, setSelectedForBatch] = useState([]);
+  // Beneficiary Bank Records & Manual Transfer state
+  const [beneficiarySearch, setBeneficiarySearch] = useState('');
+  const [beneficiaryDistrict, setBeneficiaryDistrict] = useState('All');
+  const [beneficiaryFilterStatus, setBeneficiaryFilterStatus] = useState('all');
+  const [copyFeedback, setCopyFeedback] = useState({});
+  const [markingTransferredApp, setMarkingTransferredApp] = useState(null);
+  const [transferModalForm, setTransferModalForm] = useState({
+    paymentDate: new Date().toISOString().split('T')[0],
+    utrNumber: '',
+    disbursingBank: 'State Bank of India',
+    remarks: 'Manually transferred via Net Banking'
+  });
 
   // Commissions state
   const [commissionRates, setCommissionRates] = useState([]);
@@ -301,82 +310,131 @@ export const Admin = () => {
     });
   };
 
-  // Create Payment Batch for selected approved students
-  const handleCreateBatch = async () => {
-    const approvedIds = roleScopedApplications
-      .filter(a => (
-        a.status === 'Approved' || 
-        a.rawStatus === 'APPROVED' || 
-        a.status === 'Bonafide Attested' || 
-        a.rawStatus === 'INSTITUTION_RECOMMENDED' ||
-        a.status === 'Under Verification' ||
-        a.rawStatus === 'UNDER_VERIFICATION'
-      ) && a.status !== 'Scholarship Released' && a.rawStatus !== 'SCHOLARSHIP_RELEASED')
-      .map(a => a.id);
-    if (approvedIds.length === 0) {
-      alert('No eligible applications pending disbursement. All applications may already be in batches or released.');
-      return;
-    }
-    try {
-      const batch = await paymentService.createPaymentBatch(approvedIds, authUser?.id);
-      alert(`DBT Batch ${batch.batch_number} created successfully with ${batch.total_students} verified students!`);
-      const batches = await paymentService.getPaymentBatches();
-      setDbtBatches(batches);
-      setActiveTab('payments');
-    } catch (err) {
-      alert('Error creating batch: ' + err.message);
-    }
+  // Copy to clipboard helper for account / IFSC
+  const handleCopyText = (text, key) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopyFeedback(prev => ({ ...prev, [key]: true }));
+    setTimeout(() => {
+      setCopyFeedback(prev => ({ ...prev, [key]: false }));
+    }, 1500);
   };
 
-  // Process Batch Disbursement
-  const handleDisburseBatch = async (batchId) => {
-    if (!confirm('Are you sure you want to release Direct Benefit Transfer for this batch? This will record official banking UTRs.')) {
+  // Approved beneficiaries ready for scholarship
+  const approvedBeneficiaries = roleScopedApplications.filter(a => 
+    a.status === 'Approved' || 
+    a.rawStatus === 'APPROVED' || 
+    a.status === 'Scholarship Released' || 
+    a.rawStatus === 'SCHOLARSHIP_RELEASED' ||
+    a.stage === 5
+  );
+
+  const readyBeneficiariesCount = approvedBeneficiaries.filter(a => 
+    a.status !== 'Scholarship Released' && a.rawStatus !== 'SCHOLARSHIP_RELEASED'
+  ).length;
+
+  const transferredBeneficiariesCount = approvedBeneficiaries.filter(a => 
+    a.status === 'Scholarship Released' || a.rawStatus === 'SCHOLARSHIP_RELEASED'
+  ).length;
+
+  const filteredBeneficiaries = approvedBeneficiaries.filter(a => {
+    if (beneficiaryDistrict !== 'All' && a.district !== beneficiaryDistrict) {
+      return false;
+    }
+    if (beneficiaryFilterStatus === 'ready') {
+      if (a.status === 'Scholarship Released' || a.rawStatus === 'SCHOLARSHIP_RELEASED') return false;
+    } else if (beneficiaryFilterStatus === 'transferred') {
+      if (a.status !== 'Scholarship Released' && a.rawStatus !== 'SCHOLARSHIP_RELEASED') return false;
+    }
+    if (beneficiarySearch.trim()) {
+      const q = beneficiarySearch.toLowerCase();
+      const matchId = (a.id || '').toLowerCase().includes(q);
+      const matchName = (a.studentName || '').toLowerCase().includes(q);
+      const matchMobile = (a.mobile || '').includes(q);
+      const matchBank = (a.bankName || '').toLowerCase().includes(q);
+      const matchAcc = (a.accountNumber || '').includes(q);
+      const matchIfsc = (a.ifsc || '').toLowerCase().includes(q);
+      if (!matchId && !matchName && !matchMobile && !matchBank && !matchAcc && !matchIfsc) return false;
+    }
+    return true;
+  });
+
+  // Export Approved Beneficiaries Bank Transfer Sheet (CSV)
+  const handleExportBeneficiaries = () => {
+    if (!filteredBeneficiaries.length) {
+      alert('No beneficiary records found matching current search or filters.');
       return;
     }
-    try {
-      await paymentService.processBatchDisbursement(batchId);
-      alert('Direct Benefit Transfer successfully disbursed and recorded in database!');
-      await loadApplications();
-      const batches = await paymentService.getPaymentBatches();
-      setDbtBatches(batches);
-      const pmts = await paymentService.getPayments();
-      setDbtPayments(pmts);
-    } catch (err) {
-      alert('Disbursement error: ' + err.message);
-    }
+    const rows = filteredBeneficiaries.map((b, idx) => ({
+      'Sr No': idx + 1,
+      'Application ID': b.id,
+      'Beneficiary Name': b.accountHolderName || b.studentName,
+      'Father Name': b.fatherName || '-',
+      'Mobile Number': b.mobile || '-',
+      'Email': b.email || '-',
+      'Bank Name': b.bankName || 'State Bank of India',
+      'Branch Name': b.branchName || 'Main Branch',
+      'Account Number': b.accountNumber,
+      'IFSC Code': b.ifsc,
+      'Aadhaar Seeded Status': b.isAadhaarSeeded ? 'YES' : 'PENDING',
+      'Sanctioned Amount (INR)': 12000,
+      'Institution': b.institution || '-',
+      'District': b.district || '-',
+      'Block': b.block || '-',
+      'Course': b.course || '-',
+      'Approval Date': b.approvalDate || '-',
+      'Transfer Status': (b.status === 'Scholarship Released' || b.rawStatus === 'SCHOLARSHIP_RELEASED') ? 'TRANSFERRED_OFFLINE' : 'READY_FOR_BANK_TRANSFER',
+      'Bank UTR Reference': b.utrNumber || '-',
+      'Transfer Date': b.paymentDate || '-'
+    }));
+
+    reportService.exportToCsv(`Jankalyan_Beneficiary_Bank_Transfer_Sheet_${new Date().toISOString().split('T')[0]}.csv`, rows);
   };
 
-  // Direct Quick Disburse for a single individual application
-  const handleQuickDisburse = async (app) => {
-    if (!confirm(`Are you sure you want to directly release ₹12,000 Direct Benefit Transfer (DBT) grant to ${app.studentName} (${app.id})? This will immediately record an official banking UTR.`)) {
-      return;
-    }
+  // Print Beneficiary Sanction Ledger Order
+  const handlePrintSanctionLedger = () => {
+    window.print();
+  };
+
+  // Open modal to mark a student's manual transfer as done
+  const handleOpenMarkTransferred = (app) => {
+    setMarkingTransferredApp(app);
+    setTransferModalForm({
+      paymentDate: new Date().toISOString().split('T')[0],
+      utrNumber: '',
+      disbursingBank: 'State Bank of India',
+      remarks: 'Manually transferred via Net Banking'
+    });
+  };
+
+  // Save manual offline transfer record
+  const handleConfirmManualTransfer = async () => {
+    if (!markingTransferredApp) return;
     try {
-      const utr = `JMFDBT${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+      const utr = transferModalForm.utrNumber.trim();
+      const remarks = `${transferModalForm.remarks} (Bank: ${transferModalForm.disbursingBank})`;
       await scrutinyService.updateApplicationStatus(
-        app.id,
+        markingTransferredApp.id,
         'Scholarship Released',
-        `Direct scholarship grant disbursed via Admin Panel (Bank UTR: ${utr})`,
+        remarks,
         utr,
         { ...authUser, role: authRole }
       );
+
       try {
         await certificateService.issueCertificate({
-          applicationId: app.id,
-          studentName: app.studentName,
+          applicationId: markingTransferredApp.id,
+          studentName: markingTransferredApp.studentName,
           schemeName: 'Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27',
           grantAmount: 12000
         });
       } catch (cErr) {}
 
-      alert(`Direct Benefit Transfer successfully disbursed to ${app.studentName}!\nBanking UTR: ${utr}\nApplication status is now Scholarship Released.`);
+      alert(`Manual bank transfer recorded for ${markingTransferredApp.studentName}! Application marked as Scholarship Released.`);
+      setMarkingTransferredApp(null);
       await loadApplications();
-      const batches = await paymentService.getPaymentBatches();
-      setDbtBatches(batches);
-      const pmts = await paymentService.getPayments();
-      setDbtPayments(pmts);
     } catch (err) {
-      alert('Disbursement failed: ' + err.message);
+      alert('Failed to update record: ' + err.message);
     }
   };
 
@@ -652,20 +710,14 @@ export const Admin = () => {
                                 <Eye size={13} />
                                 <span>Scrutiny</span>
                               </button>
-                              {app.status !== 'Scholarship Released' && (
-                                <button 
-                                  className="btn btn-gold btn-sm" 
-                                  onClick={() => handleQuickDisburse(app)}
-                                  title="Direct DBT Payout ₹12,000"
-                                  style={{ padding: '0.25rem 0.55rem', fontSize: '0.76rem' }}
-                                >
-                                  <CreditCard size={12} />
-                                  <span>Disburse</span>
-                                </button>
+                              {app.status === 'Approved' && (
+                                <span className="badge badge-blue" style={{ fontSize: '0.72rem' }}>
+                                  ✓ Ready for Payout
+                                </span>
                               )}
                               {app.status === 'Scholarship Released' && (
                                 <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
-                                  ✓ Disbursed
+                                  ✓ Transferred
                                 </span>
                               )}
                             </div>
@@ -1065,20 +1117,14 @@ export const Admin = () => {
                                   <Eye size={13} />
                                   <span>Scrutinize / Verify</span>
                                 </button>
-                                {app.status !== 'Scholarship Released' && (
-                                  <button 
-                                    className="btn btn-gold btn-sm" 
-                                    onClick={() => handleQuickDisburse(app)}
-                                    title="Direct DBT Payout ₹12,000"
-                                    style={{ padding: '0.25rem 0.55rem', fontSize: '0.76rem' }}
-                                  >
-                                    <CreditCard size={12} />
-                                    <span>Disburse</span>
-                                  </button>
+                                {(app.status === 'Approved' || app.rawStatus === 'APPROVED') && (
+                                  <span className="badge badge-blue" style={{ fontSize: '0.72rem' }}>
+                                    ✓ In Beneficiary Records
+                                  </span>
                                 )}
-                                {app.status === 'Scholarship Released' && (
+                                {(app.status === 'Scholarship Released' || app.rawStatus === 'SCHOLARSHIP_RELEASED') && (
                                   <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
-                                    ✓ Disbursed
+                                    ✓ Transferred
                                   </span>
                                 )}
                               </div>
@@ -1096,113 +1142,310 @@ export const Admin = () => {
           {/* ====================================================================
               MODULE 4: PAYMENTS & DBT DISBURSEMENT
               ==================================================================== */}
+          {/* ====================================================================
+              MODULE 4: SCHOLARSHIP BENEFICIARY RECORDS (READY FOR DISBURSEMENT)
+              ==================================================================== */}
           {activeTab === 'payments' && (
             <div className="animate-fade-in">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+              
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
-                    Direct Benefit Transfer (DBT) & Payment Batches
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <span>Scholarship Beneficiaries Record</span>
+                    <span className="badge badge-green" style={{ fontSize: '0.8rem', padding: '0.3rem 0.75rem', fontWeight: 700 }}>
+                      Ready for Manual Bank Transfer
+                    </span>
                   </h2>
-                  <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                    Batch processing, banking UTR reconciliation, and gateway integration
+                  <p style={{ color: '#64748B', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    Official ledger of all verified & approved students ready for scholarship transfer (₹12,000). Export bank transfer sheet (CSV) for manual corporate net banking or branch transfer.
                   </p>
                 </div>
 
-                <button className="btn btn-gold" onClick={handleCreateBatch}>
-                  <Plus size={16} />
-                  <span>Create New DBT Batch ({approvedCount} Approved)</span>
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button className="btn btn-outline" onClick={handlePrintSanctionLedger} title="Print Sanction Ledger Order">
+                    <Printer size={16} />
+                    <span>Print Sanction Ledger</span>
+                  </button>
+                  <button className="btn btn-primary" onClick={handleExportBeneficiaries} title="Export bank-ready CSV for Corporate Net Banking upload">
+                    <Download size={16} />
+                    <span>Export Bank Transfer Sheet (CSV)</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Payment Batches Section */}
-              <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
-                  Active & Processed Payment Batches
-                </h3>
+              {/* Metric Cards */}
+              <div className="grid-4" style={{ marginBottom: '1.75rem', gap: '1rem' }}>
+                <div className="metric-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    Total Approved Beneficiaries
+                  </div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#1E40AF', marginTop: '0.25rem' }}>
+                    {approvedBeneficiaries.length}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>
+                    Verified by Scrutiny Desk
+                  </div>
+                </div>
+
+                <div className="metric-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    Total Grant Sanctioned
+                  </div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16A34A', marginTop: '0.25rem' }}>
+                    ₹{(approvedBeneficiaries.length * 12000).toLocaleString('en-IN')}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#16A34A', marginTop: '0.25rem' }}>
+                    @ ₹12,000 per student
+                  </div>
+                </div>
+
+                <div className="metric-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    Ready for Bank Transfer
+                  </div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#D97706', marginTop: '0.25rem' }}>
+                    {readyBeneficiariesCount}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#D97706', marginTop: '0.25rem' }}>
+                    Pending manual offline transfer
+                  </div>
+                </div>
+
+                <div className="metric-card" style={{ padding: '1.25rem' }}>
+                  <div style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    Transfers Completed
+                  </div>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#059669', marginTop: '0.25rem' }}>
+                    {transferredBeneficiariesCount}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.25rem' }}>
+                    Offline payout recorded
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: '280px', flexWrap: 'wrap' }}>
+                    <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+                      <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                      <input 
+                        type="text"
+                        placeholder="Search student, App ID, mobile, bank account, IFSC..."
+                        value={beneficiarySearch}
+                        onChange={(e) => setBeneficiarySearch(e.target.value)}
+                        className="form-control"
+                        style={{ paddingLeft: '36px' }}
+                      />
+                    </div>
+
+                    <select 
+                      className="form-control" 
+                      style={{ width: 'auto', minWidth: '160px' }}
+                      value={beneficiaryDistrict}
+                      onChange={(e) => setBeneficiaryDistrict(e.target.value)}
+                    >
+                      <option value="All">All Districts</option>
+                      <option value="Jabalpur">Jabalpur</option>
+                      <option value="Bhopal">Bhopal</option>
+                      <option value="Indore">Indore</option>
+                      <option value="Gwalior">Gwalior</option>
+                      <option value="Ujjain">Ujjain</option>
+                      <option value="Sagar">Sagar</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.35rem', backgroundColor: '#F1F5F9', padding: '0.3rem', borderRadius: '8px' }}>
+                    <button 
+                      className={`btn btn-sm ${beneficiaryFilterStatus === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => setBeneficiaryFilterStatus('all')}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                    >
+                      All Verified ({approvedBeneficiaries.length})
+                    </button>
+                    <button 
+                      className={`btn btn-sm ${beneficiaryFilterStatus === 'ready' ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => setBeneficiaryFilterStatus('ready')}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                    >
+                      Ready for Transfer ({readyBeneficiariesCount})
+                    </button>
+                    <button 
+                      className={`btn btn-sm ${beneficiaryFilterStatus === 'transferred' ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => setBeneficiaryFilterStatus('transferred')}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                    >
+                      Transferred ({transferredBeneficiariesCount})
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Beneficiary Records Table */}
+              <div className="card" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    Sanctioned Beneficiaries & Bank Account Ledger ({filteredBeneficiaries.length})
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                    Showing verified students ready for manual bank payout
+                  </span>
+                </div>
 
                 <div className="data-table-container">
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Batch Number</th>
-                        <th>Academic Year</th>
-                        <th>Total Students</th>
-                        <th>Total Amount</th>
-                        <th>Status</th>
+                        <th>Sr / App ID</th>
+                        <th>Beneficiary Student</th>
+                        <th>College / District</th>
+                        <th>Sanction Amount</th>
+                        <th>Bank Account Details</th>
+                        <th>Approval Date</th>
+                        <th>Transfer Status</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {dbtBatches.map(b => (
+                      {filteredBeneficiaries.map((b, idx) => (
                         <tr key={b.id}>
-                          <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#1E40AF' }}>{b.batch_number}</td>
-                          <td>{b.academic_year || '2026-27'}</td>
-                          <td>{b.total_students} Students</td>
-                          <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{parseFloat(b.total_amount || 0).toLocaleString('en-IN')}</td>
                           <td>
-                            <span className={`badge ${b.status === 'COMPLETED' ? 'badge-green' : 'badge-yellow'}`}>
-                              {b.status}
-                            </span>
+                            <div style={{ fontSize: '0.75rem', color: '#64748B' }}>#{idx + 1}</div>
+                            <div 
+                              style={{ fontWeight: 700, fontFamily: 'monospace', color: '#1E40AF', cursor: 'pointer' }}
+                              onClick={() => setActiveViewApp(b)}
+                              title="Click to view dossier"
+                            >
+                              {b.id}
+                            </div>
                           </td>
+
                           <td>
-                            {b.status !== 'COMPLETED' ? (
-                              <button className="btn btn-gold btn-sm" onClick={() => handleDisburseBatch(b.id)}>
-                                <CreditCard size={13} />
-                                <span>Disburse & Record UTR</span>
-                              </button>
+                            <div style={{ fontWeight: 800, color: '#0F172A' }}>{b.accountHolderName || b.studentName}</div>
+                            {b.fatherName && <div style={{ fontSize: '0.75rem', color: '#64748B' }}>S/o: {b.fatherName}</div>}
+                            <div style={{ fontSize: '0.72rem', color: '#2563EB', marginTop: '2px' }}>{b.mobile}</div>
+                          </td>
+
+                          <td>
+                            <div style={{ fontWeight: 600, fontSize: '0.82rem', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {b.institution}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                              {b.district} {b.block ? `/ ${b.block}` : ''}
+                            </div>
+                          </td>
+
+                          <td>
+                            <div style={{ fontWeight: 800, color: '#16A34A', fontSize: '1.05rem' }}>₹12,000</div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Sanctioned Grant</div>
+                          </td>
+
+                          <td>
+                            <div style={{ backgroundColor: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #E2E8F0', minWidth: '220px' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.bankName}</span>
+                                <span className={`badge ${b.isAadhaarSeeded ? 'badge-green' : 'badge-yellow'}`} style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}>
+                                  {b.isAadhaarSeeded ? 'Aadhaar Seeded' : 'Pending'}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+                                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF', fontSize: '0.85rem' }}>
+                                  {b.accountNumber}
+                                </span>
+                                <button 
+                                  onClick={() => handleCopyText(b.accountNumber, `acc_${b.id}`)}
+                                  title="Copy Account Number"
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', color: copyFeedback[`acc_${b.id}`] ? '#16A34A' : '#64748B' }}
+                                >
+                                  {copyFeedback[`acc_${b.id}`] ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                                </button>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.15rem' }}>
+                                <span style={{ fontSize: '0.72rem', color: '#64748B', fontFamily: 'monospace' }}>
+                                  IFSC: <strong>{b.ifsc}</strong>
+                                </span>
+                                <button 
+                                  onClick={() => handleCopyText(b.ifsc, `ifsc_${b.id}`)}
+                                  title="Copy IFSC Code"
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', color: copyFeedback[`ifsc_${b.id}`] ? '#16A34A' : '#64748B' }}
+                                >
+                                  {copyFeedback[`ifsc_${b.id}`] ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td>
+                            <div style={{ fontWeight: 600, fontSize: '0.8rem', color: '#0F172A' }}>
+                              {b.approvalDate && b.approvalDate !== '-' ? b.approvalDate : 'Verified'}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#16A34A', fontWeight: 600 }}>
+                              ✓ Scrutiny Passed
+                            </div>
+                          </td>
+
+                          <td>
+                            {(b.status === 'Scholarship Released' || b.rawStatus === 'SCHOLARSHIP_RELEASED') ? (
+                              <div>
+                                <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>✓ Transferred</span>
+                                {b.utrNumber && b.utrNumber !== '-' && (
+                                  <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: '#15803D', marginTop: '2px' }}>
+                                    Ref: {b.utrNumber}
+                                  </div>
+                                )}
+                              </div>
                             ) : (
-                              <span style={{ fontSize: '0.8rem', color: '#16A34A', fontWeight: 600 }}>Disbursed</span>
+                              <span className="badge badge-blue" style={{ fontSize: '0.75rem' }}>
+                                Ready for Transfer
+                              </span>
                             )}
+                          </td>
+
+                          <td>
+                            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                              <button 
+                                className="btn btn-outline btn-sm" 
+                                onClick={() => setActiveViewApp(b)}
+                                title="View full application form and documents"
+                                style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
+                              >
+                                <FileText size={12} />
+                                <span>View</span>
+                              </button>
+                              {(b.status !== 'Scholarship Released' && b.rawStatus !== 'SCHOLARSHIP_RELEASED') ? (
+                                <button 
+                                  className="btn btn-secondary btn-sm" 
+                                  onClick={() => handleOpenMarkTransferred(b)}
+                                  title="Mark that you have completed manual transfer offline"
+                                  style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
+                                >
+                                  <CheckCircle2 size={12} />
+                                  <span>Mark Paid</span>
+                                </button>
+                              ) : (
+                                <span style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700 }}>
+                                  Recorded
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
-                      {dbtBatches.length === 0 && (
+
+                      {filteredBeneficiaries.length === 0 && (
                         <tr>
-                          <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
-                            No active payment batches. Click "Create New DBT Batch" to group approved students.
+                          <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 1.5rem', color: '#64748B' }}>
+                            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.35rem' }}>
+                              No Beneficiaries Found
+                            </div>
+                            <div style={{ fontSize: '0.85rem' }}>
+                              Once applications are approved in the Verification Queue, they will appear here ready for manual bank transfer.
+                            </div>
                           </td>
                         </tr>
                       )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Direct Benefit Transfer Ledger */}
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
-                  Direct Benefit Transfer Ledger
-                </h3>
-
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Application ID</th>
-                        <th>Beneficiary Name</th>
-                        <th>Mobile</th>
-                        <th>Bank Account</th>
-                        <th>Amount</th>
-                        <th>UTR Number</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dbtPayments.map(p => (
-                        <tr key={p.id}>
-                          <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#1E40AF' }}>{p.applicationId}</td>
-                          <td>{p.studentName}</td>
-                          <td>{p.mobile}</td>
-                          <td>{p.bankAccount} ({p.ifsc})</td>
-                          <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{parseFloat(p.amount || 12000).toLocaleString('en-IN')}</td>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{p.utrNumber}</td>
-                          <td>
-                            <span className={`badge ${p.status === 'SUCCESS' ? 'badge-green' : 'badge-yellow'}`}>
-                              {p.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -1908,6 +2151,129 @@ export const Admin = () => {
           }}
           currentUser={{ ...authUser, role: authRole, jurisdiction }}
         />
+      )}
+
+      {/* Manual Offline Transfer Confirmation Modal */}
+      {markingTransferredApp && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100,
+          padding: '1rem'
+        }}>
+          <div className="card animate-fade-in" style={{ maxWidth: '520px', width: '100%', padding: '2rem', backgroundColor: '#FFFFFF', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                  Mark Manual Bank Transfer Completed
+                </h3>
+                <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
+                  Record offline bank transfer details for student tracking
+                </p>
+              </div>
+              <button 
+                onClick={() => setMarkingTransferredApp(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Beneficiary Details Summary Card */}
+            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Beneficiary Student:</span>
+                <strong style={{ color: '#0F172A' }}>{markingTransferredApp.studentName} ({markingTransferredApp.id})</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Grant Sanctioned:</span>
+                <strong style={{ color: '#16A34A', fontSize: '1.05rem' }}>₹12,000.00</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Beneficiary Bank:</span>
+                <span style={{ color: '#0F172A', fontWeight: 600 }}>{markingTransferredApp.bankName}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Account No & IFSC:</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF' }}>
+                  {markingTransferredApp.accountNumber} ({markingTransferredApp.ifsc})
+                </span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <div className="form-group">
+                <label className="form-label required">Transfer Execution Date</label>
+                <input 
+                  type="date"
+                  value={transferModalForm.paymentDate}
+                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, paymentDate: e.target.value }))}
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label required">Disbursing Bank / Source Account</label>
+                <input 
+                  type="text"
+                  value={transferModalForm.disbursingBank}
+                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, disbursingBank: e.target.value }))}
+                  placeholder="e.g. State Bank of India - Trust Account"
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Bank Transaction Reference / UTR (Optional)</label>
+                <input 
+                  type="text"
+                  value={transferModalForm.utrNumber}
+                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, utrNumber: e.target.value.toUpperCase() }))}
+                  placeholder="e.g. SBIN409281729014 or CMS-992144"
+                  className="form-control"
+                  style={{ fontFamily: 'monospace' }}
+                />
+                <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                  If entered, the student will see this UTR on their dashboard.
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Ledger Remarks (Optional)</label>
+                <input 
+                  type="text"
+                  value={transferModalForm.remarks}
+                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, remarks: e.target.value }))}
+                  placeholder="e.g. Manually transferred via Net Banking"
+                  className="form-control"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+              <button 
+                className="btn btn-outline btn-sm"
+                onClick={() => setMarkingTransferredApp(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary btn-sm"
+                style={{ backgroundColor: '#16A34A', borderColor: '#16A34A' }}
+                onClick={handleConfirmManualTransfer}
+              >
+                <CheckCircle2 size={14} />
+                <span>Confirm & Mark Transferred</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
