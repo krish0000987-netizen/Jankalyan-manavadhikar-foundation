@@ -17,7 +17,14 @@ import {
   Eye,
   RefreshCw,
   Building,
-  UserCheck
+  UserCheck,
+  MapPin,
+  Check,
+  Info,
+  LogOut,
+  ChevronRight,
+  User,
+  GraduationCap
 } from 'lucide-react';
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { applicationService } from '../services/applicationService';
@@ -32,7 +39,27 @@ export const SCHOLARSHIP_SLABS = [
 ];
 
 export const Apply = () => {
-  const { lang, t, navigate, submitNewApplication, cms } = useApp();
+  const { 
+    lang, 
+    t, 
+    navigate, 
+    submitNewApplication, 
+    cms, 
+    activeStudentApp, 
+    authUser, 
+    authRole, 
+    logout 
+  } = useApp();
+
+  const isStudentLoggedIn = Boolean(
+    authRole === 'STUDENT' || 
+    authUser?.user_metadata?.role === 'STUDENT' || 
+    activeStudentApp
+  );
+
+  const currentStudentName = activeStudentApp?.studentName || authUser?.user_metadata?.full_name || '';
+  const currentStudentMobile = activeStudentApp?.mobile || authUser?.user_metadata?.mobile || '';
+  const currentAppId = activeStudentApp?.id || authUser?.user_metadata?.applicationId || '';
 
   // Wizard Step (1 to 8, or 9 for Final Submission Confirmation)
   const [currentStep, setCurrentStep] = useState(1);
@@ -144,6 +171,64 @@ export const Apply = () => {
     }
     loadMeta();
   }, []);
+
+  // Hydrate formData from active logged-in student profile
+  useEffect(() => {
+    if (isStudentLoggedIn && (activeStudentApp || authUser)) {
+      setFormData(prev => {
+        const sName = activeStudentApp?.studentName || authUser?.user_metadata?.full_name || prev.fullName;
+        const sMobile = activeStudentApp?.mobile || authUser?.user_metadata?.mobile || prev.mobile;
+        const sEmail = activeStudentApp?.email || authUser?.email || prev.email;
+
+        return {
+          ...prev,
+          fullName: prev.fullName || sName || '',
+          mobile: prev.mobile || sMobile || '',
+          email: prev.email || sEmail || '',
+          fatherName: prev.fatherName || activeStudentApp?.fatherName || '',
+          motherName: prev.motherName || activeStudentApp?.motherName || '',
+          dob: prev.dob || activeStudentApp?.dob || '',
+          gender: prev.gender || activeStudentApp?.gender || 'Male',
+          address: prev.address || activeStudentApp?.address || '',
+          state: prev.state || 'Madhya Pradesh',
+          district: prev.district || activeStudentApp?.district || 'Jabalpur',
+          districtId: prev.districtId || activeStudentApp?.districtId || 'a0000000-0000-0000-0000-000000000001',
+          block: prev.block || activeStudentApp?.block || 'Patan',
+          blockId: prev.blockId || activeStudentApp?.blockId || 'b0000000-0000-0000-0000-000000000001',
+          pincode: prev.pincode || activeStudentApp?.pincode || '482001',
+          institutionName: prev.institutionName || activeStudentApp?.institution || activeStudentApp?.institutionName || 'Govt. Model Higher Secondary School',
+          institutionId: prev.institutionId || activeStudentApp?.institutionId || 'c0000000-0000-0000-0000-000000000001',
+          classCourse: prev.classCourse || activeStudentApp?.course || activeStudentApp?.classCourse || 'Class 12th',
+          category: prev.category || activeStudentApp?.category || 'General',
+          annualIncome: prev.annualIncome || activeStudentApp?.annualIncome || '',
+          bankName: prev.bankName || activeStudentApp?.bankName || 'State Bank of India',
+          accountHolder: prev.accountHolder || activeStudentApp?.accountHolder || sName || '',
+          accountNumber: prev.accountNumber || activeStudentApp?.accountNumber || '',
+          confirmAccount: prev.confirmAccount || activeStudentApp?.accountNumber || '',
+          ifsc: prev.ifsc || activeStudentApp?.ifsc || '',
+          branch: prev.branch || activeStudentApp?.branch || '',
+          aadhaar: prev.aadhaar || activeStudentApp?.aadhaar || '',
+          samagraId: prev.samagraId || activeStudentApp?.samagraId || '',
+          percentage: prev.percentage || activeStudentApp?.percentage || '',
+          selectedSlab: prev.selectedSlab || activeStudentApp?.selectedSlab || 'slab-3',
+          scholarshipAmount: prev.scholarshipAmount || activeStudentApp?.scholarshipAmount || 12000,
+          otpSent: true,
+          otpVerified: true,
+          password: prev.password || 'authenticated',
+          confirmPassword: prev.confirmPassword || 'authenticated'
+        };
+      });
+
+      // If opening form on Step 1 while logged in, transition directly to Step 2 (Personal Details)
+      try {
+        const visitedKey = `jmf_applied_init_${currentStudentMobile || 'student'}`;
+        if (!sessionStorage.getItem(visitedKey) && currentStep === 1) {
+          sessionStorage.setItem(visitedKey, 'true');
+          setCurrentStep(2);
+        }
+      } catch (e) {}
+    }
+  }, [activeStudentApp, authUser, isStudentLoggedIn, currentStudentMobile]);
 
   // Autosave Draft
   const saveDraft = () => {
@@ -260,13 +345,15 @@ export const Apply = () => {
     const errs = {};
 
     if (currentStep === 1) {
-      if (!formData.mobile || formData.mobile.length < 10) {
-        errs.mobile = lang === 'hi' ? 'मोबाइल नंबर आवश्यक है (10 अंक)' : 'Mobile number required (10 digits)';
-      }
-      if (!formData.password) {
-        setFormData(prev => ({ ...prev, password: 'password123', confirmPassword: 'password123', otpVerified: true }));
-      } else if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
-        errs.confirmPassword = lang === 'hi' ? 'पासवर्ड मेल नहीं खा रहा है' : 'Passwords do not match';
+      if (!isStudentLoggedIn) {
+        if (!formData.mobile || formData.mobile.length < 10) {
+          errs.mobile = lang === 'hi' ? 'मोबाइल नंबर आवश्यक है (10 अंक)' : 'Mobile number required (10 digits)';
+        }
+        if (!formData.password) {
+          setFormData(prev => ({ ...prev, password: 'password123', confirmPassword: 'password123', otpVerified: true }));
+        } else if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+          errs.confirmPassword = lang === 'hi' ? 'पासवर्ड मेल नहीं खा रहा है' : 'Passwords do not match';
+        }
       }
     }
 
@@ -320,6 +407,13 @@ export const Apply = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleStepJump = (targetStep) => {
+    saveDraft();
+    setErrors({});
+    setCurrentStep(targetStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFinalSubmit = async () => {
@@ -368,7 +462,7 @@ export const Apply = () => {
       <div className="container">
         
         {/* Wizard Header Banner */}
-        <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 2.5rem' }}>
+        <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 2rem' }}>
           <span className="badge badge-red" style={{ marginBottom: '0.75rem' }}>
             {lang === 'hi' ? 'सत्र 2026-27' : 'Academic Session 2026-27'}
           </span>
@@ -379,6 +473,155 @@ export const Apply = () => {
             {t.applySubtitle}
           </p>
         </div>
+
+        {/* Logged-In Student Applicant Identity Card */}
+        {isStudentLoggedIn ? (
+          <div style={{
+            maxWidth: '860px',
+            margin: '0 auto 2.25rem',
+            background: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)',
+            color: '#FFFFFF',
+            borderRadius: '16px',
+            padding: '1.35rem 1.75rem',
+            boxShadow: '0 8px 24px rgba(30, 58, 138, 0.22)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1.25rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
+              <div style={{
+                width: '54px',
+                height: '54px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(4px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                border: '2px solid rgba(255, 255, 255, 0.4)',
+                flexShrink: 0
+              }}>
+                🎓
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                    {currentStudentName || 'Registered Student'}
+                  </span>
+                  <span style={{ 
+                    backgroundColor: '#16A34A', 
+                    color: '#FFFFFF', 
+                    fontSize: '0.74rem', 
+                    fontWeight: 700, 
+                    padding: '3px 10px', 
+                    borderRadius: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: '0 2px 6px rgba(22, 163, 74, 0.4)'
+                  }}>
+                    <CheckCircle size={13} />
+                    {lang === 'hi' ? 'लॉग-इन आवेदक' : 'Active Logged-In Student'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#BFDBFE', marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span>📱 {currentStudentMobile || 'Mobile Verified'}</span>
+                  {currentAppId && <span>• 🆔 Application ID: <strong>{currentAppId}</strong></span>}
+                  {activeStudentApp?.institution && <span>• 🏫 {activeStudentApp.institution}</span>}
+                  {activeStudentApp?.district && <span>• 📍 {activeStudentApp.district}</span>}
+                </div>
+                {activeStudentApp?.status && (
+                  <div style={{ fontSize: '0.78rem', color: '#E0E7FF', marginTop: '3px' }}>
+                    {lang === 'hi' ? 'वर्तमान स्थिति:' : 'Application Status:'} <strong style={{ color: '#FDE047' }}>{activeStudentApp.status}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.18)', 
+                  color: '#FFFFFF', 
+                  border: '1px solid rgba(255, 255, 255, 0.35)', 
+                  borderRadius: '10px', 
+                  fontSize: '0.82rem',
+                  padding: '0.45rem 0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  cursor: 'pointer'
+                }}
+                onClick={() => navigate('/student-dashboard')}
+              >
+                <UserCheck size={14} />
+                <span>{lang === 'hi' ? 'विद्यार्थी डैशबोर्ड' : 'Student Dashboard'}</span>
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ 
+                  backgroundColor: 'rgba(239, 68, 68, 0.25)', 
+                  color: '#FCA5A5', 
+                  border: '1px solid rgba(239, 68, 68, 0.45)', 
+                  borderRadius: '10px', 
+                  fontSize: '0.82rem',
+                  padding: '0.45rem 0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  logout();
+                  navigate('/student-login');
+                }}
+                title="Log out and switch student account"
+              >
+                <LogOut size={13} />
+                <span>{lang === 'hi' ? 'खाता बदलें' : 'Switch Student'}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            maxWidth: '860px',
+            margin: '0 auto 2.25rem',
+            backgroundColor: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            borderRadius: '14px',
+            padding: '1rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.85rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.88rem', color: '#1E40AF' }}>
+              <AlertCircle size={20} color="#2563EB" style={{ flexShrink: 0 }} />
+              <span>
+                {lang === 'hi'
+                  ? 'यदि आपका पहले से छात्रवृत्ति खाता है, तो कृपया लॉग-इन करें ताकि आपका विवरण स्वतः भर जाए:'
+                  : 'Already registered with Jankalyan? Log in directly to auto-populate your student records:'}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              style={{ fontSize: '0.82rem', padding: '0.4rem 0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              onClick={() => navigate('/student-login')}
+            >
+              <UserCheck size={14} />
+              <span>{lang === 'hi' ? 'विद्यार्थी लॉग-इन' : 'Student Login'}</span>
+            </button>
+          </div>
+        )}
 
         {/* ====================================================================
             CONFIRMATION SCREEN (Step 9) - Generated Application ID & Printable Receipt
@@ -526,22 +769,114 @@ export const Apply = () => {
              ==================================================================== */
           <div className="card wizard-card">
             
-            {/* Progress Bar & Steps Count */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1B2A4E' }}>
-                Step {currentStep} of 8: {stepsList[currentStep - 1]}
-              </span>
-              <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>
-                {Math.round((currentStep / 8) * 100)}% Completed
-              </span>
-            </div>
+            {/* Interactive 8-Step Navigation Stepper Tabs */}
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(115px, 1fr))',
+                gap: '0.45rem',
+                backgroundColor: '#F8FAFC',
+                padding: '0.6rem',
+                borderRadius: '16px',
+                border: '1px solid #E2E8F0'
+              }}>
+                {stepsList.map((stepTitle, idx) => {
+                  const stepNum = idx + 1;
+                  const isCurrent = currentStep === stepNum;
+                  const isCompleted = currentStep > stepNum || (stepNum === 1 && isStudentLoggedIn);
 
-            <div className="wizard-progress">
-              <div className="wizard-bar">
-                <div 
-                  className="wizard-fill" 
-                  style={{ width: `${(currentStep / 8) * 100}%` }} 
-                />
+                  return (
+                    <button
+                      key={stepNum}
+                      type="button"
+                      onClick={() => handleStepJump(stepNum)}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0.65rem 0.4rem',
+                        borderRadius: '12px',
+                        border: isCurrent ? '2px solid #1E40AF' : '1px solid transparent',
+                        backgroundColor: isCurrent 
+                          ? '#FFFFFF' 
+                          : isCompleted 
+                            ? '#ECFDF5' 
+                            : 'transparent',
+                        boxShadow: isCurrent 
+                          ? '0 4px 14px rgba(30, 64, 175, 0.18)' 
+                          : 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        position: 'relative'
+                      }}
+                      title={`Click to jump to Step ${stepNum}: ${stepTitle}`}
+                    >
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        marginBottom: '0.35rem',
+                        backgroundColor: isCurrent 
+                          ? '#1E40AF' 
+                          : isCompleted 
+                            ? '#10B981' 
+                            : '#CBD5E1',
+                        color: '#FFFFFF'
+                      }}>
+                        {isCompleted && !isCurrent ? <Check size={14} strokeWidth={3} /> : stepNum}
+                      </div>
+
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: isCurrent ? 800 : 600,
+                        color: isCurrent 
+                          ? '#1E40AF' 
+                          : isCompleted 
+                            ? '#065F46' 
+                            : '#64748B',
+                        textAlign: 'center',
+                        lineHeight: 1.25,
+                        maxWidth: '100%'
+                      }}>
+                        {stepTitle.replace(/^[0-9.]+\s*/, '')}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Progress Summary */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.85rem', padding: '0 0.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#0F172A', fontWeight: 800 }}>
+                  <span style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '3px 9px', borderRadius: '8px', fontSize: '0.75rem' }}>
+                    Step {currentStep} of 8
+                  </span>
+                  <span>{stepsList[currentStep - 1]}</span>
+                </div>
+                <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>
+                  {Math.round((currentStep / 8) * 100)}% {lang === 'hi' ? 'पूर्ण' : 'Completed'}
+                </span>
+              </div>
+
+              {/* Progress Fill Bar */}
+              <div className="wizard-progress" style={{ marginTop: '0.5rem' }}>
+                <div className="wizard-bar" style={{ height: '6px', borderRadius: '3px', backgroundColor: '#E2E8F0', overflow: 'hidden' }}>
+                  <div 
+                    className="wizard-fill" 
+                    style={{ 
+                      width: `${(currentStep / 8) * 100}%`,
+                      height: '100%',
+                      backgroundColor: '#2563EB',
+                      transition: 'width 0.3s ease'
+                    }} 
+                  />
+                </div>
               </div>
             </div>
 
@@ -554,6 +889,49 @@ export const Apply = () => {
                 <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '1.75rem' }}>
                   {t.uniqueAppIdNotice}
                 </p>
+
+                {/* Logged In Student Confirmation */}
+                {isStudentLoggedIn && (
+                  <div style={{
+                    backgroundColor: '#F0FDF4',
+                    border: '1px solid #86EFAC',
+                    borderRadius: '12px',
+                    padding: '1.25rem 1.5rem',
+                    marginBottom: '1.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                      <CheckCircle size={28} color="#16A34A" style={{ flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontWeight: 800, color: '#166534', fontSize: '1rem' }}>
+                          {lang === 'hi' ? 'पंजीकृत व सत्यापित विद्यार्थी खाता' : 'Verified Registered Student Profile'}
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#15803D', marginTop: '2px' }}>
+                          <strong>{currentStudentName}</strong> • {formData.mobile || currentStudentMobile}
+                          {currentAppId ? ` • ID: ${currentAppId}` : ''}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#4B5563', marginTop: '4px' }}>
+                          {lang === 'hi'
+                            ? 'आपका मोबाइल नंबर व खाता सत्यापित है। आप सीधे व्यक्तिगत विवरण (Step 2) पर बढ़ सकते हैं।'
+                            : 'Your mobile & student credentials are fully verified. You can proceed directly to Personal Details (Step 2).'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleStepJump(2)}
+                      style={{ padding: '0.5rem 1rem' }}
+                    >
+                      <span>{lang === 'hi' ? 'व्यक्तिगत विवरण भरें (Step 2) →' : 'Proceed to Step 2 →'}</span>
+                    </button>
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label required">{t.fieldMobile}</label>
