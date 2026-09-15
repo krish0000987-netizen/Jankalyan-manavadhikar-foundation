@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   CheckCircle2, 
@@ -14,7 +14,8 @@ import {
   Download,
   ShieldCheck,
   Send,
-  Printer
+  Printer,
+  ExternalLink
 } from 'lucide-react';
 import { scrutinyService } from '../../services/scrutinyService';
 import { certificateService } from '../../services/certificateService';

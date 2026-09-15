@@ -81,20 +81,34 @@ export const StudentDashboard = () => {
     }
   }, [student]);
 
-  const handleLookup = async (e) => {
-    e.preventDefault();
-    const cleanQ = searchQuery.trim();
+  const getStageClass = (stepNumber, currentStage, status) => {
+    if (status === 'Rejected' || status === 'REJECTED') {
+      if (stepNumber <= currentStage) return 'rejected';
+      return '';
+    }
+    if (stepNumber < currentStage) return 'completed';
+    if (stepNumber === currentStage) return 'active';
+    return '';
+  };
+
+  const handleLookup = async (e, directQuery = null) => {
+    e?.preventDefault();
+    const cleanQ = (directQuery || searchQuery).trim();
     if (!cleanQ) return;
+    if (directQuery) setSearchQuery(directQuery);
     setLoading(true);
     setSearchError('');
     try {
-      // 1. If searching with JMF- Application ID, fetch full application dossier
       let found = null;
-      if (cleanQ.toUpperCase().startsWith('JMF-')) {
+      // 1. Direct fetch by ID
+      found = await applicationService.getApplicationById(cleanQ);
+
+      // 2. Try uppercase if ID starts with jmf-
+      if (!found && cleanQ.toLowerCase().startsWith('jmf-')) {
         found = await applicationService.getApplicationById(cleanQ.toUpperCase());
       }
 
-      // 2. If not found or searching by mobile, attempt direct student lookup
+      // 3. If searching by mobile or numeric ID, attempt direct student lookup
       if (!found) {
         try {
           const authRes = await authService.signInStudent(cleanQ);
@@ -104,7 +118,7 @@ export const StudentDashboard = () => {
         } catch (authErr) {}
       }
 
-      // 3. Fallback to public trackApplication
+      // 4. Fallback to public trackApplication
       if (!found) {
         const result = await applicationService.trackApplication(cleanQ);
         if (result?.id) {
@@ -167,9 +181,12 @@ export const StudentDashboard = () => {
 
             <div style={{ marginTop: '2rem', borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <button className="btn btn-outline btn-sm" onClick={() => {
-                  setSearchQuery('JMF-2026-108234');
-                }}>
+                <button 
+                  type="button"
+                  className="btn btn-outline btn-sm" 
+                  onClick={() => handleLookup(null, 'JMF-2026-108234')}
+                  style={{ color: '#1E40AF', borderColor: '#BFDBFE', fontWeight: 700 }}
+                >
                   Try Demo: JMF-2026-108234
                 </button>
                 <button className="btn btn-primary btn-sm" onClick={() => navigate('/student-register')} style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700 }}>
@@ -306,14 +323,81 @@ export const StudentDashboard = () => {
                 <div><strong>Bank Name:</strong> {student.bankName}</div>
               </div>
 
-              {/* Progress Stepper Miniature */}
-              <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700, color: '#1B2A4E', marginBottom: '0.5rem' }}>
-                  <span>Stage {student.stage} of 5</span>
-                  <span>{student.status}</span>
+              {/* Real-time Scholarship Status Tracking Stepper */}
+              <div style={{ marginTop: '0.5rem', paddingTop: '1.25rem', borderTop: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Clock size={16} color="#2563EB" />
+                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0F172A' }}>
+                      {lang === 'hi' ? 'छात्रवृत्ति प्रगति ट्रैकिंग' : 'Scholarship Progress Tracking'}
+                    </span>
+                  </div>
+                  <span className={`badge ${
+                    isReleased ? 'badge-green' :
+                    student.status === 'Approved' ? 'badge-blue' :
+                    student.status === 'Rejected' ? 'badge-red' :
+                    student.status === 'Correction Requested' ? 'badge-yellow' : 'badge-navy'
+                  }`} style={{ fontSize: '0.75rem' }}>
+                    Stage {student.stage || (isReleased ? 5 : 2)} of 5 • {student.status}
+                  </span>
                 </div>
-                <div style={{ height: '8px', backgroundColor: '#E2E8F0', borderRadius: '9999px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(student.stage / 5) * 100}%`, backgroundColor: student.status === 'Rejected' ? '#DC2626' : '#16A34A', transition: 'width 0.3s' }} />
+
+                {/* Stepper */}
+                <div className="timeline-stepper" style={{ margin: '1.5rem 0' }}>
+                  <div className={`timeline-step ${getStageClass(1, student.stage, student.status)}`}>
+                    <div className="timeline-circle">01</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0F172A', marginBottom: '0.2rem' }}>
+                      {lang === 'hi' ? 'आवेदन' : 'Applied'}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                      {student.submissionDate || 'Submitted'}
+                    </div>
+                  </div>
+
+                  <div className={`timeline-step ${getStageClass(2, student.stage, student.status)}`}>
+                    <div className="timeline-circle">02</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0F172A', marginBottom: '0.2rem' }}>
+                      {lang === 'hi' ? 'संवीक्षा' : 'Scrutiny'}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                      {student.stage >= 2 ? 'In Review' : 'Pending'}
+                    </div>
+                  </div>
+
+                  <div className={`timeline-step ${getStageClass(3, student.stage, student.status)}`}>
+                    <div className="timeline-circle">03</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0F172A', marginBottom: '0.2rem' }}>
+                      {lang === 'hi' ? 'सत्यापन' : 'District Cell'}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                      {student.stage >= 3 ? 'Verified' : 'Pending'}
+                    </div>
+                  </div>
+
+                  <div className={`timeline-step ${getStageClass(4, student.stage, student.status)}`}>
+                    <div className="timeline-circle">04</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0F172A', marginBottom: '0.2rem' }}>
+                      {lang === 'hi' ? 'अनुमोदन' : 'Approved'}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                      {student.approvalDate && student.approvalDate !== '-' ? student.approvalDate : (student.stage >= 4 ? 'Approved' : 'Pending')}
+                    </div>
+                  </div>
+
+                  <div className={`timeline-step ${getStageClass(5, student.stage, student.status)}`}>
+                    <div className="timeline-circle">05</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0F172A', marginBottom: '0.2rem' }}>
+                      {lang === 'hi' ? 'डीबीटी' : 'Disbursed'}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                      {student.paymentDate && student.paymentDate !== '-' ? student.paymentDate : (isReleased ? 'Disbursed' : 'Pending')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress bar line */}
+                <div style={{ height: '6px', backgroundColor: '#E2E8F0', borderRadius: '9999px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(Math.min(student.stage || 2, 5) / 5) * 100}%`, backgroundColor: student.status === 'Rejected' ? '#DC2626' : '#16A34A', transition: 'width 0.3s' }} />
                 </div>
               </div>
             </div>
