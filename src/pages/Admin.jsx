@@ -1154,6 +1154,34 @@ export const Admin = () => {
                                   <Eye size={13} />
                                   <span>Scrutinize / Verify</span>
                                 </button>
+                                {app.status === 'Under Verification' && (
+                                  <button 
+                                    type="button"
+                                    className="btn btn-sm"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      if (window.confirm(`Approve scholarship grant of ₹12,000 for ${app.studentName} (${app.id})? This will move the student to Beneficiary Bank Records for disbursal.`)) {
+                                        await updateApplicationStatus(app.id, 'Approved', 'Approved by Committee from Verification Queue');
+                                        try {
+                                          await certificateService.issueCertificate({
+                                            applicationId: app.id,
+                                            studentName: app.studentName,
+                                            schemeName: 'Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27',
+                                            grantAmount: 12000
+                                          });
+                                        } catch (err) {
+                                          // ignore duplicate cert
+                                        }
+                                        loadApplications();
+                                      }
+                                    }}
+                                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', color: '#166534', backgroundColor: '#DCFCE7', border: '1px solid #BBF7D0', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
+                                    title="Quick Approve & Move to Beneficiary Bank Records for Disbursal"
+                                  >
+                                    <CheckCircle2 size={13} color="#16A34A" />
+                                    <span>Approve (₹12k)</span>
+                                  </button>
+                                )}
                                 {(app.status === 'Approved' || app.rawStatus === 'APPROVED') && (
                                   <button 
                                     type="button"
