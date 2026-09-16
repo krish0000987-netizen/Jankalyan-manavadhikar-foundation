@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { uploadFile, validateDocumentFile, getSignedUrl } from '../api/storage';
 import { supabase } from '../api/supabase';
@@ -110,6 +110,28 @@ export const Documents = () => {
     }
   ]);
 
+  // Synchronize docList with activeStudentApp.documents and server rejection remarks
+  useEffect(() => {
+    if (!activeStudentApp?.documents) return;
+    setDocList(prev => prev.map(item => {
+      const serverDoc = activeStudentApp.documents[item.id] || activeStudentApp.documents[item.id.toLowerCase()];
+      if (serverDoc) {
+        const isDocRejected = serverDoc.status === 'Rejected' || serverDoc.status === 'INVALID';
+        const isDocCorrection = serverDoc.status === 'Correction Requested' || serverDoc.status === 'CORRECTION_REQUIRED';
+        return {
+          ...item,
+          status: isDocRejected ? 'Rejected' : isDocCorrection ? 'Correction Requested' : serverDoc.status || item.status,
+          file: serverDoc.file || serverDoc.file_name || item.file,
+          reason: serverDoc.reason !== undefined && serverDoc.reason !== null && String(serverDoc.reason).trim() !== ''
+            ? serverDoc.reason
+            : (isDocRejected || isDocCorrection ? (activeStudentApp.rejectionReason || activeStudentApp.correctionRemarks || item.reason) : item.reason),
+          updated: serverDoc.updated || item.updated
+        };
+      }
+      return item;
+    }));
+  }, [activeStudentApp]);
+
   const [uploadSuccessMsg, setUploadSuccessMsg] = useState(null);
   const [uploadErrorMsg, setUploadErrorMsg] = useState(null);
 
@@ -159,6 +181,63 @@ export const Documents = () => {
         return d;
       }));
 
+      // Update activeStudentApp state
+      if (setActiveStudentApp) {
+        setActiveStudentApp(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            documents: {
+              ...(prev.documents || {}),
+              [activeDocToUpload]: {
+                ...(prev.documents?.[activeDocToUpload] || {}),
+                status: 'Under Verification',
+                file: file.name,
+                reason: ''
+              }
+            }
+          };
+        });
+      }
+
+      // Persist to Supabase application_documents table if appId is valid
+      if (activeStudentApp?.id) {
+        try {
+          const { data: existingDoc } = await supabase
+            .from('application_documents')
+            .select('id')
+            .eq('application_id', activeStudentApp.id)
+            .eq('document_type', activeDocToUpload)
+            .maybeSingle();
+
+          if (existingDoc?.id) {
+            await supabase
+              .from('application_documents')
+              .update({
+                file_name: file.name,
+                file_url: storagePath,
+                verification_status: 'UPLOADED',
+                rejection_reason: null,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingDoc.id);
+          } else {
+            await supabase
+              .from('application_documents')
+              .insert({
+                application_id: activeStudentApp.id,
+                document_type: activeDocToUpload,
+                file_name: file.name,
+                file_url: storagePath,
+                verification_status: 'UPLOADED',
+                rejection_reason: null
+              });
+          }
+        } catch (dbErr) {
+          console.warn('Could not sync to application_documents table:', dbErr);
+        }
+      }
+
       setUploadSuccessMsg(lang === 'hi' ? 'दस्तावेज़ सफलतापूर्वक अपलोड हो गया है। संवीक्षा प्रगति पर है।' : `Document "${file.name}" uploaded to secure storage. Under scrutiny.`);
       setTimeout(() => setUploadSuccessMsg(null), 5000);
     } catch (err) {
@@ -172,16 +251,23 @@ export const Documents = () => {
 
   const handleLookupApp = async (e) => {
     e.preventDefault();
-    if (!searchAppId.trim()) return;
+    const query = searchAppId.trim();
+    if (!query) return;
     setSearching(true);
     try {
-      const result = await applicationService.trackApplication(searchAppId.trim());
-      if (result) {
-        setActiveStudentApp({
-          id: result.id,
-          studentName: result.student_name || 'Applicant',
-          mobile: result.mobile || ''
-        });
+      let fullApp = await applicationService.getApplicationById(query);
+      if (!fullApp && query.toLowerCase().startsWith('jmf-')) {
+        fullApp = await applicationService.getApplicationById(query.toUpperCase());
+      }
+      if (!fullApp) {
+        const result = await applicationService.trackApplication(query);
+        if (result?.id) {
+          fullApp = await applicationService.getApplicationById(result.id) || result;
+        }
+      }
+
+      if (fullApp && fullApp.id) {
+        setActiveStudentApp(fullApp);
       } else {
         setUploadErrorMsg('Application ID not found.');
         setTimeout(() => setUploadErrorMsg(null), 4000);
@@ -201,6 +287,8 @@ export const Documents = () => {
         return <span className="badge badge-blue"><Clock size={12} /> Under Scrutiny</span>;
       case 'Uploaded':
         return <span className="badge badge-yellow"><FileText size={12} /> Uploaded</span>;
+      case 'Correction Requested':
+        return <span className="badge badge-yellow"><AlertCircle size={12} /> Correction Needed</span>;
       case 'Rejected':
         return <span className="badge badge-red"><XCircle size={12} /> Rejected</span>;
       default:
@@ -335,15 +423,15 @@ export const Documents = () => {
                 </div>
               )}
 
-              {/* Rejection Alert & Action */}
-              {doc.status === 'Rejected' && (
-                <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
+              {/* Rejection / Defective Alert & Action */}
+              {(doc.status === 'Rejected' || doc.status === 'Correction Requested' || (doc.reason && String(doc.reason).trim() !== '')) && (
+                <div style={{ backgroundColor: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#DC2626', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.35rem' }}>
                     <AlertCircle size={16} />
-                    <span>{lang === 'hi' ? 'अस्वीकृति का कारण (Rejection Reason)' : 'Rejection Reason'}</span>
+                    <span>{lang === 'hi' ? 'अस्वीकृति / त्रुटि का कारण (Scrutiny Remarks):' : 'Scrutiny Officer Rejection Reason:'}</span>
                   </div>
-                  <div style={{ color: '#991B1B', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                    {doc.reason}
+                  <div style={{ color: '#991B1B', fontSize: '0.85rem', lineHeight: 1.5, fontWeight: 600, backgroundColor: '#FFFFFF', padding: '0.65rem 0.85rem', borderRadius: '6px', border: '1px solid #FCA5A5' }}>
+                    "{doc.reason || activeStudentApp?.rejectionReason || activeStudentApp?.correctionRemarks || (lang === 'hi' ? 'दस्तावेज़ स्पष्ट नहीं है अथवा निर्धारित प्रारूप में नहीं है।' : 'Document is unclear or missing mandatory verification stamp.')}"
                   </div>
                 </div>
               )}
@@ -351,9 +439,10 @@ export const Documents = () => {
               {/* Actions */}
               <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '0.5rem' }}>
                 <button 
-                  className={`btn ${doc.status === 'Rejected' ? 'btn-primary' : doc.status === 'Not Uploaded' ? 'btn-secondary' : 'btn-outline'} btn-sm`}
+                  className={`btn ${(doc.status === 'Rejected' || doc.status === 'Correction Requested' || doc.reason) ? 'btn-primary' : doc.status === 'Not Uploaded' ? 'btn-secondary' : 'btn-outline'} btn-sm`}
                   disabled={uploadingDocId === doc.id}
                   onClick={() => handleStartUpload(doc.id)}
+                  style={(doc.status === 'Rejected' || doc.status === 'Correction Requested' || doc.reason) ? { backgroundColor: '#DC2626', borderColor: '#DC2626' } : {}}
                 >
                   {uploadingDocId === doc.id ? (
                     <>
@@ -362,10 +451,10 @@ export const Documents = () => {
                     </>
                   ) : (
                     <>
-                      {doc.status === 'Rejected' ? <RefreshCw size={14} /> : <Upload size={14} />}
+                      {(doc.status === 'Rejected' || doc.status === 'Correction Requested' || doc.reason) ? <RefreshCw size={14} /> : <Upload size={14} />}
                       <span>
-                        {doc.status === 'Rejected' 
-                          ? (lang === 'hi' ? 'नया दस्तावेज़ अपलोड करें' : 'Upload Replacement')
+                        {(doc.status === 'Rejected' || doc.status === 'Correction Requested' || doc.reason)
+                          ? (lang === 'hi' ? 'नवीन स्पष्ट दस्तावेज़ अपलोड करें' : 'Upload Replacement')
                           : (lang === 'hi' ? 'दस्तावेज़ चुनें व अपलोड करें' : 'Upload File')}
                       </span>
                     </>

@@ -140,9 +140,10 @@ export const ApplicationScrutinyModal = ({
   const handleDocumentVerify = async (docKey, status, reason = '') => {
     try {
       const doc = docsState[docKey] || application.documents?.[docKey];
-      if (doc?.id) {
-        await scrutinyService.verifyDocument(doc.id, status, reason, currentUser);
-      }
+      await scrutinyService.verifyDocument(doc?.id, status, reason, currentUser, {
+        applicationId: application.id,
+        docKey
+      });
 
       const newStatusLabel = status === 'VALID' ? 'Verified' : status === 'INVALID' ? 'Rejected' : 'Correction Requested';
 

@@ -37,8 +37,10 @@ import {
   Bell,
   HelpCircle,
   ShieldAlert,
-  Printer
+  Printer,
+  Pin
 } from 'lucide-react';
+import { supabase } from '../api/supabase';
 import { paymentService } from '../services/paymentService';
 import { scrutinyService } from '../services/scrutinyService';
 import { reportService } from '../services/reportService';
@@ -73,6 +75,7 @@ export const Admin = () => {
     updateApplicationStatus, 
     cms, 
     updateCMS, 
+    refreshCMS,
     authUser, 
     authRole, 
     authLoading,
@@ -165,6 +168,8 @@ export const Admin = () => {
   const [cmsSaveAlert, setCmsSaveAlert] = useState(false);
   const [heroSlides, setHeroSlides] = useState(cms.heroSlides || []);
   const [noticesList, setNoticesList] = useState(cms.notices || []);
+  const [editingNotice, setEditingNotice] = useState(null);
+  const [isNoticeModalOpen, setIsNoticeModalOpen] = useState(false);
   const [faqsList, setFaqsList] = useState(cms.faqs || []);
   const [teamList, setTeamList] = useState(cms.teamMembers || []);
   const [downloadsList, setDownloadsList] = useState(cms.downloads || []);
@@ -359,6 +364,89 @@ export const Admin = () => {
     setTimeout(() => setCmsSaveAlert(false), 3500);
   };
 
+  // Notice Board CRUD Operations
+  const handleOpenAddNotice = () => {
+    setEditingNotice({
+      id: '',
+      title_en: '',
+      title_hi: '',
+      content_en: '',
+      content_hi: '',
+      category_en: 'Guidelines',
+      category_hi: 'दिशानिर्देश',
+      publish_date: new Date().toISOString().split('T')[0],
+      priority: 'HIGH',
+      is_pinned: false,
+      is_published: true
+    });
+    setIsNoticeModalOpen(true);
+  };
+
+  const handleOpenEditNotice = (notice) => {
+    setEditingNotice({
+      id: notice.id,
+      title_en: notice.title_en || notice.titleEn || '',
+      title_hi: notice.title_hi || notice.titleHi || '',
+      content_en: notice.content_en || notice.contentEn || '',
+      content_hi: notice.content_hi || notice.contentHi || '',
+      category_en: notice.category_en || notice.categoryEn || 'General',
+      category_hi: notice.category_hi || notice.categoryHi || 'सामान्य',
+      publish_date: notice.publish_date || notice.date || new Date().toISOString().split('T')[0],
+      priority: notice.priority || 'NORMAL',
+      is_pinned: notice.is_pinned ?? notice.isPinned ?? false,
+      is_published: notice.is_published ?? notice.isPublished ?? true
+    });
+    setIsNoticeModalOpen(true);
+  };
+
+  const handleSaveNotice = async (e) => {
+    e?.preventDefault();
+    if (!editingNotice.title_en || !editingNotice.title_hi) {
+      alert('Please enter both English and Hindi titles for the notice.');
+      return;
+    }
+    try {
+      if (editingNotice.id) {
+        await cmsService.updateNotice(editingNotice.id, editingNotice);
+      } else {
+        await cmsService.createNotice(editingNotice);
+      }
+      const refreshed = await cmsService.getNotices();
+      setNoticesList(refreshed);
+      if (refreshCMS) refreshCMS();
+      setIsNoticeModalOpen(false);
+      setEditingNotice(null);
+      alert('Notice saved successfully! Public Notice Board updated.');
+    } catch (err) {
+      alert('Failed to save notice: ' + err.message);
+    }
+  };
+
+  const handleDeleteNotice = async (noticeId) => {
+    if (!window.confirm('Are you sure you want to delete this notice?')) return;
+    try {
+      await cmsService.deleteNotice(noticeId);
+      const refreshed = await cmsService.getNotices();
+      setNoticesList(refreshed);
+      if (refreshCMS) refreshCMS();
+      alert('Notice deleted successfully.');
+    } catch (err) {
+      alert('Failed to delete notice: ' + err.message);
+    }
+  };
+
+  const handleTogglePinNotice = async (notice) => {
+    try {
+      const newPinned = !(notice.is_pinned ?? notice.isPinned);
+      await cmsService.updateNotice(notice.id, { is_pinned: newPinned });
+      const refreshed = await cmsService.getNotices();
+      setNoticesList(refreshed);
+      if (refreshCMS) refreshCMS();
+    } catch (err) {
+      alert('Failed to toggle pin: ' + err.message);
+    }
+  };
+
   // Export Applications to CSV
   const handleExportApplications = () => {
     const rows = filteredApplications.map(app => ({
@@ -494,44 +582,101 @@ export const Admin = () => {
   };
 
   // Open modal to mark a student's manual transfer as done
+  // Open modal to mark a student's manual transfer / installment payout as done
   const handleOpenMarkTransferred = (app) => {
     setMarkingTransferredApp(app);
+    const sanctioned = app.sanctionedAmount || 12000;
+    const paidSoFar = app.rawDisbursedAmount || 0;
+    const remaining = Math.max(0, sanctioned - paidSoFar);
+
     setTransferModalForm({
+      installmentAmount: remaining > 0 ? remaining : sanctioned,
       paymentDate: new Date().toISOString().split('T')[0],
       utrNumber: '',
-      disbursingBank: 'State Bank of India',
-      remarks: 'Manually transferred via Net Banking'
+      disbursingBank: 'State Bank of India - Trust A/c',
+      remarks: remaining < sanctioned ? 'Installment disbursement via DBT/NEFT' : 'Scholarship grant disbursement via DBT/NEFT'
     });
   };
 
-  // Save manual offline transfer record
+  // Save manual offline transfer / installment record
   const handleConfirmManualTransfer = async () => {
     if (!markingTransferredApp) return;
     try {
-      const utr = transferModalForm.utrNumber.trim();
-      const remarks = `${transferModalForm.remarks} (Bank: ${transferModalForm.disbursingBank})`;
-      await scrutinyService.updateApplicationStatus(
-        markingTransferredApp.id,
-        'Scholarship Released',
-        remarks,
-        utr,
-        { ...authUser, role: authRole }
-      );
+      const sanctioned = markingTransferredApp.sanctionedAmount || 12000;
+      const currentPaid = markingTransferredApp.rawDisbursedAmount || 0;
+      const installment = parseFloat(transferModalForm.installmentAmount) || Math.max(0, sanctioned - currentPaid);
 
+      if (installment <= 0) {
+        alert('Please enter a valid installment amount greater than 0.');
+        return;
+      }
+
+      const newTotalPaid = currentPaid + installment;
+      const newRemaining = Math.max(0, sanctioned - newTotalPaid);
+      const isFullPayout = newRemaining <= 0;
+      const nextStatus = isFullPayout ? 'Scholarship Released' : 'Partially Disbursed';
+
+      const utr = transferModalForm.utrNumber.trim() || `JMFDBT${Date.now()}`;
+      const remarks = `${transferModalForm.remarks} (Bank: ${transferModalForm.disbursingBank}, Paid: ₹${installment.toLocaleString('en-IN')}, Remaining: ₹${newRemaining.toLocaleString('en-IN')})`;
+
+      // 1. Insert row into payments table
       try {
-        await certificateService.issueCertificate({
-          applicationId: markingTransferredApp.id,
-          studentName: markingTransferredApp.studentName,
-          schemeName: 'Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27',
-          grantAmount: 12000
+        await supabase.from('payments').insert({
+          application_id: markingTransferredApp.id,
+          student_id: markingTransferredApp.studentId || markingTransferredApp.id,
+          amount: installment,
+          bank_account_masked: markingTransferredApp.accountNumber,
+          ifsc_code: markingTransferredApp.ifsc,
+          payment_method: 'DBT_NEFT',
+          status: 'SUCCESS',
+          utr_number: utr,
+          transaction_reference: transferModalForm.disbursingBank,
+          payment_date: transferModalForm.paymentDate
         });
-      } catch (cErr) {}
+      } catch (pErr) {
+        console.warn('Payment record insert note:', pErr);
+      }
 
-      alert(`Manual bank transfer recorded for ${markingTransferredApp.studentName}! Application marked as Scholarship Released.`);
+      // 2. Update application status and disbursed_amount
+      await supabase
+        .from('applications')
+        .update({
+          disbursed_amount: newTotalPaid,
+          status: isFullPayout ? 'SCHOLARSHIP_RELEASED' : 'PARTIALLY_DISBURSED',
+          stage: isFullPayout ? 5 : 4,
+          payment_date: transferModalForm.paymentDate,
+          utr_number: utr,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', markingTransferredApp.id);
+
+      // 3. Log history
+      await supabase.from('application_status_history').insert({
+        application_id: markingTransferredApp.id,
+        previous_status: markingTransferredApp.rawStatus || markingTransferredApp.status,
+        new_status: isFullPayout ? 'SCHOLARSHIP_RELEASED' : 'PARTIALLY_DISBURSED',
+        actor_id: authUser?.id && authUser.id.length === 36 ? authUser.id : null,
+        actor_role: authRole,
+        remarks
+      }).catch(e => console.warn('Status history note:', e));
+
+      // 4. If full payout, issue certificate
+      if (isFullPayout) {
+        try {
+          await certificateService.issueCertificate({
+            applicationId: markingTransferredApp.id,
+            studentName: markingTransferredApp.studentName,
+            schemeName: 'Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27',
+            grantAmount: sanctioned
+          });
+        } catch (cErr) {}
+      }
+
+      alert(`✓ DBT Payment recorded for ${markingTransferredApp.studentName}!\nPaid Installment: ₹${installment.toLocaleString('en-IN')}\nTotal Disbursed: ₹${newTotalPaid.toLocaleString('en-IN')}\nRemaining Balance: ₹${newRemaining.toLocaleString('en-IN')}\nStatus: ${nextStatus}`);
       setMarkingTransferredApp(null);
-      await loadApplications();
+      await loadApplications(authRole, jurisdiction);
     } catch (err) {
-      alert('Failed to update record: ' + err.message);
+      alert('Failed to record transfer: ' + err.message);
     }
   };
 
@@ -1602,8 +1747,9 @@ export const Admin = () => {
                         <th>Beneficiary Student</th>
                         <th>College / District</th>
                         <th>Sanction Amount</th>
+                        <th>Disbursed (Paid)</th>
+                        <th>Remaining Balance</th>
                         <th>Bank Account Details</th>
-                        <th>Approval Date</th>
                         <th>Transfer Status</th>
                         <th>Actions</th>
                       </tr>
@@ -1638,8 +1784,28 @@ export const Admin = () => {
                           </td>
 
                           <td>
-                            <div style={{ fontWeight: 800, color: '#16A34A', fontSize: '1.05rem' }}>₹12,000</div>
-                            <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Sanctioned Grant</div>
+                            <div style={{ fontWeight: 800, color: '#1E40AF', fontSize: '1rem' }}>
+                              {b.sanctionedAmountFormatted || `₹${(b.sanctionedAmount || 12000).toLocaleString('en-IN')}`}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Total Sanctioned</div>
+                          </td>
+
+                          <td>
+                            <div style={{ fontWeight: 800, color: '#16A34A', fontSize: '1rem' }}>
+                              {b.disbursedAmount || `₹${(b.rawDisbursedAmount || 0).toLocaleString('en-IN')}`}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: '#64748B' }}>
+                              {(b.paymentsList && b.paymentsList.length > 0) ? `${b.paymentsList.length} Installment(s)` : 'Disbursed To Date'}
+                            </div>
+                          </td>
+
+                          <td>
+                            <div style={{ fontWeight: 800, color: (b.rawRemainingAmount ?? 0) > 0 ? '#D97706' : '#16A34A', fontSize: '1rem' }}>
+                              {b.remainingAmount ?? `₹${Math.max(0, (b.sanctionedAmount || 12000) - (b.rawDisbursedAmount || 0)).toLocaleString('en-IN')}`}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: (b.rawRemainingAmount ?? 0) > 0 ? '#B45309' : '#15803D', fontWeight: 600 }}>
+                              {(b.rawRemainingAmount ?? 0) > 0 ? 'Pending Balance' : 'Settled In Full ✓'}
+                            </div>
                           </td>
 
                           <td>
@@ -1678,23 +1844,21 @@ export const Admin = () => {
                           </td>
 
                           <td>
-                            <div style={{ fontWeight: 600, fontSize: '0.8rem', color: '#0F172A' }}>
-                              {b.approvalDate && b.approvalDate !== '-' ? b.approvalDate : 'Verified'}
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: '#16A34A', fontWeight: 600 }}>
-                              ✓ Scrutiny Passed
-                            </div>
-                          </td>
-
-                          <td>
-                            {(b.status === 'Scholarship Released' || b.rawStatus === 'SCHOLARSHIP_RELEASED') ? (
+                            {(b.status === 'Scholarship Released' || b.rawStatus === 'SCHOLARSHIP_RELEASED' || (b.rawRemainingAmount !== undefined && b.rawRemainingAmount <= 0)) ? (
                               <div>
-                                <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>✓ Transferred</span>
+                                <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>✓ Fully Released</span>
                                 {b.utrNumber && b.utrNumber !== '-' && (
                                   <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: '#15803D', marginTop: '2px' }}>
                                     Ref: {b.utrNumber}
                                   </div>
                                 )}
+                              </div>
+                            ) : (b.rawDisbursedAmount || 0) > 0 ? (
+                              <div>
+                                <span className="badge badge-yellow" style={{ fontSize: '0.75rem' }}>Partially Paid</span>
+                                <div style={{ fontSize: '0.68rem', color: '#B45309', marginTop: '2px', fontWeight: 600 }}>
+                                  Bal: {b.remainingAmount || `₹${Math.max(0, (b.sanctionedAmount || 12000) - (b.rawDisbursedAmount || 0)).toLocaleString('en-IN')}`}
+                                </div>
                               </div>
                             ) : (
                               <span className="badge badge-blue" style={{ fontSize: '0.75rem' }}>
@@ -1714,19 +1878,25 @@ export const Admin = () => {
                                 <FileText size={12} />
                                 <span>View</span>
                               </button>
-                              {(b.status !== 'Scholarship Released' && b.rawStatus !== 'SCHOLARSHIP_RELEASED') ? (
+                              {((b.rawRemainingAmount === undefined || b.rawRemainingAmount > 0) && b.status !== 'Scholarship Released' && b.rawStatus !== 'SCHOLARSHIP_RELEASED') ? (
                                 <button 
                                   className="btn btn-secondary btn-sm" 
                                   onClick={() => handleOpenMarkTransferred(b)}
-                                  title="Mark that you have completed manual transfer offline"
-                                  style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
+                                  title="Disburse scholarship grant or installment"
+                                  style={{ 
+                                    padding: '0.3rem 0.55rem', 
+                                    fontSize: '0.75rem',
+                                    backgroundColor: (b.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#1E40AF',
+                                    borderColor: (b.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#1E40AF',
+                                    color: '#FFFFFF'
+                                  }}
                                 >
-                                  <CheckCircle2 size={12} />
-                                  <span>Mark Paid</span>
+                                  <CreditCard size={12} />
+                                  <span>{(b.rawDisbursedAmount || 0) > 0 ? 'Pay Installment' : 'Disburse Grant'}</span>
                                 </button>
                               ) : (
-                                <span style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700 }}>
-                                  Recorded
+                                <span style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                                  <CheckCircle2 size={13} color="#16A34A" /> Fully Paid
                                 </span>
                               )}
                             </div>
@@ -2009,12 +2179,306 @@ export const Admin = () => {
                   </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary btn-lg">
+                <button type="submit" className="btn btn-primary btn-lg" style={{ marginBottom: '2.5rem' }}>
                   <Save size={18} />
                   <span>Save CMS Content to Database</span>
                 </button>
 
               </form>
+
+              {/* 5. Official Notice Board Manager */}
+              <div className="card" style={{ padding: '1.75rem', marginTop: '1.5rem', borderTop: '4px solid #1E40AF' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Bell size={20} color="#1E40AF" />
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                        5. Official Notice Board Manager
+                      </h3>
+                      <span className="badge badge-blue">{noticesList.length} Notices</span>
+                    </div>
+                    <p style={{ color: '#64748B', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+                      Publish official guidelines, DBT payout schedules, circulars, and announcements directly to the public Notice Board.
+                    </p>
+                  </div>
+
+                  <button 
+                    type="button" 
+                    className="btn btn-primary"
+                    onClick={handleOpenAddNotice}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}
+                  >
+                    <Plus size={16} />
+                    <span>Create Official Notice</span>
+                  </button>
+                </div>
+
+                {/* Notices List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {noticesList.map(notice => {
+                    const isPinned = notice.is_pinned ?? notice.isPinned ?? false;
+                    const priority = notice.priority || 'NORMAL';
+
+                    return (
+                      <div 
+                        key={notice.id} 
+                        style={{ 
+                          backgroundColor: isPinned ? '#FEFCE8' : '#F8FAFC', 
+                          border: `1.5px solid ${isPinned ? '#FDE047' : '#E2E8F0'}`, 
+                          borderRadius: '12px', 
+                          padding: '1.25rem',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          justifyContent: 'space-between',
+                          gap: '1rem',
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: '280px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+                            {isPinned && (
+                              <span className="badge badge-yellow" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <Pin size={11} /> PINNED NOTICE
+                              </span>
+                            )}
+                            <span className={`badge ${priority === 'HIGH' ? 'badge-red' : priority === 'MEDIUM' ? 'badge-yellow' : 'badge-navy'}`}>
+                              {priority} PRIORITY
+                            </span>
+                            <span className="badge badge-blue">
+                              {notice.category_en || notice.categoryEn || 'General'}
+                            </span>
+                            <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600 }}>
+                              Ref: {notice.id} • Date: {notice.publish_date || notice.date || '-'}
+                            </span>
+                          </div>
+
+                          <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: '0.2rem 0' }}>
+                            {notice.title_en || notice.titleEn}
+                          </h4>
+                          <div style={{ fontSize: '0.92rem', color: '#1E3A8A', fontWeight: 700, marginBottom: '0.4rem' }}>
+                            {notice.title_hi || notice.titleHi}
+                          </div>
+
+                          <p style={{ fontSize: '0.85rem', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                            {notice.content_en || notice.contentEn}
+                          </p>
+                          {notice.content_hi && (
+                            <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0.3rem 0 0 0', lineHeight: 1.5 }}>
+                              {notice.content_hi || notice.contentHi}
+                            </p>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${isPinned ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => handleTogglePinNotice(notice)}
+                            title={isPinned ? "Unpin notice from top" : "Pin notice to top of public board"}
+                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                          >
+                            <Pin size={13} />
+                            <span>{isPinned ? 'Pinned' : 'Pin'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={() => handleOpenEditNotice(notice)}
+                            title="Edit notice details"
+                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                          >
+                            <Edit3 size={13} />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => handleDeleteNotice(notice.id)}
+                            title="Delete this notice"
+                            style={{ padding: '0.4rem 0.6rem', color: '#DC2626' }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Notice Edit/Create Modal */}
+              {isNoticeModalOpen && editingNotice && (
+                <div style={{
+                  position: 'fixed',
+                  inset: 0,
+                  backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1200,
+                  padding: '1rem',
+                  overflowY: 'auto'
+                }}>
+                  <div 
+                    className="animate-fade-in"
+                    style={{
+                      maxWidth: '620px',
+                      width: '100%',
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '16px',
+                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0' }}>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                        {editingNotice.id ? `Edit Notice (${editingNotice.id})` : 'Create New Official Notice'}
+                      </h3>
+                      <button 
+                        onClick={() => { setIsNoticeModalOpen(false); setEditingNotice(null); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSaveNotice} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div className="form-group">
+                        <label className="form-label required">Notice Title (English)</label>
+                        <input 
+                          type="text" 
+                          required
+                          className="form-control"
+                          placeholder="e.g. Schedule of Scrutiny & Direct Benefit Transfer"
+                          value={editingNotice.title_en}
+                          onChange={(e) => setEditingNotice({ ...editingNotice, title_en: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label required">Notice Title (Hindi - हिंदी)</label>
+                        <input 
+                          type="text" 
+                          required
+                          className="form-control"
+                          placeholder="e.g. संवीक्षा एवं प्रत्यक्ष लाभ अंतरण (DBT) समय-सारिणी"
+                          value={editingNotice.title_hi}
+                          onChange={(e) => setEditingNotice({ ...editingNotice, title_hi: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="form-row-2">
+                        <div className="form-group">
+                          <label className="form-label">Category (English)</label>
+                          <input 
+                            type="text" 
+                            className="form-control"
+                            placeholder="e.g. Guidelines, DBT, Scrutiny"
+                            value={editingNotice.category_en}
+                            onChange={(e) => setEditingNotice({ ...editingNotice, category_en: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Category (Hindi)</label>
+                          <input 
+                            type="text" 
+                            className="form-control"
+                            placeholder="e.g. दिशानिर्देश, डीबीटी"
+                            value={editingNotice.category_hi}
+                            onChange={(e) => setEditingNotice({ ...editingNotice, category_hi: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-row-2">
+                        <div className="form-group">
+                          <label className="form-label required">Publish Date</label>
+                          <input 
+                            type="date" 
+                            required
+                            className="form-control"
+                            value={editingNotice.publish_date}
+                            onChange={(e) => setEditingNotice({ ...editingNotice, publish_date: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Priority Level</label>
+                          <select 
+                            className="form-control"
+                            value={editingNotice.priority}
+                            onChange={(e) => setEditingNotice({ ...editingNotice, priority: e.target.value })}
+                          >
+                            <option value="HIGH">HIGH (Urgent Announcement)</option>
+                            <option value="MEDIUM">MEDIUM (Standard Notice)</option>
+                            <option value="NORMAL">NORMAL (Informational)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Detailed Content (English)</label>
+                        <textarea 
+                          className="form-control"
+                          rows="3"
+                          placeholder="Detailed instructions or notice text in English..."
+                          value={editingNotice.content_en}
+                          onChange={(e) => setEditingNotice({ ...editingNotice, content_en: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Detailed Content (Hindi - हिंदी)</label>
+                        <textarea 
+                          className="form-control"
+                          rows="3"
+                          placeholder="विस्तृत दिशानिर्देश या सूचना का विवरण हिंदी में..."
+                          value={editingNotice.content_hi}
+                          onChange={(e) => setEditingNotice({ ...editingNotice, content_hi: e.target.value })}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', padding: '0.5rem 0' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>
+                          <input 
+                            type="checkbox"
+                            checked={editingNotice.is_pinned}
+                            onChange={(e) => setEditingNotice({ ...editingNotice, is_pinned: e.target.checked })}
+                          />
+                          <span>Pin to Top of Notice Board (विशेष सूचना)</span>
+                        </label>
+
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>
+                          <input 
+                            type="checkbox"
+                            checked={editingNotice.is_published}
+                            onChange={(e) => setEditingNotice({ ...editingNotice, is_published: e.target.checked })}
+                          />
+                          <span>Published (सार्वजनिक रूप से प्रदर्शित)</span>
+                        </label>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline"
+                          onClick={() => { setIsNoticeModalOpen(false); setEditingNotice(null); }}
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary">
+                          <Save size={16} />
+                          <span>{editingNotice.id ? 'Update Notice' : 'Publish Notice'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -2499,10 +2963,38 @@ export const Admin = () => {
                   <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Beneficiary Student:</span>
                   <strong style={{ color: '#0F172A', fontSize: '0.85rem' }}>{markingTransferredApp.studentName} ({markingTransferredApp.id})</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Grant Sanctioned:</span>
-                  <strong style={{ color: '#16A34A', fontSize: '1rem' }}>₹12,000.00</strong>
+
+                {/* 3-Pillar Financial Ledger Box */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(3, 1fr)', 
+                  gap: '0.5rem', 
+                  backgroundColor: '#FFFFFF', 
+                  padding: '0.65rem 0.75rem', 
+                  borderRadius: '8px', 
+                  border: '1px solid #CBD5E1', 
+                  margin: '0.5rem 0' 
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Total Sanctioned</div>
+                    <div style={{ fontWeight: 800, color: '#1E40AF', fontSize: '0.95rem' }}>
+                      ₹{(markingTransferredApp.sanctionedAmount || 12000).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Paid So Far</div>
+                    <div style={{ fontWeight: 800, color: '#16A34A', fontSize: '0.95rem' }}>
+                      ₹{(markingTransferredApp.rawDisbursedAmount || 0).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Remaining Balance</div>
+                    <div style={{ fontWeight: 800, color: (markingTransferredApp.rawRemainingAmount ?? 12000) > 0 ? '#D97706' : '#16A34A', fontSize: '0.95rem' }}>
+                      ₹{(markingTransferredApp.rawRemainingAmount ?? Math.max(0, (markingTransferredApp.sanctionedAmount || 12000) - (markingTransferredApp.rawDisbursedAmount || 0))).toLocaleString('en-IN')}
+                    </div>
+                  </div>
                 </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                   <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Beneficiary Bank:</span>
                   <span style={{ color: '#0F172A', fontWeight: 600, fontSize: '0.82rem' }}>{markingTransferredApp.bankName}</span>
@@ -2517,6 +3009,37 @@ export const Admin = () => {
 
               {/* Form Inputs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div className="form-group">
+                  <label className="form-label required" style={{ fontSize: '0.82rem', marginBottom: '0.3rem' }}>
+                    Installment / Payout Amount to Disburse (₹)
+                  </label>
+                  <input 
+                    type="number" 
+                    value={transferModalForm.installmentAmount ?? ''}
+                    onChange={(e) => setTransferModalForm(prev => ({ ...prev, installmentAmount: e.target.value }))}
+                    className="form-control"
+                    style={{ fontSize: '1.05rem', fontWeight: 800, color: '#16A34A' }}
+                    min="1"
+                    placeholder="Enter installment amount in rupees"
+                  />
+                  {/* Live Remaining Balance Calculation Preview */}
+                  {(() => {
+                    const sanc = markingTransferredApp.sanctionedAmount || 12000;
+                    const prevPaid = markingTransferredApp.rawDisbursedAmount || 0;
+                    const inst = parseFloat(transferModalForm.installmentAmount) || 0;
+                    const newTotal = prevPaid + inst;
+                    const newRem = Math.max(0, sanc - newTotal);
+                    return (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: '6px', padding: '0.45rem 0.65rem', marginTop: '0.35rem', fontSize: '0.75rem' }}>
+                        <span>New Balance after this payout:</span>
+                        <strong style={{ color: newRem <= 0 ? '#16A34A' : '#D97706', fontSize: '0.85rem' }}>
+                          ₹{newRem.toLocaleString('en-IN')} {newRem <= 0 ? '(Fully Paid ✓)' : '(Partial Installment)'}
+                        </strong>
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 <div className="form-group">
                   <label className="form-label required" style={{ fontSize: '0.82rem', marginBottom: '0.3rem' }}>Transfer Execution Date</label>
                   <input 

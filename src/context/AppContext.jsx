@@ -15,7 +15,7 @@ const INITIAL_CMS = {
   registrationFeeNote: "₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)",
   applicationStartDate: "15/09/2026",
   applicationLastDate: "30/11/2026",
-  eligibilityCriteria: "Class 5th to Post Graduation & Diploma Courses in recognized institutions.",
+  eligibilityCriteria: "Class 5th to Post Graduation (Min 50% Marks & Annual Income up to ₹2,50,000)",
   officeAddress: "Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002",
   registrationDetails: "JMF/MP/NGO/2026/894",
   officialEmail: "jankalyanmanavadhikar@gmail.com",
@@ -124,7 +124,7 @@ const INITIAL_CMS = {
   notices: [
     {
       id: "NOT-2026-01",
-      date: "2026-09-10",
+      date: "2026-09-15",
       titleEn: "Online Application Guidelines & Document Verification Protocol",
       titleHi: "ऑनलाइन आवेदन दिशा-निर्देश एवं दस्तावेज़ सत्यापन प्रक्रिया",
       categoryEn: "Guidelines",
@@ -134,13 +134,53 @@ const INITIAL_CMS = {
     },
     {
       id: "NOT-2026-02",
-      date: "2026-09-05",
+      date: "2026-09-12",
       titleEn: "Advisory on Bank Account Linking with Aadhaar (DBT Compliance)",
       titleHi: "आधार से बैंक खाता लिंक करने संबंधी आवश्यक परामर्श (DBT अनुपालन)",
       categoryEn: "Advisory",
       categoryHi: "परामर्श",
-      contentEn: "Payments will only be disbursed through Direct Benefit Transfer. Inoperative or unlinked accounts will cause transaction failure.",
-      contentHi: "छात्रवृत्ति राशि केवल प्रत्यक्ष लाभ अंतरण द्वारा जारी होगी। निष्क्रिय या असंबद्ध खातों में लेन-देन विफल हो सकता है।"
+      contentEn: "Scholarship grants will only be disbursed through Direct Benefit Transfer. Ensure bank account is active and linked with Aadhaar for seamless DBT credit.",
+      contentHi: "छात्रवृत्ति राशि केवल प्रत्यक्ष लाभ अंतरण द्वारा जारी होगी। निर्बाध डीबीटी क्रेडिट हेतु बैंक खाता सक्रिय एवं आधार से लिंक होना सुनिश्चित करें।"
+    },
+    {
+      id: "NOT-2026-03",
+      date: "2026-09-10",
+      titleEn: "Eligibility Notice: 50% Minimum Qualifying Marks & ₹2,50,000 Annual Income Limit",
+      titleHi: "पात्रता सूचना: न्यूनतम 50% प्राप्तांक एवं ₹2,50,000 वार्षिक आय सीमा",
+      categoryEn: "Eligibility",
+      categoryHi: "पात्रता",
+      contentEn: "Applicants across Class 5th to Post Graduation must possess at least 50% marks in their qualifying examination. Family annual income must not exceed ₹2,50,000 as certified by competent authority.",
+      contentHi: "कक्षा 5वीं से पोस्ट ग्रेजुएशन तक के आवेदकों को पिछली परीक्षा में न्यूनतम 50% अंक प्राप्त होना आवश्यक है। सक्षम अधिकारी द्वारा प्रमाणित वार्षिक पारिवारिक आय ₹2,50,000 से अधिक नहीं होनी चाहिए।"
+    },
+    {
+      id: "NOT-2026-04",
+      date: "2026-09-08",
+      titleEn: "Direct Benefit Transfer (DBT) Installment Payout & Disbursal Protocol",
+      titleHi: "प्रत्यक्ष लाभ अंतरण (DBT) किस्त भुगतान एवं संवितरण प्रक्रिया",
+      categoryEn: "Disbursement",
+      categoryHi: "भुगतान",
+      contentEn: "Sanctioned scholarship grants may be disbursed in scheduled bank installments. Both current credited installment and remaining balance can be tracked directly on student dashboard.",
+      contentHi: "स्वीकृत छात्रवृत्ति राशि निर्धारित बैंक किस्तों में जारी की जा सकती है। वर्तमान भुगतान की गई किस्त एवं शेष राशि की स्थिति विद्यार्थी डैशबोर्ड पर लाइव देखी जा सकती है।"
+    },
+    {
+      id: "NOT-2026-05",
+      date: "2026-09-05",
+      titleEn: "District & Block Nodal Scrutiny Schedule for Session 2026-27",
+      titleHi: "सत्र 2026-27 हेतु जिला एवं ब्लॉक नोडल संवीक्षा समय-सारणी",
+      categoryEn: "Administration",
+      categoryHi: "प्रशासनिक",
+      contentEn: "Institutional heads and district coordinators are instructed to complete primary verification of uploaded student records within 5 working days of receipt.",
+      contentHi: "संस्था प्रमुखों एवं जिला समन्वयकों को प्राप्त विद्यार्थी आवेदनों का प्राथमिक दस्तावेज़ सत्यापन 5 कार्यदिवसों के भीतर पूर्ण करने के निर्देश दिए जाते हैं।"
+    },
+    {
+      id: "NOT-2026-06",
+      date: "2026-09-01",
+      titleEn: "Grievance Redressal & Defective Document Re-upload Facility",
+      titleHi: "छात्र शिकायत निवारण एवं दस्तावेज़ पुनः अपलोड सुविधा",
+      categoryEn: "Support",
+      categoryHi: "सहायता",
+      contentEn: "If any uploaded certificate is marked defective during scrutiny, students can view the specific officer remarks and upload a replacement copy directly via Document Portal.",
+      contentHi: "यदि संवीक्षा के दौरान कोई दस्तावेज़ त्रुटिपूर्ण पाया जाता है, तो विद्यार्थी संबंधित कारण देखकर दस्तावेज़ पोर्टल से सीधे नया स्पष्ट दस्तावेज़ पुनः अपलोड कर सकते हैं।"
     }
   ],
   commissionRates: {
@@ -387,6 +427,19 @@ export const AppProvider = ({ children }) => {
           announcements: liveCms.announcements?.length ? liveCms.announcements.map(a => ({ id: a.id, en: a.text_en, hi: a.text_hi })) : prev.announcements,
           downloads: liveCms.downloads?.length ? liveCms.downloads.map(d => ({ id: d.id, titleEn: d.title_en, titleHi: d.title_hi, categoryEn: d.category_en, categoryHi: d.category_hi, format: d.format, size: d.size_display })) : prev.downloads,
           faqs: liveCms.faqs?.length ? liveCms.faqs.map(f => ({ id: f.id, qEn: f.question_en, qHi: f.question_hi, aEn: f.answer_en, aHi: f.answer_hi })) : prev.faqs,
+          notices: liveCms.notices?.length ? liveCms.notices.map(n => ({
+            id: n.id,
+            date: n.publish_date || n.date,
+            titleEn: n.title_en || n.titleEn,
+            titleHi: n.title_hi || n.titleHi,
+            categoryEn: n.category_en || n.categoryEn,
+            categoryHi: n.category_hi || n.categoryHi,
+            contentEn: n.content_en || n.contentEn,
+            contentHi: n.content_hi || n.contentHi,
+            priority: n.priority || 'NORMAL',
+            isPinned: n.is_pinned ?? n.isPinned ?? false,
+            isPublished: n.is_published ?? n.isPublished ?? true
+          })) : prev.notices,
           teamMembers: liveCms.teamMembers?.length ? liveCms.teamMembers.map(m => ({ id: m.id, name: m.name, roleEn: m.role_en, roleHi: m.role_hi, bioEn: m.bio_en, bioHi: m.bio_hi, photo: m.photo_url })) : prev.teamMembers
         }));
       }

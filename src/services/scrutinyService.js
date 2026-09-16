@@ -12,6 +12,7 @@ export const scrutinyService = {
     let rawStatus = newStatus;
     if (newStatus === 'Approved' || newStatus === 'APPROVED') rawStatus = 'APPROVED';
     else if (newStatus === 'Scholarship Released' || newStatus === 'SCHOLARSHIP_RELEASED') rawStatus = 'SCHOLARSHIP_RELEASED';
+    else if (newStatus === 'Partially Disbursed' || newStatus === 'PARTIALLY_DISBURSED') rawStatus = 'PARTIALLY_DISBURSED';
     else if (newStatus === 'Bonafide Attested' || newStatus === 'INSTITUTION_RECOMMENDED') rawStatus = 'INSTITUTION_RECOMMENDED';
     else if (newStatus === 'Rejected' || newStatus === 'REJECTED') rawStatus = 'REJECTED';
     else if (newStatus === 'Correction Requested' || newStatus === 'CORRECTION_REQUESTED') rawStatus = 'CORRECTION_REQUESTED';
@@ -30,6 +31,12 @@ export const scrutinyService = {
     } else if (rawStatus === 'APPROVED') {
       stage = 4;
       approvalDate = today;
+      bonafideVerified = true;
+      districtVerified = true;
+    } else if (rawStatus === 'PARTIALLY_DISBURSED') {
+      stage = 4;
+      approvalDate = today;
+      paymentDate = today;
       bonafideVerified = true;
       districtVerified = true;
     } else if (rawStatus === 'SCHOLARSHIP_RELEASED') {
@@ -196,41 +203,88 @@ export const scrutinyService = {
   /**
    * Scrutinize and verify an individual uploaded document
    */
-  async verifyDocument(docId, newStatus, remarks = '', verifier = null) {
-    const { data: currentDoc } = await supabase
+  async verifyDocument(docId, newStatus, remarks = '', verifier = null, extra = {}) {
+    const validVerifierId = sanitizeActorUUID(verifier?.id);
+    let targetDocId = docId;
+
+    let { data: currentDoc } = await supabase
       .from('application_documents')
       .select('*')
       .eq('id', docId)
-      .single();
+      .maybeSingle();
+
+    if (!currentDoc && extra.applicationId && extra.docKey) {
+      const { data: byApp } = await supabase
+        .from('application_documents')
+        .select('*')
+        .eq('application_id', extra.applicationId)
+        .eq('document_type_id', extra.docKey)
+        .maybeSingle();
+      if (byApp) {
+        currentDoc = byApp;
+        targetDocId = byApp.id;
+      }
+    }
 
     const previousStatus = currentDoc?.verification_status || 'UPLOADED';
-    const validVerifierId = sanitizeActorUUID(verifier?.id);
 
-    const { data: updatedDoc, error } = await supabase
-      .from('application_documents')
-      .update({
-        verification_status: newStatus,
-        rejection_reason: newStatus === 'INVALID' || newStatus === 'CORRECTION_REQUIRED' ? remarks : null,
-        verifier_id: validVerifierId,
-        verified_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', docId)
-      .select()
-      .single();
+    let updatedDoc = null;
+    if (currentDoc) {
+      const { data, error } = await supabase
+        .from('application_documents')
+        .update({
+          verification_status: newStatus,
+          rejection_reason: newStatus === 'INVALID' || newStatus === 'CORRECTION_REQUIRED' ? remarks : null,
+          verifier_id: validVerifierId,
+          verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetDocId)
+        .select()
+        .single();
+      if (error) throw error;
+      updatedDoc = data;
+    } else if (extra.applicationId && extra.docKey) {
+      const { data, error } = await supabase
+        .from('application_documents')
+        .insert({
+          application_id: extra.applicationId,
+          document_type_id: extra.docKey,
+          file_name: `${extra.docKey}_document.pdf`,
+          verification_status: newStatus,
+          rejection_reason: newStatus === 'INVALID' || newStatus === 'CORRECTION_REQUIRED' ? remarks : null,
+          verifier_id: validVerifierId,
+          verified_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      updatedDoc = data;
+    }
 
-    if (error) throw error;
+    // If defective / rejected, update applications record with correction remarks/rejection reason
+    const targetAppId = currentDoc?.application_id || extra.applicationId;
+    if (targetAppId && (newStatus === 'INVALID' || newStatus === 'CORRECTION_REQUIRED')) {
+      await supabase
+        .from('applications')
+        .update({
+          rejection_reason: remarks,
+          correction_remarks: remarks,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetAppId);
+    }
 
     // Record scrutiny log
-    if (currentDoc) {
+    if (currentDoc || targetDocId) {
       await supabase.from('document_verifications').insert({
-        document_id: docId,
-        application_id: currentDoc.application_id,
+        document_id: targetDocId || currentDoc?.id,
+        application_id: targetAppId,
         verifier_id: validVerifierId,
         previous_status: previousStatus,
         new_status: newStatus,
         remarks
-      });
+      }).catch(e => console.warn('document_verifications log note:', e));
     }
 
     return updatedDoc;

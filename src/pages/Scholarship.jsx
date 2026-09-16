@@ -133,15 +133,15 @@ export const Scholarship = () => {
   ];
 
   const eligibilityPoints = isHindi ? [
-    { title: 'भारतीय नागरिक', desc: 'आवेदक का भारत का स्थायी नागरिक होना अनिवार्य है।' },
-    { title: 'कक्षा 5वीं से पीजी स्तर', desc: 'कक्षा 5वीं, 8वीं, 10वीं, 12वीं, डिप्लोमा, स्नातक या परास्नातक में नियमित अध्ययनरत।' },
-    { title: 'मान्यता प्राप्त संस्थान', desc: 'शासकीय अथवा शासन द्वारा मान्यता प्राप्त विद्यालय / महाविद्यालय में प्रवेश।' },
-    { title: 'आर्थिक संबल की आवश्यकता', desc: 'आर्थिक रूप से कमजोर एवं जरूरतमंद परिवार के होनहार छात्र-छात्राएं।' }
+    { title: 'कक्षा 5वीं से पोस्ट ग्रेजुएशन', desc: 'कक्षा 5वीं से 12वीं, डिप्लोमा, स्नातक अथवा परास्नातक में नियमित अध्ययनरत छात्र।' },
+    { title: 'न्यूनतम 50% अंक (Min 50% Marks)', desc: 'पूर्व उत्तीर्ण कक्षा / परीक्षा में न्यूनतम 50% प्राप्तांक या समकक्ष ग्रेड अनिवार्य।' },
+    { title: 'वार्षिक आय सीमा ₹2,50,000', desc: 'परिवार अथवा अभिभावक की समस्त स्रोतों से कुल वार्षिक आय ₹2,50,000 से अधिक न हो।' },
+    { title: 'भारतीय नागरिक एवं मान्यता प्राप्त संस्थान', desc: 'भारत का मूल नागरिक एवं शासन से मान्यता प्राप्त स्कूल, कॉलेज या विश्वविद्यालय में प्रवेशित।' }
   ] : [
-    { title: 'Indian Citizen', desc: 'The applicant must be a bona fide and permanent citizen of India.' },
-    { title: 'Class 5th to PG Level', desc: 'Regularly enrolled in Class 5th, 8th, 10th, 12th, Diploma, UG or PG courses.' },
-    { title: 'Recognized Institution', desc: 'Enrolled in an affiliated government or recognized school/college.' },
-    { title: 'Economic Need', desc: 'Meritorious students from economically weaker sections seeking financial aid.' }
+    { title: 'Class 5th to Post Graduation', desc: 'Regularly enrolled in Class 5th to 12th, Diploma, Undergraduate or Post-Graduate courses.' },
+    { title: 'Minimum 50% Marks', desc: 'Must have secured at least 50% marks or equivalent grade in the previous qualifying exam.' },
+    { title: 'Annual Family Income up to ₹2,50,000', desc: 'Combined annual family income from all sources must not exceed ₹2,50,000 per annum.' },
+    { title: 'Indian Citizen & Recognized Institution', desc: 'Bona fide Indian citizen enrolled in a recognized government/private school, college or university.' }
   ];
 
   const requiredDocuments = isHindi ? [

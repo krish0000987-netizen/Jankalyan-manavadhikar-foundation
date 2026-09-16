@@ -1100,14 +1100,75 @@ export const applicationService = {
     const student = app.students || {};
     const docs = {};
     (app.application_documents || []).forEach(d => {
+      let docStatus = 'Uploaded';
+      if (d.verification_status === 'VALID' || d.verification_status === 'Verified') {
+        docStatus = 'Verified';
+      } else if (d.verification_status === 'INVALID' || d.verification_status === 'Rejected') {
+        docStatus = 'Rejected';
+      } else if (d.verification_status === 'CORRECTION_REQUIRED' || d.verification_status === 'Correction Requested') {
+        docStatus = 'Correction Requested';
+      } else if (d.verification_status) {
+        docStatus = d.verification_status;
+      }
+
       docs[d.document_type_id] = {
         id: d.id,
-        status: d.verification_status,
+        status: docStatus,
+        rawStatus: d.verification_status,
         file: d.file_name || d.file_path,
         filePath: d.file_path,
-        reason: d.rejection_reason
+        reason: d.rejection_reason || null
       };
     });
+
+    // Determine sanctioned grant amount
+    let sanctionedAmount = 12000;
+    if (app.scholarship_schemes?.grant_amount) {
+      sanctionedAmount = parseFloat(app.scholarship_schemes.grant_amount);
+    } else {
+      const courseStr = (app.academic_records?.[0]?.class_course || student.academic_records?.[0]?.class_course || app.course || '').toLowerCase();
+      if (courseStr.includes('post') || courseStr.includes('master') || courseStr.includes('m.a') || courseStr.includes('m.sc')) {
+        sanctionedAmount = 22000;
+      } else if (courseStr.includes('grad') || courseStr.includes('bachelor') || courseStr.includes('b.a') || courseStr.includes('b.sc') || courseStr.includes('degree')) {
+        sanctionedAmount = 16000;
+      } else if (courseStr.includes('diploma') || courseStr.includes('iti') || courseStr.includes('polytechnic')) {
+        sanctionedAmount = 14000;
+      } else if (courseStr.includes('11') || courseStr.includes('12')) {
+        sanctionedAmount = 12000;
+      } else if (courseStr.includes('8') || courseStr.includes('9') || courseStr.includes('10')) {
+        sanctionedAmount = 8000;
+      } else if (courseStr.includes('5') || courseStr.includes('6') || courseStr.includes('7')) {
+        sanctionedAmount = 4000;
+      }
+    }
+
+    // Determine disbursed / paid amount from app.disbursed_amount or successful payments
+    const successfulPayments = (app.payments || []).filter(p => p.status === 'SUCCESS');
+    const totalPaymentsAmount = successfulPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    const rawDisbursedAmount = (app.disbursed_amount !== null && app.disbursed_amount !== undefined)
+      ? parseFloat(app.disbursed_amount)
+      : (totalPaymentsAmount > 0 ? totalPaymentsAmount : (app.status === 'SCHOLARSHIP_RELEASED' ? sanctionedAmount : 0));
+
+    const rawRemainingAmount = Math.max(0, sanctionedAmount - rawDisbursedAmount);
+    const isReleased = app.status === 'SCHOLARSHIP_RELEASED' || (rawDisbursedAmount >= sanctionedAmount && sanctionedAmount > 0);
+    const isPartiallyDisbursed = (app.status === 'PARTIALLY_DISBURSED') || (rawDisbursedAmount > 0 && rawRemainingAmount > 0);
+
+    let statusDisplay = this.formatStatus(app.status);
+    if (isReleased) {
+      statusDisplay = 'Scholarship Released';
+    } else if (isPartiallyDisbursed) {
+      statusDisplay = 'Partially Disbursed';
+    }
+
+    const paymentsList = (app.payments || []).map(p => ({
+      id: p.id,
+      amount: parseFloat(p.amount) || 0,
+      amountFormatted: `₹${(parseFloat(p.amount) || 0).toLocaleString('en-IN')}`,
+      date: p.payment_date || p.created_at?.split('T')[0] || '-',
+      utrNumber: p.utr_number || '-',
+      paymentMethod: p.payment_method || 'DBT_NEFT',
+      status: p.status || 'SUCCESS'
+    }));
 
     return {
       id: app.id,
@@ -1138,14 +1199,21 @@ export const applicationService = {
       accountHolderName: student.bank_details?.[0]?.account_holder_name || app.accountHolderName || student.full_name || 'Beneficiary',
       branchName: student.bank_details?.[0]?.branch_name || app.branchName || 'Main Branch',
       isAadhaarSeeded: student.bank_details?.[0]?.is_aadhaar_seeded ?? app.isAadhaarSeeded ?? true,
-      status: (app.status === 'SCHOLARSHIP_RELEASED' || app.payments?.some(p => p.status === 'SUCCESS')) ? 'Scholarship Released' : this.formatStatus(app.status),
+      status: statusDisplay,
       rawStatus: app.status,
-      stage: (app.status === 'SCHOLARSHIP_RELEASED' || app.payments?.some(p => p.status === 'SUCCESS')) ? 5 : (app.stage || (app.status === 'APPROVED' ? 4 : app.status === 'INSTITUTION_RECOMMENDED' ? 3 : 2)),
+      stage: isReleased ? 5 : (isPartiallyDisbursed ? 4 : (app.stage || (app.status === 'APPROVED' ? 4 : app.status === 'INSTITUTION_RECOMMENDED' ? 3 : 2))),
       submissionDate: app.submission_date || '-',
       approvalDate: app.approval_date || '-',
       paymentDate: app.payment_date || app.payments?.find(p => p.status === 'SUCCESS')?.payment_date || app.payments?.[0]?.payment_date || '-',
       utrNumber: app.utr_number || app.payments?.find(p => p.status === 'SUCCESS')?.utr_number || app.payments?.[0]?.utr_number || '-',
-      disbursedAmount: app.disbursed_amount ? `₹${Number(app.disbursed_amount).toLocaleString('en-IN')}` : (app.payments?.[0]?.amount ? `₹${Number(app.payments[0].amount).toLocaleString('en-IN')}` : '₹12,000'),
+      sanctionedAmount,
+      sanctionedAmountFormatted: `₹${sanctionedAmount.toLocaleString('en-IN')}`,
+      rawDisbursedAmount,
+      disbursedAmount: `₹${rawDisbursedAmount.toLocaleString('en-IN')}`,
+      rawRemainingAmount,
+      remainingAmount: `₹${rawRemainingAmount.toLocaleString('en-IN')}`,
+      isPartiallyDisbursed,
+      paymentsList,
       rejectionReason: app.rejection_reason,
       correctionRemarks: app.correction_remarks,
       verificationToken: app.verification_token,
@@ -1188,6 +1256,7 @@ export const applicationService = {
   formatStatus(status) {
     switch (status) {
       case 'SCHOLARSHIP_RELEASED': return 'Scholarship Released';
+      case 'PARTIALLY_DISBURSED': return 'Partially Disbursed';
       case 'APPROVED': return 'Approved';
       case 'INSTITUTION_RECOMMENDED': return 'Bonafide Attested';
       case 'REJECTED': return 'Rejected';

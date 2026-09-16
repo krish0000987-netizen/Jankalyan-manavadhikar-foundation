@@ -30,7 +30,7 @@ export const SettingsManager = () => {
     applicationStartDate: '15/09/2026',
     applicationClosingDate: '30/11/2026',
     officialMobile: '8871557054',
-    officialTelephone: '0761-2400123',
+    officialTelephone: '0761-4500054',
     officialEmail: 'jankalyanmanavadhikar@gmail.com',
     officeAddress: 'Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002',
     dbtMode: 'MANUAL_DBT',

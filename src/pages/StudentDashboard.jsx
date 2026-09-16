@@ -214,8 +214,47 @@ export const StudentDashboard = () => {
     );
   }
 
-  const isApproved = student.status === 'Approved' || student.status === 'APPROVED' || student.status === 'Scholarship Released' || student.status === 'SCHOLARSHIP_RELEASED' || student.stage === 5;
+  const formatMoney = (val) => {
+    if (val === null || val === undefined || val === '') return '₹0';
+    if (typeof val === 'string' && val.includes('₹')) return val;
+    const num = Number(val);
+    if (isNaN(num)) return '₹0';
+    return '₹' + num.toLocaleString('en-IN');
+  };
+
+  const isApproved = student.status === 'Approved' || student.status === 'APPROVED' || student.status === 'Scholarship Released' || student.status === 'SCHOLARSHIP_RELEASED' || student.stage >= 4;
   const isReleased = student.status === 'Scholarship Released' || student.status === 'SCHOLARSHIP_RELEASED' || student.rawStatus === 'SCHOLARSHIP_RELEASED' || student.stage === 5;
+  const isPartiallyDisbursed = student.rawStatus === 'PARTIALLY_DISBURSED' || student.status === 'Partially Disbursed' || (Number(student.rawDisbursedAmount || 0) > 0 && Number(student.rawRemainingAmount || 0) > 0);
+  const isRejected = student.status === 'Rejected' || student.rawStatus === 'REJECTED';
+  const isCorrectionRequested = student.status === 'Correction Requested' || student.rawStatus === 'CORRECTION_REQUESTED';
+
+  const rawSanctioned = Number(student.rawSanctionedAmount) || 12000;
+  const rawDisbursed = Number(student.rawDisbursedAmount) || (student.disbursedAmount ? Number(String(student.disbursedAmount).replace(/[^0-9.]/g, '')) || 0 : 0);
+  const rawRemaining = student.rawRemainingAmount !== undefined && student.rawRemainingAmount !== null
+    ? Number(student.rawRemainingAmount)
+    : Math.max(0, rawSanctioned - rawDisbursed);
+
+  const displaySanctioned = student.sanctionedAmount || formatMoney(rawSanctioned);
+  const displayDisbursed = student.disbursedAmount || formatMoney(rawDisbursed);
+  const displayRemaining = student.remainingAmount || formatMoney(rawRemaining);
+
+  const disbursementPercent = Math.min(100, Math.round((rawDisbursed / (rawSanctioned || 1)) * 100));
+
+  // Identify defective or rejected documents in student record
+  const defectiveDocs = Object.entries(student.documents || {}).filter(([k, v]) => {
+    return v && (v.status === 'Rejected' || v.status === 'Correction Requested' || (v.reason && String(v.reason).trim() !== ''));
+  });
+
+  const docLabelMap = {
+    photo: { en: 'Passport Photograph', hi: 'पासपोर्ट आकार का फोटो' },
+    aadhaar: { en: 'Aadhaar Card (UIDAI)', hi: 'आधार कार्ड (UIDAI)' },
+    marksheet: { en: 'Qualifying Marksheet', hi: 'पिछली परीक्षा की अंकसूची' },
+    bonafide: { en: 'Admission / Bonafide Certificate', hi: 'प्रवेश / बोनाफाइड प्रमाण पत्र' },
+    passbook: { en: 'Bank Passbook / Statement', hi: 'बैंक पासबुक / विवरण' },
+    income: { en: 'Annual Income Certificate', hi: 'सक्षम आय प्रमाण पत्र' },
+    caste: { en: 'Caste / Category Certificate', hi: 'जाति / श्रेणी प्रमाण पत्र' },
+    disability: { en: 'Disability Certificate', hi: 'दिव्यांगता प्रमाण पत्र' }
+  };
 
   return (
     <div className="section-py" style={{ backgroundColor: '#F8FAFC', minHeight: '85vh' }}>
@@ -356,16 +395,51 @@ export const StudentDashboard = () => {
           {/* Left Column: Application Details & Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             
-            {/* Phase 2 Alert: Correction Requested */}
-            {student.status === 'Correction Requested' && (
+            {/* Phase Alert: Rejection Banner with Specific Reason */}
+            {isRejected && (
+              <div style={{ backgroundColor: '#FEF2F2', border: '1.5px solid #F87171', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                <AlertCircle size={26} color="#DC2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#991B1B' }}>
+                      {lang === 'hi' ? 'आवेदन अस्वीकृत (Application Rejected During Scrutiny)' : 'Application Scrutiny: Defective / Rejected'}
+                    </div>
+                    <span className="badge badge-red">{lang === 'hi' ? 'अस्वीकृत' : 'REJECTED'}</span>
+                  </div>
+                  
+                  <div style={{ fontSize: '0.88rem', color: '#7F1D1D', marginTop: '0.5rem', backgroundColor: '#FFFFFF', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #FECACA' }}>
+                    <div style={{ fontWeight: 700, color: '#DC2626', marginBottom: '0.2rem' }}>
+                      {lang === 'hi' ? 'अस्वीकृति / स्क्रूटनी अधिकारी की टिप्पणी:' : 'Scrutiny Officer Rejection Reason:'}
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#1E293B', lineHeight: 1.5 }}>
+                      "{student.rejectionReason || student.correctionRemarks || (lang === 'hi' ? 'संलग्न दस्तावेज़ अथवा पात्रता मानदंडों में विसंगति पाई गई है।' : 'Discrepancy found in submitted documents or eligibility parameters.')}"
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.85rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-sm" style={{ backgroundColor: '#DC2626', color: '#FFFFFF', borderColor: '#DC2626' }} onClick={() => navigate('/documents')}>
+                      <Upload size={14} />
+                      <span>{lang === 'hi' ? 'दस्तावेज़ सुधारें एवं पुनः अपलोड करें' : 'Review & Re-upload Defective Documents'}</span>
+                    </button>
+                    <button className="btn btn-outline btn-sm" onClick={() => navigate('/grievance')}>
+                      <span>{lang === 'hi' ? 'आपत्ति / शिकायत दर्ज करें' : 'File Scrutiny Appeal / Grievance'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Phase Alert: Correction Requested */}
+            {!isRejected && isCorrectionRequested && (
               <div style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
                 <AlertTriangle size={24} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#92400E' }}>
                     {lang === 'hi' ? 'दस्तावेज़ सुधार आवश्यक (Correction Requested)' : 'Document Correction Requested by Nodal Officer'}
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#78350F', marginTop: '0.35rem' }}>
-                    <strong>Officer Remarks:</strong> {student.correctionRemarks || student.rejectionReason || 'Uploaded institutional bonafide/marksheet is blurry or mismatched. Please re-upload clear stamped copy.'}
+                  <div style={{ fontSize: '0.85rem', color: '#78350F', marginTop: '0.35rem', backgroundColor: '#FFFBEB', padding: '0.6rem 0.85rem', borderRadius: '6px', border: '1px dashed #FCD34D' }}>
+                    <strong>{lang === 'hi' ? 'स्क्रूटनी टिप्पणी:' : 'Officer Remarks:'}</strong>{' '}
+                    <span>{student.correctionRemarks || student.rejectionReason || 'Uploaded institutional bonafide/marksheet is blurry or mismatched. Please re-upload clear stamped copy.'}</span>
                   </div>
                   <div style={{ marginTop: '0.85rem' }}>
                     <button className="btn btn-sm" style={{ backgroundColor: '#D97706', color: '#FFFFFF', borderColor: '#D97706' }} onClick={() => navigate('/documents')}>
@@ -377,19 +451,44 @@ export const StudentDashboard = () => {
               </div>
             )}
 
+            {/* Phase Alert: Individual Defective Documents Warning */}
+            {!isRejected && !isCorrectionRequested && defectiveDocs.length > 0 && (
+              <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                <AlertTriangle size={24} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: '#92400E' }}>
+                    {lang === 'hi' 
+                      ? `ध्यान दें: आपके ${defectiveDocs.length} दस्तावेज़ में त्रुटि पाई गई है (Re-upload Required)` 
+                      : `Attention: ${defectiveDocs.length} Document(s) marked defective during scrutiny`}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#78350F', marginTop: '0.35rem' }}>
+                    {lang === 'hi'
+                      ? 'स्क्रूटनी अधिकारी द्वारा दस्तावेज़ पर त्रुटि का कारण दर्ज किया गया है। कृपया कारण पढ़कर तुरंत नया दस्तावेज़ अपलोड करें।'
+                      : 'The scrutiny officer has provided specific reasons for rejection. Please review remarks below and re-upload clear copies.'}
+                  </div>
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <button className="btn btn-sm" style={{ backgroundColor: '#D97706', color: '#FFFFFF', borderColor: '#D97706' }} onClick={() => navigate('/documents')}>
+                      <Upload size={14} />
+                      <span>{lang === 'hi' ? 'त्रुटिपूर्ण दस्तावेज़ देखें व सुधारें' : 'Manage & Re-upload Documents'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Approved & Sanctioned Banner */}
-            {!isReleased && (student.status === 'Approved' || student.rawStatus === 'APPROVED') && (
+            {!isReleased && !isPartiallyDisbursed && !isRejected && (isApproved || student.stage >= 4) && (
               <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <CheckCircle size={28} color="#2563EB" />
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1E40AF' }}>
-                      {lang === 'hi' ? 'आवेदन स्वीकृत - छात्रवृत्ति राशि ₹12,000 स्वीकृत' : 'Application Approved - Scholarship Grant Sanctioned (₹12,000)'}
+                      {lang === 'hi' ? `आवेदन स्वीकृत - छात्रवृत्ति राशि ${displaySanctioned} स्वीकृत` : `Application Approved - Scholarship Grant Sanctioned (${displaySanctioned})`}
                     </div>
                     <div style={{ fontSize: '0.82rem', color: '#1E3A8A', marginTop: '2px' }}>
                       {lang === 'hi' 
                         ? `दस्तावेज़ सत्यापन पूर्ण। ट्रस्ट प्रशासन द्वारा आपके बैंक खाते (${student.bankName || 'SBI'}, खाता: ${student.accountNumber || 'दर्ज'}, IFSC: ${student.ifsc || 'SBIN0001234'}) में राशि सीधे स्थानांतरित की जा रही है।`
-                        : `Document scrutiny verified. Scholarship amount of ₹12,000 will be manually transferred by trust administration to your verified account (${student.bankName || 'SBI'}, A/c: ${student.accountNumber || 'Recorded'}, IFSC: ${student.ifsc || 'SBIN0001234'}).`}
+                        : `Document scrutiny verified. Scholarship amount of ${displaySanctioned} will be manually transferred by trust administration to your verified account (${student.bankName || 'SBI'}, A/c: ${student.accountNumber || 'Recorded'}, IFSC: ${student.ifsc || 'SBIN0001234'}).`}
                     </div>
                   </div>
                 </div>
@@ -400,17 +499,43 @@ export const StudentDashboard = () => {
               </div>
             )}
 
-            {/* Phase 4 Banner: Scholarship Released & UTR Confirmation */}
-            {isReleased && (
+            {/* Phase: Partially Disbursed Installment Banner */}
+            {isPartiallyDisbursed && !isRejected && (
+              <div style={{ backgroundColor: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <CheckCircle size={28} color="#16A34A" />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#166534' }}>
+                      {lang === 'hi' ? 'छात्रवृत्ति किस्त राशि जारी (DBT Installment Credited)' : 'Scholarship Grant Disbursed in Installments'}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#14532D', marginTop: '2px' }}>
+                      {lang === 'hi'
+                        ? `प्राप्त किस्त: ${displayDisbursed} (कुल स्वीकृत: ${displaySanctioned}) • शेष बकाया राशि: ${displayRemaining}`
+                        : `Paid So Far: ${displayDisbursed} of ${displaySanctioned} • Remaining Balance Pending: ${displayRemaining}`}
+                      {student.utrNumber && student.utrNumber !== '-' && (
+                        <span> • UTR: <strong style={{ fontFamily: 'monospace' }}>{student.utrNumber}</strong></span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button className="btn btn-sm" style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A' }} onClick={() => navigate(`/certificate/${student.id}`)}>
+                  <Award size={14} />
+                  <span>{lang === 'hi' ? 'किस्त रसीद / प्रमाण पत्र' : 'View Grant Certificate'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Phase 4 Banner: 100% Scholarship Released & UTR Confirmation */}
+            {isReleased && !isPartiallyDisbursed && !isRejected && (
               <div style={{ backgroundColor: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <CheckCircle size={28} color="#16A34A" />
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '1rem', color: '#166534' }}>
-                      {lang === 'hi' ? 'छात्रवृत्ति राशि बैंक खाते में जारी (DBT Payout Complete)' : 'Scholarship Grant Disbursed via Direct Benefit Transfer!'}
+                      {lang === 'hi' ? 'छात्रवृत्ति संपूर्ण राशि बैंक खाते में जारी (100% DBT Complete)' : 'Scholarship Full Grant Disbursed via Direct Benefit Transfer!'}
                     </div>
                     <div style={{ fontSize: '0.82rem', color: '#14532D', marginTop: '2px' }}>
-                      Banking UTR: <strong style={{ fontFamily: 'monospace' }}>{student.utrNumber}</strong> • Amount: <strong>{student.disbursedAmount}</strong>
+                      Banking UTR: <strong style={{ fontFamily: 'monospace' }}>{student.utrNumber}</strong> • Total Disbursed: <strong>{displayDisbursed}</strong>
                     </div>
                   </div>
                 </div>
@@ -634,34 +759,125 @@ export const StudentDashboard = () => {
                 )}
               </div>
 
+              {/* 3 Financial Installment Metrics */}
               <div className="grid-3" style={{ gap: '1rem', marginBottom: '1.25rem' }}>
-                <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Scholarship Amount</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#16A34A', margin: '0.25rem 0' }}>
-                    <span className="editable-field">{student.disbursedAmount}</span>
+                <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Total Sanctioned Grant</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1E40AF', margin: '0.25rem 0' }}>
+                    {displaySanctioned}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Direct Bank Transfer</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Approved for 2026-27</div>
                 </div>
 
-                <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Payment Status</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', margin: '0.25rem 0' }}>
-                    {student.paymentDate === 'Queued' || student.paymentDate === 'In Payment Queue' ? 'In Bank Queue' : student.paymentDate !== '-' ? 'Released' : 'Under Review'}
+                <div style={{ backgroundColor: '#F0FDF4', padding: '1rem', borderRadius: '10px', border: '1px solid #BBF7D0' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: 600 }}>Disbursed So Far (Paid)</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#16A34A', margin: '0.25rem 0' }}>
+                    <span className="editable-field">{displayDisbursed}</span>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Date: {student.paymentDate}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#166534' }}>Direct Bank Transfer (DBT)</div>
                 </div>
 
-                <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>UTR / Ref No.</div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E40AF', fontFamily: 'monospace', margin: '0.25rem 0' }}>
-                    {student.utrNumber}
+                <div style={{ 
+                  backgroundColor: rawRemaining > 0 ? '#FFFBEB' : '#F8FAFC', 
+                  padding: '1rem', 
+                  borderRadius: '10px', 
+                  border: `1px solid ${rawRemaining > 0 ? '#FCD34D' : '#E2E8F0'}` 
+                }}>
+                  <div style={{ fontSize: '0.75rem', color: rawRemaining > 0 ? '#92400E' : '#64748B', fontWeight: 600 }}>
+                    Remaining Balance Pending
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Banking Acknowledgment</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: rawRemaining > 0 ? '#D97706' : '#64748B', margin: '0.25rem 0' }}>
+                    {displayRemaining}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: rawRemaining > 0 ? '#B45309' : '#64748B' }}>
+                    {rawRemaining === 0 && rawDisbursed > 0 ? 'Fully Paid (100%)' : (rawDisbursed > 0 ? 'Next Installment In Queue' : 'Awaiting 1st Installment')}
+                  </div>
                 </div>
               </div>
+
+              {/* Installment Progress Bar */}
+              <div style={{ backgroundColor: '#F8FAFC', padding: '0.85rem 1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>
+                  <span>Scholarship Grant Payout Progress</span>
+                  <span style={{ color: '#16A34A' }}>{disbursementPercent}% Disbursed</span>
+                </div>
+                <div style={{ height: '8px', backgroundColor: '#E2E8F0', borderRadius: '9999px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${disbursementPercent}%`, backgroundColor: disbursementPercent >= 100 ? '#16A34A' : '#2563EB', transition: 'width 0.4s' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748B', marginTop: '0.35rem' }}>
+                  <span>Paid: <strong>{displayDisbursed}</strong></span>
+                  <span>Balance Due: <strong style={{ color: rawRemaining > 0 ? '#D97706' : '#16A34A' }}>{displayRemaining}</strong></span>
+                </div>
+              </div>
+
+              {/* Payment Details Metadata */}
+              <div className="grid-2" style={{ gap: '0.75rem', fontSize: '0.82rem', marginBottom: '1rem', backgroundColor: '#F8FAFC', padding: '0.85rem 1rem', borderRadius: '8px' }}>
+                <div>
+                  <strong>Payment Status:</strong>{' '}
+                  <span className={`badge ${isReleased && !isPartiallyDisbursed ? 'badge-green' : isPartiallyDisbursed ? 'badge-yellow' : 'badge-navy'}`} style={{ fontSize: '0.7rem' }}>
+                    {isPartiallyDisbursed ? 'Partially Disbursed (Installments)' : (isReleased ? 'Fully Disbursed (100%)' : student.paymentDate === 'Queued' ? 'In Bank Queue' : 'Under Review')}
+                  </span>
+                </div>
+                <div>
+                  <strong>Latest Payment Date:</strong> {student.paymentDate || '-'}
+                </div>
+                <div>
+                  <strong>Primary Bank UTR:</strong>{' '}
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF' }}>
+                    {student.utrNumber || '-'}
+                  </span>
+                </div>
+                <div>
+                  <strong>Seeded Account:</strong> {student.bankName || 'State Bank of India'} (A/c: {student.accountNumber || 'Recorded'})
+                </div>
+              </div>
+
+              {/* Installment History / Transactions */}
+              {((student.paymentsList && student.paymentsList.length > 0) || (rawDisbursed > 0 && student.utrNumber && student.utrNumber !== '-')) && (
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <CreditCard size={15} color="#16A34A" />
+                    <span>Installment Disbursement Ledger / DBT Log</span>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#F1F5F9', textAlign: 'left', color: '#475569' }}>
+                          <th style={{ padding: '0.5rem 0.75rem', borderRadius: '6px 0 0 6px' }}>Installment</th>
+                          <th style={{ padding: '0.5rem 0.75rem' }}>Amount</th>
+                          <th style={{ padding: '0.5rem 0.75rem' }}>Date</th>
+                          <th style={{ padding: '0.5rem 0.75rem' }}>Bank UTR / Ref</th>
+                          <th style={{ padding: '0.5rem 0.75rem', borderRadius: '0 6px 6px 0' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {student.paymentsList && student.paymentsList.length > 0 ? (
+                          student.paymentsList.map((p, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                              <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Installment #{idx + 1}</td>
+                              <td style={{ padding: '0.5rem 0.75rem', fontWeight: 800, color: '#16A34A' }}>{formatMoney(p.amount)}</td>
+                              <td style={{ padding: '0.5rem 0.75rem', color: '#64748B' }}>{p.payment_date ? new Date(p.payment_date).toLocaleDateString('en-IN') : student.paymentDate}</td>
+                              <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF' }}>{p.utr_number || p.reference_id || student.utrNumber}</td>
+                              <td style={{ padding: '0.5rem 0.75rem' }}><span className="badge badge-green" style={{ fontSize: '0.68rem' }}>CREDITED</span></td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600 }}>Installment #1</td>
+                            <td style={{ padding: '0.5rem 0.75rem', fontWeight: 800, color: '#16A34A' }}>{displayDisbursed}</td>
+                            <td style={{ padding: '0.5rem 0.75rem', color: '#64748B' }}>{student.paymentDate}</td>
+                            <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF' }}>{student.utrNumber}</td>
+                            <td style={{ padding: '0.5rem 0.75rem' }}><span className="badge badge-green" style={{ fontSize: '0.68rem' }}>CREDITED</span></td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Documents Scrutiny Quick Status */}
+            {/* Documents Scrutiny Quick Status with Rejection Reasons */}
             <div className="card">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
@@ -673,15 +889,69 @@ export const StudentDashboard = () => {
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {Object.entries(student.documents || {}).map(([key, val]) => (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: '#F8FAFC', borderRadius: '8px', fontSize: '0.85rem' }}>
-                    <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{key}</span>
-                    <span className={`badge ${val.status === 'Verified' ? 'badge-green' : val.status === 'Rejected' ? 'badge-red' : 'badge-navy'}`}>
-                      {val.status}
-                    </span>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {Object.entries(student.documents || {}).map(([key, val]) => {
+                  const isDocRejected = val.status === 'Rejected' || val.status === 'INVALID';
+                  const isDocCorrection = val.status === 'Correction Requested' || val.status === 'CORRECTION_REQUIRED';
+                  const hasReason = Boolean(val.reason && String(val.reason).trim());
+                  const displayName = docLabelMap[key]?.[lang] || key.replace('_', ' ').toUpperCase();
+
+                  return (
+                    <div 
+                      key={key} 
+                      style={{ 
+                        padding: '0.85rem 1rem', 
+                        backgroundColor: (isDocRejected || isDocCorrection) ? '#FEF2F2' : '#F8FAFC', 
+                        borderRadius: '10px', 
+                        border: `1.5px solid ${(isDocRejected || isDocCorrection) ? '#FECACA' : '#E2E8F0'}`,
+                        fontSize: '0.85rem' 
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div>
+                          <span style={{ fontWeight: 700, color: '#0F172A' }}>{displayName}</span>
+                          {val.file && (
+                            <span style={{ fontSize: '0.75rem', color: '#64748B', marginLeft: '0.5rem' }}>
+                              ({val.file})
+                            </span>
+                          )}
+                        </div>
+                        <span className={`badge ${
+                          val.status === 'Verified' ? 'badge-green' : 
+                          (isDocRejected || isDocCorrection) ? 'badge-red' : 
+                          'badge-navy'
+                        }`}>
+                          {isDocRejected ? (lang === 'hi' ? 'अस्वीकृत' : 'Rejected') : 
+                           isDocCorrection ? (lang === 'hi' ? 'सुधार आवश्यक' : 'Correction Needed') : 
+                           val.status}
+                        </span>
+                      </div>
+
+                      {/* Display Admin Rejection Reason Prominently */}
+                      {(isDocRejected || isDocCorrection || hasReason) && (
+                        <div style={{ marginTop: '0.65rem', backgroundColor: '#FFFFFF', border: '1px solid #FCA5A5', borderRadius: '8px', padding: '0.65rem 0.85rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#DC2626', fontWeight: 700, fontSize: '0.78rem', marginBottom: '0.2rem' }}>
+                            <AlertCircle size={14} />
+                            <span>{lang === 'hi' ? 'अस्वीकृति / त्रुटि का कारण (Officer Remark):' : 'Scrutiny Officer Rejection Reason:'}</span>
+                          </div>
+                          <div style={{ color: '#7F1D1D', fontSize: '0.82rem', lineHeight: 1.4, fontWeight: 600 }}>
+                            "{val.reason || student.rejectionReason || (lang === 'hi' ? 'दस्तावेज़ स्पष्ट नहीं है अथवा निर्धारित प्रारूप में नहीं है।' : 'Document is illegible or missing required seal/stamp.')}"
+                          </div>
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <button 
+                              className="btn btn-sm" 
+                              style={{ backgroundColor: '#DC2626', color: '#FFFFFF', borderColor: '#DC2626', fontSize: '0.75rem', padding: '0.25rem 0.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                              onClick={() => navigate('/documents')}
+                            >
+                              <Upload size={12} />
+                              <span>{lang === 'hi' ? 'नया दस्तावेज़ पुनः अपलोड करें' : 'Re-upload Clear Document'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

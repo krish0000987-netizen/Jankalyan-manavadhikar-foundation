@@ -43,7 +43,7 @@ export const translations = {
     overviewLastTitle: "Application Last Date",
     overviewLastDesc: "Submit Completed Form Before Deadline",
     overviewEligibilityTitle: "Eligibility Criteria",
-    overviewEligibilityDesc: "For Regular School & College Students",
+    overviewEligibilityDesc: "Class 5th to Post Graduation (Min 50% Marks & Income ≤ ₹2,50,000)",
 
     // Section 2: Objective
     objBadge: "SCHOLARSHIP OBJECTIVE",
@@ -60,7 +60,7 @@ export const translations = {
     whoTitle: "Who Can Apply for This Scholarship?",
     whoDesc: "Applications are invited from eligible candidates enrolled in recognized institutions across categories configured below.",
     whoCatSchool: "School Students",
-    whoCatSchoolDesc: "Class 9th to 12th students pursuing regular education in recognized state or central boards.",
+    whoCatSchoolDesc: "Class 5th to 12th students pursuing regular education in recognized state or central boards.",
     whoCatCollege: "College & Undergraduate",
     whoCatCollegeDesc: "Students admitted to Degree, Diploma, or Technical Undergraduate programs.",
     whoCatHigher: "Higher & Professional Studies",
@@ -357,7 +357,7 @@ export const translations = {
     overviewLastTitle: "आवेदन की अंतिम तिथि",
     overviewLastDesc: "अंतिम तिथि से पूर्व पूर्ण आवेदन जमा करें",
     overviewEligibilityTitle: "पात्रता मापदंड",
-    overviewEligibilityDesc: "नियमित विद्यालय एवं महाविद्यालय विद्यार्थियों हेतु",
+    overviewEligibilityDesc: "कक्षा 5वीं से पोस्ट ग्रेजुएशन (न्यूनतम 50% अंक एवं आय ≤ ₹2,50,000)",
 
     // Section 2: Objective
     objBadge: "योजना का उद्देश्य",
@@ -374,7 +374,7 @@ export const translations = {
     whoTitle: "इस छात्रवृत्ति के लिए कौन आवेदन कर सकता है?",
     whoDesc: "प्रशासन द्वारा निर्धारित निम्नलिखित श्रेणियों के अंतर्गत मान्यता प्राप्त संस्थानों में अध्ययनरत छात्र-छात्राओं से आवेदन आमंत्रित हैं।",
     whoCatSchool: "स्कूली विद्यार्थी",
-    whoCatSchoolDesc: "मान्यता प्राप्त राज्य अथवा केंद्रीय बोर्ड में कक्षा 9वीं से 12वीं तक के नियमित विद्यार्थी।",
+    whoCatSchoolDesc: "मान्यता प्राप्त राज्य अथवा केंद्रीय बोर्ड में कक्षा 5वीं से 12वीं तक के नियमित विद्यार्थी।",
     whoCatCollege: "कॉलेज एवं स्नातक विद्यार्थी",
     whoCatCollegeDesc: "मान्यता प्राप्त डिग्री, डिप्लोमा या तकनीकी स्नातक पाठ्यक्रमों में अध्ययनरत विद्यार्थी।",
     whoCatHigher: "उच्च एवं व्यावसायिक शिक्षा",
