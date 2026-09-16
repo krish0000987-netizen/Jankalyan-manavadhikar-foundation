@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminTopNav } from '../components/admin/AdminTopNav';
 import { ApplicationScrutinyModal } from '../components/admin/ApplicationScrutinyModal';
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
+import { getAllStates, getDistrictsByState, getBlocksByDistrict, findStateByDistrict } from '../data/indiaLocations';
 import { 
   Users, 
   CheckCircle2, 
@@ -86,16 +87,23 @@ export const Admin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
 
-  // Application Filters
+  // Indian States master list
+  const allStates = useMemo(() => getAllStates(), []);
+
+  // Application Filters (State > District > Block cascading)
+  const [selectedState, setSelectedState] = useState('All');
   const [selectedDistrict, setSelectedDistrict] = useState('All');
+  const [selectedBlock, setSelectedBlock] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [tableSearch, setTableSearch] = useState('');
 
-  // Verification Queue State
+  // Verification Queue State (State > District > Block cascading)
   const [verificationFilter, setVerificationFilter] = useState('all'); // 'all' | 'pending' | 'correction' | 'approved' | 'rejected'
   const [verificationSearch, setVerificationSearch] = useState('');
+  const [verificationState, setVerificationState] = useState('All');
   const [verificationDistrict, setVerificationDistrict] = useState('All');
+  const [verificationBlock, setVerificationBlock] = useState('All');
 
   // Scrutiny & View Modals
   const [activeModalApp, setActiveModalApp] = useState(null);
@@ -104,10 +112,15 @@ export const Admin = () => {
   // Live MIS Summary
   const [misSummary, setMisSummary] = useState(null);
 
-  // Beneficiary Bank Records & Manual Transfer state
+  // Beneficiary Bank Records & Manual Transfer state (State > District > Block cascading)
   const [beneficiarySearch, setBeneficiarySearch] = useState('');
+  const [beneficiaryState, setBeneficiaryState] = useState('All');
   const [beneficiaryDistrict, setBeneficiaryDistrict] = useState('All');
+  const [beneficiaryBlock, setBeneficiaryBlock] = useState('All');
   const [beneficiaryFilterStatus, setBeneficiaryFilterStatus] = useState('all');
+
+  // Matrix State Selector
+  const [matrixState, setMatrixState] = useState('Madhya Pradesh');
   const [copyFeedback, setCopyFeedback] = useState({});
   const [markingTransferredApp, setMarkingTransferredApp] = useState(null);
   const [transferModalForm, setTransferModalForm] = useState({
@@ -182,9 +195,26 @@ export const Admin = () => {
     return true; // Super Admin sees all
   });
 
-  // Filtered Applications (Search + Status + Category on top of scoped applications)
+  // Dynamic cascading options for Main Application Filters
+  const availableDistricts = useMemo(() => {
+    if (selectedState !== 'All') {
+      return getDistrictsByState(selectedState);
+    }
+    const distSet = new Set(roleScopedApplications.map(a => a.district).filter(Boolean));
+    ['Jabalpur', 'Bhopal', 'Indore', 'Gwalior', 'Rewa', 'Mandla'].forEach(d => distSet.add(d));
+    return Array.from(distSet).sort();
+  }, [selectedState, roleScopedApplications]);
+
+  const availableBlocks = useMemo(() => {
+    if (selectedDistrict === 'All') return [];
+    return getBlocksByDistrict(selectedState !== 'All' ? selectedState : null, selectedDistrict);
+  }, [selectedState, selectedDistrict]);
+
+  // Filtered Applications (Search + Status + Category + State > District > Block cascading)
   const filteredApplications = roleScopedApplications.filter(app => {
-    const matchesDistrict = selectedDistrict === 'All' || app.district === selectedDistrict;
+    const matchesState = selectedState === 'All' || (app.state && app.state.toLowerCase() === selectedState.toLowerCase());
+    const matchesDistrict = selectedDistrict === 'All' || (app.district && app.district.toLowerCase() === selectedDistrict.toLowerCase());
+    const matchesBlock = selectedBlock === 'All' || (app.block && app.block.toLowerCase() === selectedBlock.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || app.category === selectedCategory;
     const matchesStatus = selectedStatus === 'All' || app.status === selectedStatus;
     const searchTarget = (tableSearch || globalSearch).toLowerCase();
@@ -193,7 +223,7 @@ export const Admin = () => {
       app.studentName.toLowerCase().includes(searchTarget) ||
       app.institution.toLowerCase().includes(searchTarget) ||
       app.mobile.includes(searchTarget);
-    return matchesDistrict && matchesCategory && matchesStatus && matchesSearch;
+    return matchesState && matchesDistrict && matchesBlock && matchesCategory && matchesStatus && matchesSearch;
   });
 
   // KPI Calculations strictly based on roleScopedApplications
@@ -219,13 +249,35 @@ export const Admin = () => {
     a.status === 'Rejected' || a.rawStatus === 'REJECTED'
   ).length;
 
+  // Verification Queue cascading options
+  const verificationAvailableDistricts = useMemo(() => {
+    if (verificationState !== 'All') {
+      return getDistrictsByState(verificationState);
+    }
+    const distSet = new Set(roleScopedApplications.map(a => a.district).filter(Boolean));
+    return Array.from(distSet).sort();
+  }, [verificationState, roleScopedApplications]);
+
+  const verificationAvailableBlocks = useMemo(() => {
+    if (verificationDistrict === 'All') return [];
+    return getBlocksByDistrict(verificationState !== 'All' ? verificationState : null, verificationDistrict);
+  }, [verificationState, verificationDistrict]);
+
   const verificationQueueApplications = roleScopedApplications.filter(app => {
-    // 1. District filter
-    if (verificationDistrict !== 'All' && app.district !== verificationDistrict) {
+    // 1. State filter
+    if (verificationState !== 'All' && (app.state || '').toLowerCase() !== verificationState.toLowerCase()) {
+      return false;
+    }
+    // 2. District filter
+    if (verificationDistrict !== 'All' && (app.district || '').toLowerCase() !== verificationDistrict.toLowerCase()) {
+      return false;
+    }
+    // 3. Block filter
+    if (verificationBlock !== 'All' && (app.block || '').toLowerCase() !== verificationBlock.toLowerCase()) {
       return false;
     }
 
-    // 2. Search filter
+    // 4. Search filter
     if (verificationSearch.trim()) {
       const q = verificationSearch.toLowerCase();
       const matchId = (app.id || '').toLowerCase().includes(q);
@@ -336,8 +388,28 @@ export const Admin = () => {
     a.status === 'Scholarship Released' || a.rawStatus === 'SCHOLARSHIP_RELEASED'
   ).length;
 
+  // Beneficiary cascading options
+  const beneficiaryAvailableDistricts = useMemo(() => {
+    if (beneficiaryState !== 'All') {
+      return getDistrictsByState(beneficiaryState);
+    }
+    const distSet = new Set(roleScopedApplications.map(a => a.district).filter(Boolean));
+    return Array.from(distSet).sort();
+  }, [beneficiaryState, roleScopedApplications]);
+
+  const beneficiaryAvailableBlocks = useMemo(() => {
+    if (beneficiaryDistrict === 'All') return [];
+    return getBlocksByDistrict(beneficiaryState !== 'All' ? beneficiaryState : null, beneficiaryDistrict);
+  }, [beneficiaryState, beneficiaryDistrict]);
+
   const filteredBeneficiaries = approvedBeneficiaries.filter(a => {
-    if (beneficiaryDistrict !== 'All' && a.district !== beneficiaryDistrict) {
+    if (beneficiaryState !== 'All' && (a.state || '').toLowerCase() !== beneficiaryState.toLowerCase()) {
+      return false;
+    }
+    if (beneficiaryDistrict !== 'All' && (a.district || '').toLowerCase() !== beneficiaryDistrict.toLowerCase()) {
+      return false;
+    }
+    if (beneficiaryBlock !== 'All' && (a.block || '').toLowerCase() !== beneficiaryBlock.toLowerCase()) {
       return false;
     }
     if (beneficiaryFilterStatus === 'ready') {
@@ -617,27 +689,33 @@ export const Admin = () => {
                         );
                       })
                     ) : (
-                      [
-                        { district: 'Jabalpur', count: roleScopedApplications.filter(a => a.district === 'Jabalpur').length, color: '#1E40AF' },
-                        { district: 'Bhopal', count: roleScopedApplications.filter(a => a.district === 'Bhopal').length, color: '#2563EB' },
-                        { district: 'Indore', count: roleScopedApplications.filter(a => a.district === 'Indore').length, color: '#3B82F6' },
-                        { district: 'Rewa', count: roleScopedApplications.filter(a => a.district === 'Rewa').length, color: '#60A5FA' },
-                        { district: 'Mandla', count: roleScopedApplications.filter(a => a.district === 'Mandla').length, color: '#93C5FD' },
-                        { district: 'Gwalior', count: roleScopedApplications.filter(a => a.district === 'Gwalior').length, color: '#BFDBFE' }
-                      ].map(item => {
-                        const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
-                        return (
-                          <div key={item.district}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600 }}>
-                              <span>{item.district}</span>
-                              <span>{item.count} Candidates ({pct}%)</span>
+                      (() => {
+                        const distCounts = {};
+                        roleScopedApplications.forEach(a => {
+                          const d = a.district || 'Unassigned';
+                          distCounts[d] = (distCounts[d] || 0) + 1;
+                        });
+                        const colors = ['#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'];
+                        const sortedDists = Object.entries(distCounts)
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 6)
+                          .map(([district, count], idx) => ({ district, count, color: colors[idx % colors.length] }));
+                        
+                        return sortedDists.map(item => {
+                          const pct = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+                          return (
+                            <div key={item.district}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                                <span>{item.district}</span>
+                                <span>{item.count} Candidates ({pct}%)</span>
+                              </div>
+                              <div style={{ height: '8px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${pct}%`, backgroundColor: item.color, borderRadius: '4px' }} />
+                              </div>
                             </div>
-                            <div style={{ height: '8px', backgroundColor: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
-                              <div style={{ height: '100%', width: `${pct}%`, backgroundColor: item.color, borderRadius: '4px' }} />
-                            </div>
-                          </div>
-                        );
-                      })
+                          );
+                        });
+                      })()
                     )}
                   </div>
                 </div>
@@ -807,23 +885,61 @@ export const Admin = () => {
                     />
                   </div>
 
+                  {/* Level 1: State Filter */}
                   <div style={{ minWidth: '150px' }}>
                     <select 
                       className="form-control"
-                      value={selectedDistrict}
-                      onChange={(e) => setSelectedDistrict(e.target.value)}
+                      value={selectedState}
+                      onChange={(e) => {
+                        setSelectedState(e.target.value);
+                        setSelectedDistrict('All');
+                        setSelectedBlock('All');
+                      }}
+                      title="Step 1: State Filter"
+                      style={{ fontWeight: 600 }}
                     >
-                      <option value="All">All Districts</option>
-                      <option value="Jabalpur">Jabalpur</option>
-                      <option value="Bhopal">Bhopal</option>
-                      <option value="Indore">Indore</option>
-                      <option value="Rewa">Rewa</option>
-                      <option value="Mandla">Mandla</option>
-                      <option value="Gwalior">Gwalior</option>
+                      <option value="All">All States (समस्त राज्य)</option>
+                      {allStates.map(st => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
                     </select>
                   </div>
 
-                  <div style={{ minWidth: '130px' }}>
+                  {/* Level 2: District Filter */}
+                  <div style={{ minWidth: '140px' }}>
+                    <select 
+                      className="form-control"
+                      value={selectedDistrict}
+                      onChange={(e) => {
+                        setSelectedDistrict(e.target.value);
+                        setSelectedBlock('All');
+                      }}
+                      title="Step 2: District Filter"
+                    >
+                      <option value="All">All Districts (समस्त जिले)</option>
+                      {availableDistricts.map(dist => (
+                        <option key={dist} value={dist}>{dist}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Level 3: Block Filter */}
+                  <div style={{ minWidth: '140px' }}>
+                    <select 
+                      className="form-control"
+                      value={selectedBlock}
+                      onChange={(e) => setSelectedBlock(e.target.value)}
+                      title="Step 3: Block Filter"
+                      disabled={selectedDistrict === 'All'}
+                    >
+                      <option value="All">All Blocks (समस्त ब्लॉक)</option>
+                      {availableBlocks.map(blk => (
+                        <option key={blk} value={blk}>{blk}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ minWidth: '120px' }}>
                     <select 
                       className="form-control"
                       value={selectedCategory}
@@ -837,7 +953,7 @@ export const Admin = () => {
                     </select>
                   </div>
 
-                  <div style={{ minWidth: '170px' }}>
+                  <div style={{ minWidth: '160px' }}>
                     <select 
                       className="form-control"
                       value={selectedStatus}
@@ -854,7 +970,15 @@ export const Admin = () => {
 
                   <button 
                     className="btn btn-outline btn-sm"
-                    onClick={() => { setSelectedDistrict('All'); setSelectedCategory('All'); setSelectedStatus('All'); setTableSearch(''); }}
+                    onClick={() => { 
+                      setSelectedState('All'); 
+                      setSelectedDistrict('All'); 
+                      setSelectedBlock('All'); 
+                      setSelectedCategory('All'); 
+                      setSelectedStatus('All'); 
+                      setTableSearch(''); 
+                    }}
+                    title="Reset all filters"
                   >
                     <RefreshCw size={14} />
                     <span>Reset</span>
@@ -1049,26 +1173,69 @@ export const Admin = () => {
                     </div>
                   </div>
 
-                  <div style={{ minWidth: '160px' }}>
+                  {/* Level 1: State Filter */}
+                  <div style={{ minWidth: '150px' }}>
                     <select 
                       className="form-control"
-                      value={verificationDistrict}
-                      onChange={(e) => setVerificationDistrict(e.target.value)}
+                      value={verificationState}
+                      onChange={(e) => {
+                        setVerificationState(e.target.value);
+                        setVerificationDistrict('All');
+                        setVerificationBlock('All');
+                      }}
+                      title="Step 1: Filter by State"
                     >
-                      <option value="All">All Districts</option>
-                      <option value="Jabalpur">Jabalpur</option>
-                      <option value="Bhopal">Bhopal</option>
-                      <option value="Indore">Indore</option>
-                      <option value="Rewa">Rewa</option>
-                      <option value="Mandla">Mandla</option>
-                      <option value="Gwalior">Gwalior</option>
+                      <option value="All">All States (समस्त राज्य)</option>
+                      {allStates.map(st => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
                     </select>
                   </div>
 
-                  {(verificationSearch || verificationDistrict !== 'All' || verificationFilter !== 'all') && (
+                  {/* Level 2: District Filter */}
+                  <div style={{ minWidth: '140px' }}>
+                    <select 
+                      className="form-control"
+                      value={verificationDistrict}
+                      onChange={(e) => {
+                        setVerificationDistrict(e.target.value);
+                        setVerificationBlock('All');
+                      }}
+                      title="Step 2: Filter by District"
+                    >
+                      <option value="All">All Districts (समस्त जिले)</option>
+                      {verificationAvailableDistricts.map(dist => (
+                        <option key={dist} value={dist}>{dist}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Level 3: Block Filter */}
+                  <div style={{ minWidth: '140px' }}>
+                    <select 
+                      className="form-control"
+                      value={verificationBlock}
+                      onChange={(e) => setVerificationBlock(e.target.value)}
+                      title="Step 3: Filter by Block"
+                      disabled={verificationDistrict === 'All'}
+                    >
+                      <option value="All">All Blocks (समस्त ब्लॉक)</option>
+                      {verificationAvailableBlocks.map(blk => (
+                        <option key={blk} value={blk}>{blk}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {(verificationSearch || verificationState !== 'All' || verificationDistrict !== 'All' || verificationBlock !== 'All' || verificationFilter !== 'all') && (
                     <button 
                       className="btn btn-outline btn-sm"
-                      onClick={() => { setVerificationFilter('all'); setVerificationSearch(''); setVerificationDistrict('All'); }}
+                      onClick={() => { 
+                        setVerificationFilter('all'); 
+                        setVerificationSearch(''); 
+                        setVerificationState('All');
+                        setVerificationDistrict('All'); 
+                        setVerificationBlock('All');
+                      }}
                     >
                       <RefreshCw size={13} />
                       <span>Reset Filters</span>
@@ -1315,19 +1482,52 @@ export const Admin = () => {
                       />
                     </div>
 
+                    {/* Beneficiary State > District > Block cascading */}
                     <select 
                       className="form-control" 
-                      style={{ width: 'auto', minWidth: '160px' }}
-                      value={beneficiaryDistrict}
-                      onChange={(e) => setBeneficiaryDistrict(e.target.value)}
+                      style={{ width: 'auto', minWidth: '150px' }}
+                      value={beneficiaryState}
+                      onChange={(e) => {
+                        setBeneficiaryState(e.target.value);
+                        setBeneficiaryDistrict('All');
+                        setBeneficiaryBlock('All');
+                      }}
+                      title="Step 1: State Filter"
                     >
-                      <option value="All">All Districts</option>
-                      <option value="Jabalpur">Jabalpur</option>
-                      <option value="Bhopal">Bhopal</option>
-                      <option value="Indore">Indore</option>
-                      <option value="Gwalior">Gwalior</option>
-                      <option value="Ujjain">Ujjain</option>
-                      <option value="Sagar">Sagar</option>
+                      <option value="All">All States (समस्त राज्य)</option>
+                      {allStates.map(st => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+
+                    <select 
+                      className="form-control" 
+                      style={{ width: 'auto', minWidth: '140px' }}
+                      value={beneficiaryDistrict}
+                      onChange={(e) => {
+                        setBeneficiaryDistrict(e.target.value);
+                        setBeneficiaryBlock('All');
+                      }}
+                      title="Step 2: District Filter"
+                    >
+                      <option value="All">All Districts (समस्त जिले)</option>
+                      {beneficiaryAvailableDistricts.map(dist => (
+                        <option key={dist} value={dist}>{dist}</option>
+                      ))}
+                    </select>
+
+                    <select 
+                      className="form-control" 
+                      style={{ width: 'auto', minWidth: '130px' }}
+                      value={beneficiaryBlock}
+                      onChange={(e) => setBeneficiaryBlock(e.target.value)}
+                      title="Step 3: Block Filter"
+                      disabled={beneficiaryDistrict === 'All'}
+                    >
+                      <option value="All">All Blocks (समस्त ब्लॉक)</option>
+                      {beneficiaryAvailableBlocks.map(blk => (
+                        <option key={blk} value={blk}>{blk}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -1961,9 +2161,25 @@ export const Admin = () => {
 
               {/* Printable Table of District Breakdown */}
               <div className="card" style={{ padding: '1.75rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
-                  District-Wise Scrutiny & Disbursement Matrix
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    District-Wise Scrutiny & Disbursement Matrix
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>State (राज्य):</span>
+                    <select
+                      className="form-control"
+                      value={matrixState}
+                      onChange={(e) => setMatrixState(e.target.value)}
+                      style={{ width: 'auto', minWidth: '200px', fontWeight: 700 }}
+                    >
+                      <option value="All">All States (समस्त राज्य)</option>
+                      {allStates.map(st => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
                 <div className="data-table-container">
                   <table className="data-table">
@@ -1978,22 +2194,32 @@ export const Admin = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {['Jabalpur', 'Bhopal', 'Indore', 'Rewa', 'Mandla', 'Gwalior'].map(d => {
-                        const distApps = applications.filter(a => a.district === d);
-                        const apprv = distApps.filter(a => a.status === 'Approved').length;
-                        const disb = distApps.filter(a => a.status === 'Scholarship Released').length;
-                        const underV = distApps.filter(a => a.status === 'Under Verification').length;
-                        return (
-                          <tr key={d}>
-                            <td style={{ fontWeight: 700 }}>{d}</td>
-                            <td>{distApps.length}</td>
-                            <td>{apprv}</td>
-                            <td>{disb}</td>
-                            <td>{underV}</td>
-                            <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{(disb * 12000).toLocaleString('en-IN')}</td>
-                          </tr>
-                        );
-                      })}
+                      {(() => {
+                        const targetDistricts = matrixState !== 'All' 
+                          ? getDistrictsByState(matrixState) 
+                          : (() => {
+                              const distSet = new Set(applications.map(a => a.district).filter(Boolean));
+                              getDistrictsByState('Madhya Pradesh').slice(0, 10).forEach(d => distSet.add(d));
+                              return Array.from(distSet).sort();
+                            })();
+
+                        return targetDistricts.map(d => {
+                          const distApps = applications.filter(a => a.district === d);
+                          const apprv = distApps.filter(a => a.status === 'Approved').length;
+                          const disb = distApps.filter(a => a.status === 'Scholarship Released').length;
+                          const underV = distApps.filter(a => a.status === 'Under Verification').length;
+                          return (
+                            <tr key={d}>
+                              <td style={{ fontWeight: 700 }}>{d}</td>
+                              <td>{distApps.length}</td>
+                              <td>{apprv}</td>
+                              <td>{disb}</td>
+                              <td>{underV}</td>
+                              <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{(disb * 12000).toLocaleString('en-IN')}</td>
+                            </tr>
+                          );
+                        });
+                      })()}
                     </tbody>
                   </table>
                 </div>

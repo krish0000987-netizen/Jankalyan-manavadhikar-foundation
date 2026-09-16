@@ -16,6 +16,7 @@ import {
   School,
   GraduationCap
 } from 'lucide-react';
+import { getAllStates, getDistrictsByState, getBlocksByDistrict } from '../../data/indiaLocations';
 
 export const InstitutionsManager = () => {
   const [institutions, setInstitutions] = useState([]);
@@ -24,6 +25,7 @@ export const InstitutionsManager = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [stateFilter, setStateFilter] = useState('ALL');
   const [districtFilter, setDistrictFilter] = useState('ALL');
 
   // Modal & Form
@@ -35,10 +37,11 @@ export const InstitutionsManager = () => {
     name: '',
     code: '',
     type: 'School',
+    state: 'Madhya Pradesh',
     district_id: '',
     block_id: '',
     csc_name: '',
-    affiliation_board: 'MP Board',
+    affiliation_board: 'State Board',
     contact_person: '',
     mobile: '',
     email: '',
@@ -50,8 +53,8 @@ export const InstitutionsManager = () => {
     setLoading(true);
     try {
       const [{ data: instData }, { data: distData }, { data: blkData }] = await Promise.all([
-        supabase.from('institutions').select('*, districts(name), blocks(name)').order('name', { ascending: true }),
-        supabase.from('districts').select('id, name').order('name', { ascending: true }),
+        supabase.from('institutions').select('*, districts(name, state), blocks(name)').order('name', { ascending: true }),
+        supabase.from('districts').select('id, name, state').order('name', { ascending: true }),
         supabase.from('blocks').select('id, name, district_id').order('name', { ascending: true })
       ]);
       setInstitutions(instData || []);
@@ -231,7 +234,7 @@ export const InstitutionsManager = () => {
           className="form-control" 
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          style={{ width: '160px', height: '38px', fontSize: '0.85rem' }}
+          style={{ width: '140px', height: '38px', fontSize: '0.85rem' }}
         >
           <option value="ALL">All Types</option>
           <option value="School">Schools</option>
@@ -240,16 +243,35 @@ export const InstitutionsManager = () => {
           <option value="Institute">Institutes / ITI</option>
         </select>
 
+        {/* State Filter */}
+        <select 
+          className="form-control" 
+          value={stateFilter}
+          onChange={(e) => {
+            setStateFilter(e.target.value);
+            setDistrictFilter('ALL');
+          }}
+          style={{ width: '160px', height: '38px', fontSize: '0.85rem', fontWeight: 600 }}
+        >
+          <option value="ALL">All States</option>
+          {getAllStates().map(st => (
+            <option key={st} value={st}>{st}</option>
+          ))}
+        </select>
+
+        {/* District Filter */}
         <select 
           className="form-control" 
           value={districtFilter}
           onChange={(e) => setDistrictFilter(e.target.value)}
-          style={{ width: '180px', height: '38px', fontSize: '0.85rem' }}
+          style={{ width: '160px', height: '38px', fontSize: '0.85rem' }}
         >
           <option value="ALL">All Districts</option>
-          {districts.map(d => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
+          {districts
+            .filter(d => stateFilter === 'ALL' || (d.state || '').toLowerCase() === stateFilter.toLowerCase())
+            .map(d => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
         </select>
       </div>
 
@@ -394,9 +416,34 @@ export const InstitutionsManager = () => {
                 </div>
               </div>
 
-              <div className="form-row-2">
+              {/* Cascading State > District > Block Selection */}
+              <div className="form-row-3">
                 <div className="form-group">
-                  <label className="form-label required">District Cell (जिला प्रकोष्ठ)</label>
+                  <label className="form-label required">State (राज्य)</label>
+                  <select 
+                    className="form-control"
+                    value={form.state || 'Madhya Pradesh'}
+                    onChange={(e) => {
+                      const newState = e.target.value;
+                      const distsInState = districts.filter(d => (d.state || '').toLowerCase() === newState.toLowerCase());
+                      const firstDist = distsInState[0];
+                      const matchingBlk = firstDist ? blocks.find(b => b.district_id === firstDist.id) : null;
+                      setForm({
+                        ...form,
+                        state: newState,
+                        district_id: firstDist?.id || '',
+                        block_id: matchingBlk?.id || ''
+                      });
+                    }}
+                  >
+                    {getAllStates().map(st => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label required">District (जिला)</label>
                   <select 
                     className="form-control"
                     value={form.district_id}
@@ -410,20 +457,24 @@ export const InstitutionsManager = () => {
                       });
                     }}
                   >
-                    {districts.map(d => (
-                      <option key={d.id} value={d.id}>{d.name_en || d.name}</option>
-                    ))}
+                    <option value="">-- Select District --</option>
+                    {districts
+                      .filter(d => !form.state || (d.state || '').toLowerCase() === (form.state || '').toLowerCase())
+                      .map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Block Cell (ब्लॉक प्रकोष्ठ)</label>
+                  <label className="form-label">Block (ब्लॉक)</label>
                   <select 
                     className="form-control"
                     value={form.block_id}
                     onChange={(e) => setForm({ ...form, block_id: e.target.value })}
+                    disabled={!form.district_id}
                   >
-                    <option value="">-- Select Assigned Block Cell --</option>
+                    <option value="">-- Select Block --</option>
                     {blocks
                       .filter(b => !form.district_id || b.district_id === form.district_id)
                       .map(b => (

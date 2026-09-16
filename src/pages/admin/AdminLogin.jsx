@@ -26,6 +26,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { initiateScholarshipFeePayment, isRazorpayTestMode } from '../../services/razorpayService';
+import { getAllStates, getDistrictsByState, getBlocksByDistrict } from '../../data/indiaLocations';
 
 export const AdminLogin = ({ defaultRole = null }) => {
   const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant, activeStudentApp, setActiveStudentApp, authRole } = useApp();
@@ -101,6 +102,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
     classCourse: 'Class 12th',
     selectedSlab: 'slab-3',
     scholarshipAmount: 12000,
+    state: 'Madhya Pradesh',
     district: 'Jabalpur',
     districtId: 'a0000000-0000-0000-0000-000000000001',
     block: 'Patan',
@@ -719,30 +721,71 @@ export const AdminLogin = ({ defaultRole = null }) => {
                   </select>
                 </div>
 
-                {/* District & School/College */}
+                {/* State > District > Block Cascading Workflow */}
                 <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
-                      {lang === 'hi' ? 'गृह जिला (District)' : 'District Cell'}
+                      {lang === 'hi' ? 'राज्य (State / UT)' : 'State / UT'}
+                    </label>
+                    <select
+                      className="form-control"
+                      value={regForm.state || 'Madhya Pradesh'}
+                      onChange={(e) => {
+                        const newState = e.target.value;
+                        const dists = getDistrictsByState(newState);
+                        const firstDist = dists[0] || 'Jabalpur';
+                        const blks = getBlocksByDistrict(newState, firstDist);
+                        setRegForm({
+                          ...regForm,
+                          state: newState,
+                          district: firstDist,
+                          block: blks[0] || ''
+                        });
+                      }}
+                    >
+                      {getAllStates().map(st => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
+                      {lang === 'hi' ? 'गृह जिला (District)' : 'District'}
                     </label>
                     <select
                       className="form-control"
                       value={regForm.district}
                       onChange={(e) => {
-                        const d = DISTRICT_OPTIONS.find(opt => opt.name === e.target.value) || DISTRICT_OPTIONS[0];
+                        const newDist = e.target.value;
+                        const blks = getBlocksByDistrict(regForm.state || 'Madhya Pradesh', newDist);
                         setRegForm({
                           ...regForm,
-                          district: d.name,
-                          districtId: d.id,
-                          block: d.block,
-                          blockId: d.blockId,
-                          institutionName: d.defaultSchool,
-                          institutionId: d.instId
+                          district: newDist,
+                          block: blks[0] || ''
                         });
                       }}
                     >
-                      {DISTRICT_OPTIONS.map(d => (
-                        <option key={d.id} value={d.name}>{d.name}</option>
+                      {getDistrictsByState(regForm.state || 'Madhya Pradesh').map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Block & School/College */}
+                <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
+                      {lang === 'hi' ? 'ब्लॉक / तहसील (Block)' : 'Block / Tehsil'}
+                    </label>
+                    <select
+                      className="form-control"
+                      value={regForm.block}
+                      onChange={(e) => setRegForm({ ...regForm, block: e.target.value })}
+                    >
+                      {getBlocksByDistrict(regForm.state || 'Madhya Pradesh', regForm.district).map(b => (
+                        <option key={b} value={b}>{b}</option>
                       ))}
                     </select>
                   </div>
@@ -754,7 +797,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="e.g. Model Higher Secondary"
+                      placeholder="e.g. Govt. Model School"
                       required
                       value={regForm.institutionName}
                       onChange={(e) => setRegForm({ ...regForm, institutionName: e.target.value })}

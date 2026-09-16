@@ -1,5 +1,6 @@
 import { supabase } from '../api/supabase.js';
 import { uploadFile } from '../api/storage.js';
+import { getAllStates, getDistrictsByState, getBlocksByDistrict, findStateByDistrict, INDIA_STATES_DATA } from '../data/indiaLocations.js';
 
 export const FALLBACK_APPLICATIONS = [
   {
@@ -402,42 +403,89 @@ export const applicationService = {
   /**
    * Fetch active districts
    */
-  async getDistricts() {
+  /**
+   * Fetch active districts (optionally filtered by state)
+   */
+  async getDistricts(stateName = null) {
     try {
-      const { data, error } = await supabase
+      let q = supabase
         .from('districts')
-        .select('id, name')
+        .select('id, name, state, code')
         .eq('is_active', true)
         .order('name', { ascending: true });
-      if (!error && data && data.length > 0) return data;
+      
+      if (stateName) {
+        q = q.eq('state', stateName);
+      }
+
+      const { data, error } = await q;
+      if (!error && data && data.length > 0) {
+        // If state specified, ensure all districts from master registry exist in list
+        if (stateName) {
+          const existingNames = new Set(data.map(d => d.name.toLowerCase()));
+          const masterDistricts = getDistrictsByState(stateName);
+          const merged = [...data];
+          masterDistricts.forEach((dName, idx) => {
+            if (!existingNames.has(dName.toLowerCase())) {
+              merged.push({
+                id: `master-${stateName.slice(0, 3)}-${idx}`,
+                name: dName,
+                state: stateName,
+                code: `${stateName.slice(0, 2).toUpperCase()}-${idx + 1}`
+              });
+            }
+          });
+          return merged.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        return data;
+      }
     } catch (err) {}
 
+    // Fallback based on state or default
+    if (stateName) {
+      return getDistrictsByState(stateName).map((d, i) => ({
+        id: `fb-${stateName.slice(0, 3)}-${i}`,
+        name: d,
+        state: stateName
+      }));
+    }
+
     return [
-      { id: 'a0000000-0000-0000-0000-000000000001', name: 'Jabalpur' },
-      { id: 'a0000000-0000-0000-0000-000000000002', name: 'Bhopal' },
-      { id: 'a0000000-0000-0000-0000-000000000003', name: 'Indore' },
-      { id: 'a0000000-0000-0000-0000-000000000004', name: 'Rewa' },
-      { id: 'a0000000-0000-0000-0000-000000000005', name: 'Mandla' },
-      { id: 'a0000000-0000-0000-0000-000000000006', name: 'Gwalior' }
+      { id: 'a0000000-0000-0000-0000-000000000001', name: 'Jabalpur', state: 'Madhya Pradesh' },
+      { id: 'a0000000-0000-0000-0000-000000000002', name: 'Bhopal', state: 'Madhya Pradesh' },
+      { id: 'a0000000-0000-0000-0000-000000000003', name: 'Indore', state: 'Madhya Pradesh' },
+      { id: 'a0000000-0000-0000-0000-000000000004', name: 'Rewa', state: 'Madhya Pradesh' },
+      { id: 'a0000000-0000-0000-0000-000000000005', name: 'Mandla', state: 'Madhya Pradesh' },
+      { id: 'a0000000-0000-0000-0000-000000000006', name: 'Gwalior', state: 'Madhya Pradesh' }
     ];
   },
 
   /**
-   * Fetch blocks for a district
+   * Fetch blocks for a district (optionally using districtId or districtName + stateName)
    */
-  async getBlocks(districtId = null) {
+  async getBlocks(districtId = null, districtName = null, stateName = null) {
     try {
       let q = supabase
         .from('blocks')
-        .select('id, name, district_id')
+        .select('id, name, district_id, code')
         .eq('is_active', true)
         .order('name', { ascending: true });
-      if (districtId) {
+      if (districtId && !districtId.startsWith('master-') && !districtId.startsWith('fb-')) {
         q = q.eq('district_id', districtId);
       }
       const { data, error } = await q;
       if (!error && data && data.length > 0) return data;
     } catch (err) {}
+
+    // Fallback to master registry for this district
+    if (districtName) {
+      const blks = getBlocksByDistrict(stateName, districtName);
+      return blks.map((b, idx) => ({
+        id: `blk-master-${idx}`,
+        name: b,
+        district_id: districtId
+      }));
+    }
 
     return [
       { id: 'b0000000-0000-0000-0000-000000000001', name: 'Patan', district_id: 'a0000000-0000-0000-0000-000000000001' },
@@ -1071,9 +1119,10 @@ export const applicationService = {
       gender: student.gender || 'Male',
       category: student.category || 'General',
       annualIncome: student.annual_income ? `₹${student.annual_income.toLocaleString('en-IN')}` : '₹1,00,000',
-      district: app.districts?.name || 'Jabalpur',
+      state: app.districts?.state || app.state || findStateByDistrict(app.districts?.name || app.district) || 'Madhya Pradesh',
+      district: app.districts?.name || app.district || 'Jabalpur',
       districtId: app.district_id,
-      block: app.blocks?.name || 'Patan',
+      block: app.blocks?.name || app.block || 'Patan',
       blockId: app.block_id,
       institution: app.institutions?.name || 'Educational Institution',
       institutionId: app.institution_id,

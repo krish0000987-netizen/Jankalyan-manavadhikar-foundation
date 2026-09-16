@@ -129,14 +129,20 @@ export const translations = {
     timelineBadge: "PHASES & DATES",
     timelineTitle: "Annual Scholarship Lifecycle",
 
-    // Section 9: Impact
-    impactBadge: "OUR REACH",
-    impactTitle: "Institutional Impact & Transparency",
-    impactNote: "Statistics shown reflect live verified records processed through the Foundation's portal.",
-    statApps: "Total Applications Received",
-    statDistricts: "Districts Represented",
-    statInstitutions: "Partner Institutions",
-    statDisbursed: "Verified Beneficiaries",
+    // Section 9: Pan-India Impact & Nationwide Scale
+    impactBadge: "PAN-INDIA SCHOLARSHIP MISSION",
+    impactTitle: "Empowering Education Across All States & Union Territories of India",
+    impactNote: "The Jankalyan Manavadhikar Foundation Scholarship initiative extends equitable financial assistance, merit recognition, and institutional support across educational hubs throughout India.",
+    statStates: "28+ States & UTs Covered",
+    statStatesSub: "Pan-India Jurisdiction & Facilitation Network",
+    statDistricts: "750+ Districts Network",
+    statDistrictsSub: "Grassroots Access from Rural to Urban Centers",
+    statInstitutions: "All Recognized Boards",
+    statInstitutionsSub: "CBSE, ICSE, State Boards & Universities",
+    statDisbursed: "100% Direct Benefit (DBT)",
+    statDisbursedSub: "Aadhaar-Linked Direct Bank Transfers",
+    statApps: "Nationwide Scale",
+    panIndiaCoverageTitle: "Nationwide Zonal Reach & Institutional Footprint",
 
     // Section 10: FAQ Preview
     faqBadge: "FREQUENTLY ASKED QUESTIONS",
@@ -437,14 +443,20 @@ export const translations = {
     timelineBadge: "चरण एवं समय-सीमा",
     timelineTitle: "वार्षिक छात्रवृत्ति चक्र",
 
-    // Section 9: Impact
-    impactBadge: "हमारी पहुंच",
-    impactTitle: "संस्थागत प्रभाव एवं पारदर्शिता",
-    impactNote: "प्रदर्शित आंकड़े फाउंडेशन पोर्टल द्वारा सत्यापित वास्तविक रिकॉर्ड पर आधारित हैं।",
-    statApps: "कुल प्राप्त आवेदन",
-    statDistricts: "शामिल जिले",
-    statInstitutions: "संबद्ध शिक्षण संस्थान",
-    statDisbursed: "सत्यापित लाभार्थी विद्यार्थी",
+    // Section 9: Pan-India Impact & Nationwide Scale
+    impactBadge: "अखिल भारतीय छात्रवृत्ति मिशन",
+    impactTitle: "भारत के समस्त राज्यों एवं केंद्र शासित प्रदेशों में शैक्षणिक सशक्तिकरण",
+    impactNote: "जनकल्याण मानवाधिकार फाउंडेशन छात्रवृत्ति योजना संपूर्ण भारत में मेधावी व जरूरतमंद विद्यार्थियों को प्रत्यक्ष अनुदान, संस्थागत संबल और पारदर्शी सहायता प्रदान करती है।",
+    statStates: "28+ राज्य व केंद्र शासित प्रदेश",
+    statStatesSub: "अखिल भारतीय उपस्थिति एवं क्षेत्रीय प्रकोष्ठ",
+    statDistricts: "750+ जिलों का नेटवर्क",
+    statDistrictsSub: "ग्रामीण व नगरीय क्षेत्रों तक जमीनी पहुंच",
+    statInstitutions: "सभी मान्यता प्राप्त बोर्ड",
+    statInstitutionsSub: "CBSE, ICSE, स्टेट बोर्ड, पॉलिटेक्निक व विश्वविद्यालय",
+    statDisbursed: "100% प्रत्यक्ष लाभ अंतरण (DBT)",
+    statDisbursedSub: "आधार-लिंक्ड बैंक खातों में सीधी छात्रवृत्ति राशि",
+    statApps: "राष्ट्रव्यापी विस्तार",
+    panIndiaCoverageTitle: "राष्ट्रव्यापी आंचलिक उपस्थिति एवं संस्थागत नेटवर्क",
 
     // Section 10: FAQ Preview
     faqBadge: "सामान्यतः पूछे जाने वाले प्रश्न",

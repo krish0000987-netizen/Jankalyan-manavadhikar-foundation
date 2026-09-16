@@ -30,6 +30,7 @@ import {
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { applicationService } from '../services/applicationService';
 import { initiateScholarshipFeePayment, isRazorpayTestMode } from '../services/razorpayService';
+import { getAllStates, getDistrictsByState, getBlocksByDistrict } from '../data/indiaLocations';
 
 export const SCHOLARSHIP_SLABS = [
   { id: 'slab-1', nameHi: '5वीं से 7वीं', nameEn: 'Class 5th - 7th', amount: 4000, amountDisplay: '₹4,000/-', period: 'वार्षिक', color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', defaultCourse: 'Class 6th' },
@@ -1218,35 +1219,70 @@ export const Apply = () => {
                   />
                 </div>
 
-                <div className="form-row-3">
+                {/* State > District > Block > Pincode Cascading Workflow */}
+                <div className="form-row-2">
                   <div className="form-group">
-                    <label className="form-label required">{t.fieldDistrict}</label>
+                    <label className="form-label required">{lang === 'hi' ? 'राज्य / केंद्र शासित प्रदेश (State / UT)' : 'State / Union Territory'}</label>
                     <select 
                       className="form-control"
-                      value={formData.district}
-                      onChange={(e) => handleDistrictChange(e.target.value)}
+                      value={formData.state || 'Madhya Pradesh'}
+                      onChange={(e) => {
+                        const newState = e.target.value;
+                        const dists = getDistrictsByState(newState);
+                        const firstDist = dists[0] || 'Jabalpur';
+                        const blks = getBlocksByDistrict(newState, firstDist);
+                        setFormData(prev => ({
+                          ...prev,
+                          state: newState,
+                          district: firstDist,
+                          block: blks[0] || ''
+                        }));
+                      }}
                     >
-                      <option value="Jabalpur">Jabalpur</option>
-                      <option value="Bhopal">Bhopal</option>
-                      <option value="Indore">Indore</option>
-                      <option value="Rewa">Rewa</option>
-                      <option value="Mandla">Mandla</option>
-                      <option value="Gwalior">Gwalior</option>
-                      {districtsList.filter(d => !['Jabalpur','Bhopal','Indore','Rewa','Mandla','Gwalior'].includes(d.name)).map(d => (
-                        <option key={d.id} value={d.name}>{d.name}</option>
+                      {getAllStates().map(st => (
+                        <option key={st} value={st}>{st}</option>
                       ))}
                     </select>
                   </div>
 
                   <div className="form-group">
+                    <label className="form-label required">{t.fieldDistrict}</label>
+                    <select 
+                      className="form-control"
+                      value={formData.district}
+                      onChange={(e) => {
+                        const newDist = e.target.value;
+                        const blks = getBlocksByDistrict(formData.state || 'Madhya Pradesh', newDist);
+                        setFormData(prev => ({
+                          ...prev,
+                          district: newDist,
+                          block: blks[0] || prev.block
+                        }));
+                      }}
+                    >
+                      {getDistrictsByState(formData.state || 'Madhya Pradesh').map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row-2">
+                  <div className="form-group">
                     <label className="form-label">{t.fieldBlock}</label>
                     <input 
                       type="text"
                       className="form-control"
-                      placeholder={lang === 'hi' ? 'ब्लॉक / तहसील (उदा. पाटन / सिहोरा)' : 'Enter Block / Tehsil (e.g. Patan / Sihora)'}
+                      placeholder={lang === 'hi' ? 'ब्लॉक / तहसील का नाम दर्ज करें' : 'Enter Block / Tehsil'}
                       value={formData.block}
                       onChange={(e) => handleInputChange('block', e.target.value)}
+                      list="blocks-suggestions-apply"
                     />
+                    <datalist id="blocks-suggestions-apply">
+                      {getBlocksByDistrict(formData.state || 'Madhya Pradesh', formData.district).map(b => (
+                        <option key={b} value={b} />
+                      ))}
+                    </datalist>
                   </div>
 
                   <div className="form-group">

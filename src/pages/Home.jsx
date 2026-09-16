@@ -26,6 +26,7 @@ import {
   Pause,
   Play
 } from 'lucide-react';
+import { INDIA_ZONES } from '../data/indiaLocations';
 
 export const Home = () => {
   const { lang, t, navigate, cms, applications, liveCounters } = useApp();
@@ -71,13 +72,6 @@ export const Home = () => {
   const handleNextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
-
-  // Dynamic Impact Metrics from Supabase Database liveCounters
-  const totalAppsCount = liveCounters?.totalApplications || applications.length || 148;
-  const approvedCount = liveCounters?.approvedApplications || 92;
-  const releasedCount = liveCounters?.scholarshipsReleased || 74;
-  const uniqueDistrictsCount = liveCounters?.coveredDistricts || 6;
-  const uniqueInstitutionsCount = new Set(applications.map(a => a.institution)).size || 12;
 
   return (
     <div>
@@ -791,61 +785,168 @@ export const Home = () => {
       </section>
 
       {/* ====================================================================
-          SECTION 8: DYNAMIC IMPACT METRICS (Zero Fake Stats - Real App Counts)
+          SECTION 8: NATIONWIDE SCALE & PAN-INDIA REACH (All 28 States & UTs)
           ==================================================================== */}
-      <section className="section-py" style={{ backgroundColor: '#1B2A4E', color: '#FFFFFF' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem' }}>
-            <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FEF08A', marginBottom: '0.75rem' }}>
-              {t.impactBadge}
+      <section className="section-py" style={{ backgroundColor: '#0F172A', color: '#FFFFFF', position: 'relative', overflow: 'hidden' }}>
+        {/* Subtle decorative background glow */}
+        <div style={{ position: 'absolute', top: '-120px', right: '-120px', width: '380px', height: '380px', background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, rgba(15,23,42,0) 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-100px', left: '-100px', width: '360px', height: '360px', background: 'radial-gradient(circle, rgba(220,38,38,0.15) 0%, rgba(15,23,42,0) 70%)', pointerEvents: 'none' }} />
+
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ textAlign: 'center', maxWidth: '820px', margin: '0 auto 3rem' }}>
+            <span className="badge" style={{ backgroundColor: 'rgba(254,240,138,0.15)', color: '#FEF08A', marginBottom: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>
+              🇮🇳 {t.impactBadge}
             </span>
-            <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.75rem' }}>
+            <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.9rem', lineHeight: 1.25 }}>
               {t.impactTitle}
             </h2>
-            <p style={{ color: '#CBD5E1', fontSize: '0.9rem' }}>
+            <p style={{ color: '#CBD5E1', fontSize: '0.95rem', lineHeight: 1.6 }}>
               {t.impactNote}
             </p>
           </div>
 
-          <div className="grid-stats">
+          {/* 4 Primary Nationwide Scale Pillars */}
+          <div className="grid-stats" style={{ marginBottom: '2.5rem' }}>
             
-            <div style={{ padding: '2rem 1rem', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#FFFFFF', marginBottom: '0.5rem' }}>
-                {totalAppsCount}
+            <div style={{ padding: '2rem 1.25rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+              <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '12px', backgroundColor: 'rgba(59,130,246,0.15)', marginBottom: '0.75rem', color: '#60A5FA' }}>
+                <Building2 size={28} />
               </div>
-              <div style={{ color: '#94A3B8', fontSize: '0.9rem', fontWeight: 600 }}>
-                {t.statApps}
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#FFFFFF', marginBottom: '0.35rem', letterSpacing: '-0.02em' }}>
+                28+
+              </div>
+              <div style={{ color: '#F8FAFC', fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+                {t.statStates}
+              </div>
+              <div style={{ color: '#94A3B8', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                {t.statStatesSub}
               </div>
             </div>
 
-            <div style={{ padding: '2rem 1rem', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#FEF08A', marginBottom: '0.5rem' }}>
-                {uniqueDistrictsCount}
+            <div style={{ padding: '2rem 1.25rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+              <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '12px', backgroundColor: 'rgba(250,204,21,0.15)', marginBottom: '0.75rem', color: '#FACC15' }}>
+                <Award size={28} />
               </div>
-              <div style={{ color: '#94A3B8', fontSize: '0.9rem', fontWeight: 600 }}>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#FEF08A', marginBottom: '0.35rem', letterSpacing: '-0.02em' }}>
+                750+
+              </div>
+              <div style={{ color: '#F8FAFC', fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>
                 {t.statDistricts}
               </div>
+              <div style={{ color: '#94A3B8', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                {t.statDistrictsSub}
+              </div>
             </div>
 
-            <div style={{ padding: '2rem 1rem', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#60A5FA', marginBottom: '0.5rem' }}>
-                {uniqueInstitutionsCount}
+            <div style={{ padding: '2rem 1.25rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+              <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '12px', backgroundColor: 'rgba(96,165,250,0.15)', marginBottom: '0.75rem', color: '#93C5FD' }}>
+                <GraduationCap size={28} />
               </div>
-              <div style={{ color: '#94A3B8', fontSize: '0.9rem', fontWeight: 600 }}>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#93C5FD', marginBottom: '0.35rem', letterSpacing: '-0.02em' }}>
+                100%
+              </div>
+              <div style={{ color: '#F8FAFC', fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>
                 {t.statInstitutions}
               </div>
+              <div style={{ color: '#94A3B8', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                {t.statInstitutionsSub}
+              </div>
             </div>
 
-            <div style={{ padding: '2rem 1rem', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#4ADE80', marginBottom: '0.5rem' }}>
-                {approvedCount}
+            <div style={{ padding: '2rem 1.25rem', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+              <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '12px', backgroundColor: 'rgba(74,222,128,0.15)', marginBottom: '0.75rem', color: '#4ADE80' }}>
+                <CheckCircle2 size={28} />
               </div>
-              <div style={{ color: '#94A3B8', fontSize: '0.9rem', fontWeight: 600 }}>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#4ADE80', marginBottom: '0.35rem', letterSpacing: '-0.02em' }}>
+                DBT
+              </div>
+              <div style={{ color: '#F8FAFC', fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>
                 {t.statDisbursed}
+              </div>
+              <div style={{ color: '#94A3B8', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                {t.statDisbursedSub}
               </div>
             </div>
 
           </div>
+
+          {/* Regional Zonal Presence Grid */}
+          <div style={{ 
+            backgroundColor: 'rgba(255,255,255,0.03)', 
+            border: '1px solid rgba(255,255,255,0.08)', 
+            borderRadius: '16px', 
+            padding: '1.75rem',
+            marginTop: '1.5rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>🌐</span>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
+                  {t.panIndiaCoverageTitle}
+                </h3>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span className="badge" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#86EFAC', fontSize: '0.72rem', fontWeight: 700 }}>
+                  ✓ Central & State Boards
+                </span>
+                <span className="badge" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#93C5FD', fontSize: '0.72rem', fontWeight: 700 }}>
+                  ✓ Higher Education & ITI
+                </span>
+                <span className="badge" style={{ backgroundColor: 'rgba(234,179,8,0.15)', color: '#FDE047', fontSize: '0.72rem', fontWeight: 700 }}>
+                  ✓ University & Colleges
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              {INDIA_ZONES.map(zone => (
+                <div key={zone.id} style={{ 
+                  backgroundColor: 'rgba(255,255,255,0.04)', 
+                  border: '1px solid rgba(255,255,255,0.06)', 
+                  borderRadius: '12px', 
+                  padding: '1rem' 
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                    <span style={{ fontWeight: 800, color: '#F1F5F9', fontSize: '0.9rem' }}>
+                      {lang === 'hi' ? zone.nameHi : zone.nameEn}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#38BDF8', fontWeight: 700, backgroundColor: 'rgba(56,189,248,0.1)', padding: '2px 8px', borderRadius: '10px' }}>
+                      Active Network
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#94A3B8', lineHeight: 1.5 }}>
+                    {zone.states.slice(0, 4).join(', ')}{zone.states.length > 4 ? ` & ${zone.states.length - 4} more` : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              flexWrap: 'wrap', 
+              gap: '1rem', 
+              marginTop: '1.5rem', 
+              paddingTop: '1.25rem', 
+              borderTop: '1px solid rgba(255,255,255,0.08)' 
+            }}>
+              <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
+                {lang === 'hi' 
+                  ? 'देश के किसी भी राज्य या केंद्र शासित प्रदेश के मान्यता प्राप्त संस्थान के विद्यार्थी आवेदन के पात्र हैं।' 
+                  : 'Students enrolled in any recognized institution across all 28 States and 8 Union Territories are eligible to apply.'}
+              </div>
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => navigate('/apply')}
+                style={{ backgroundColor: '#DC2626', borderColor: '#DC2626', fontWeight: 800, padding: '0.5rem 1.25rem' }}
+              >
+                <span>{lang === 'hi' ? 'अखिल भारतीय आवेदन करें' : 'Apply Online (All India)'}</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+
         </div>
       </section>
 
