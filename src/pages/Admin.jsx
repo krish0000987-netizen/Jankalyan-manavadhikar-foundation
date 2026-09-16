@@ -60,6 +60,7 @@ import { DownloadsManager } from '../components/admin/DownloadsManager';
 import { QrVerifyManager } from '../components/admin/QrVerifyManager';
 import { UsersManager } from '../components/admin/UsersManager';
 import { SettingsManager } from '../components/admin/SettingsManager';
+import { GrievanceManager } from '../components/admin/GrievanceManager';
 
 export const Admin = () => {
   const { 
@@ -2005,60 +2006,7 @@ export const Admin = () => {
               ==================================================================== */}
           {activeTab === 'grievances' && (
             <div className="animate-fade-in">
-              <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
-                  Student Grievance & Helpdesk Cell
-                </h2>
-                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                  Review student complaints, update status, and post official resolution remarks
-                </p>
-              </div>
-
-              <div className="data-table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Grievance ID</th>
-                      <th>Student Name</th>
-                      <th>Mobile</th>
-                      <th>Application ID</th>
-                      <th>Category</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {grievances.map(g => (
-                      <tr key={g.id}>
-                        <td style={{ fontWeight: 700, fontFamily: 'monospace', color: '#DC2626' }}>{g.id}</td>
-                        <td>{g.student_name || g.name}</td>
-                        <td>{g.mobile}</td>
-                        <td style={{ fontFamily: 'monospace' }}>{g.application_id || g.applicationId || '-'}</td>
-                        <td><span className="badge badge-navy">{g.category}</span></td>
-                        <td>
-                          <span className={`badge ${g.status === 'RESOLVED' || g.status === 'Resolved' ? 'badge-green' : 'badge-yellow'}`}>
-                            {g.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button 
-                            className="btn btn-secondary btn-sm"
-                            onClick={async () => {
-                              const note = prompt(`Enter resolution notes for ${g.id}:`);
-                              if (note) {
-                                await grievanceService.updateGrievanceStatus(g.id, 'RESOLVED', note, authUser?.id);
-                                alert('Grievance marked as resolved!');
-                              }
-                            }}
-                          >
-                            Resolve Ticket
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <GrievanceManager authUser={authUser} />
             </div>
           )}
 
