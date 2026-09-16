@@ -22,8 +22,10 @@ export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const dropdownRef = useRef(null);
+  const moreDropdownRef = useRef(null);
 
   // Student and Admin Auth Session Detection
   const isStudentLoggedIn = Boolean(
@@ -32,6 +34,7 @@ export const Header = () => {
     authUser?.user_metadata?.role === 'STUDENT'
   );
   const studentName = activeStudentApp?.studentName || authUser?.user_metadata?.full_name || 'Student';
+  const studentFirstName = studentName.split(' ')[0] || studentName;
   const studentAppId = activeStudentApp?.id || authUser?.user_metadata?.applicationId || '';
   const isAdminLoggedIn = Boolean(
     authRole && 
@@ -49,11 +52,14 @@ export const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close dropdown if clicked outside
+  // Close dropdowns if clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setRoleDropdownOpen(false);
+      }
+      if (moreDropdownRef.current && !moreDropdownRef.current.contains(event.target)) {
+        setMoreDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -71,12 +77,11 @@ export const Header = () => {
 
   const activeAnnouncement = cms.announcements?.[announcementIndex] || cms.announcements?.[0];
 
-  // Clean, perfectly proportioned links for desktop horizontal header bar
-  const navLinks = [
+  // Primary High-Priority Desktop Navigation (Fits on all laptop resolutions)
+  const primaryNavLinks = [
     { label: t.navHome, route: '/' },
-    { label: lang === 'hi' ? 'हमारे बारे में' : 'About', route: '/about' },
     { 
-      label: lang === 'hi' ? 'छात्रवृत्ति योजना 2026' : 'Scholarship 2026', 
+      label: lang === 'hi' ? 'छात्रवृत्ति 2026' : 'Scholarship 2026', 
       route: '/scholarship',
       badge: '2026'
     },
@@ -86,11 +91,16 @@ export const Header = () => {
       badge: 'New'
     },
     { label: lang === 'hi' ? 'आवेदन ट्रैक' : 'Track Status', route: '/track' },
-    { label: lang === 'hi' ? 'दस्तावेज़' : 'Documents', route: '/documents' },
-    { label: lang === 'hi' ? 'डाउनलोड' : 'Downloads', route: '/downloads' },
-    { label: lang === 'hi' ? 'शिकायत' : 'Grievance', route: '/grievance' },
-    { label: 'FAQ', route: '/faq' },
-    { label: lang === 'hi' ? 'संपर्क' : 'Contact', route: '/contact' }
+    { label: lang === 'hi' ? 'दस्तावेज़' : 'Documents', route: '/documents' }
+  ];
+
+  // Secondary Links in Desktop "More" Dropdown Menu
+  const moreNavLinks = [
+    { label: lang === 'hi' ? 'हमारे बारे में' : 'About Foundation', route: '/about' },
+    { label: lang === 'hi' ? 'डाउनलोड फॉर्म' : 'Downloads & Forms', route: '/downloads' },
+    { label: lang === 'hi' ? 'शिकायत निवारण' : 'Grievance Desk', route: '/grievance' },
+    { label: 'FAQ / प्रश्नोत्तरी', route: '/faq' },
+    { label: lang === 'hi' ? 'संपर्क सहायता' : 'Contact Support', route: '/contact' }
   ];
 
   // Full detailed links for mobile slide-out drawer
@@ -323,15 +333,15 @@ export const Header = () => {
               </div>
             </div>
 
-            {/* Center: Clean Navigation Menu (Desktop >= 1160px) */}
+            {/* Center: Streamlined Primary Navigation Menu + More Dropdown */}
             <nav className="desktop-nav">
               <ul className="nav-menu">
-                {navLinks.map((item) => (
+                {primaryNavLinks.map((item) => (
                   <li key={item.route}>
                     <button
                       onClick={() => navigate(item.route)}
                       className={`nav-link ${currentRoute === item.route || (item.route === '/scholarship' && currentRoute === '/scholarship-yojna-2026') ? 'active' : ''}`}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                     >
                       <span>{item.label}</span>
                       {item.badge && (
@@ -350,11 +360,63 @@ export const Header = () => {
                     </button>
                   </li>
                 ))}
+
+                {/* More Secondary Nav Links Dropdown */}
+                <li style={{ position: 'relative' }} ref={moreDropdownRef}>
+                  <button
+                    onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                    className={`nav-link ${moreNavLinks.some(m => currentRoute === m.route) ? 'active' : ''}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                  >
+                    <span>{lang === 'hi' ? 'अन्य' : 'More'}</span>
+                    <ChevronDown size={13} />
+                  </button>
+
+                  {moreDropdownOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '120%',
+                      left: 0,
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '10px',
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.15)',
+                      border: '1px solid #E2E8F0',
+                      minWidth: '180px',
+                      padding: '0.35rem',
+                      zIndex: 250
+                    }}>
+                      {moreNavLinks.map((subItem) => (
+                        <button
+                          key={subItem.route}
+                          onClick={() => {
+                            setMoreDropdownOpen(false);
+                            navigate(subItem.route);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            width: '100%',
+                            padding: '0.5rem 0.75rem',
+                            fontSize: '0.82rem',
+                            textAlign: 'left',
+                            borderRadius: '6px',
+                            color: currentRoute === subItem.route ? '#DC2626' : '#1E293B',
+                            backgroundColor: currentRoute === subItem.route ? '#FEF2F2' : 'transparent',
+                            fontWeight: currentRoute === subItem.route ? 700 : 500,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>{subItem.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </li>
               </ul>
             </nav>
 
             {/* Right: Student Identity, Status, Logout & Apply Now Actions */}
-            <div className="header-actions">
+            <div className="header-actions" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               
               {isStudentLoggedIn ? (
                 <>
@@ -366,50 +428,64 @@ export const Header = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.45rem',
+                      gap: '0.35rem',
                       backgroundColor: '#EFF6FF',
                       border: '1px solid #BFDBFE',
                       borderRadius: '999px',
-                      padding: '0.25rem 0.75rem 0.25rem 0.35rem',
+                      padding: '0.2rem 0.6rem 0.2rem 0.25rem',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease'
+                      transition: 'all 0.15s ease',
+                      flexShrink: 0
                     }}
                   >
                     <div style={{
-                      width: '28px',
-                      height: '28px',
+                      width: '26px',
+                      height: '26px',
                       borderRadius: '50%',
                       backgroundColor: '#1E40AF',
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '0.78rem',
-                      fontWeight: 800
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      flexShrink: 0
                     }}>
                       {studentName.charAt(0).toUpperCase()}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.15 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                         <span style={{
-                          width: '7px',
-                          height: '7px',
+                          width: '6px',
+                          height: '6px',
                           borderRadius: '50%',
                           backgroundColor: '#16A34A',
                           display: 'inline-block',
-                          boxShadow: '0 0 0 2px rgba(22, 163, 74, 0.25)'
+                          boxShadow: '0 0 0 2px rgba(22, 163, 74, 0.25)',
+                          flexShrink: 0
                         }} />
-                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1E3A8A' }}>
-                          {studentName.length > 13 ? studentName.substring(0, 13) + '...' : studentName}
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1E3A8A', whiteSpace: 'nowrap' }}>
+                          {studentFirstName}
                         </span>
                       </div>
-                      <span style={{ fontSize: '0.66rem', color: '#2563EB', fontWeight: 600 }}>
-                        {studentAppId ? studentAppId : (lang === 'hi' ? 'लॉग इन हैं' : 'Logged In')}
-                      </span>
+                      {studentAppId ? (
+                        <>
+                          <span className="hide-on-laptop-narrow" style={{ fontSize: '0.62rem', color: '#2563EB', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            {studentAppId}
+                          </span>
+                          <span className="show-on-laptop-narrow" style={{ fontSize: '0.62rem', color: '#16A34A', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            {lang === 'hi' ? 'सक्रिय' : 'Active'}
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '0.62rem', color: '#16A34A', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          {lang === 'hi' ? 'लॉग इन हैं' : 'Logged In'}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Student Logout Button */}
+                  {/* Student Logout Button - Always visible, never clipped */}
                   <button
                     className="btn btn-sm header-logout-btn hide-tablet-down"
                     onClick={logout}
@@ -417,12 +493,14 @@ export const Header = () => {
                       backgroundColor: '#FEF2F2',
                       color: '#DC2626',
                       border: '1px solid #FECACA',
-                      padding: '0.38rem 0.7rem',
+                      padding: '0.35rem 0.65rem',
                       fontSize: '0.78rem',
                       fontWeight: 700,
                       gap: '4px',
                       display: 'inline-flex',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap'
                     }}
                     title={lang === 'hi' ? 'विद्यार्थी सत्र से लॉगआउट करें' : 'Logout from Student Account'}
                   >
@@ -439,33 +517,35 @@ export const Header = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.45rem',
+                      gap: '0.35rem',
                       backgroundColor: '#FEF2F2',
                       border: '1px solid #FECACA',
                       borderRadius: '999px',
-                      padding: '0.25rem 0.75rem 0.25rem 0.35rem',
-                      cursor: 'pointer'
+                      padding: '0.2rem 0.6rem 0.2rem 0.25rem',
+                      cursor: 'pointer',
+                      flexShrink: 0
                     }}
                   >
                     <div style={{
-                      width: '28px',
-                      height: '28px',
+                      width: '26px',
+                      height: '26px',
                       borderRadius: '50%',
                       backgroundColor: '#DC2626',
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '0.78rem',
-                      fontWeight: 800
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      flexShrink: 0
                     }}>
                       A
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.15 }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#991B1B' }}>
-                        Admin Portal
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#991B1B', whiteSpace: 'nowrap' }}>
+                        Admin
                       </span>
-                      <span style={{ fontSize: '0.66rem', color: '#DC2626', fontWeight: 600 }}>
+                      <span className="hide-on-laptop-narrow" style={{ fontSize: '0.62rem', color: '#DC2626', fontWeight: 600, whiteSpace: 'nowrap' }}>
                         {authRole}
                       </span>
                     </div>
@@ -479,12 +559,14 @@ export const Header = () => {
                       backgroundColor: '#FEF2F2',
                       color: '#DC2626',
                       border: '1px solid #FECACA',
-                      padding: '0.38rem 0.7rem',
+                      padding: '0.35rem 0.65rem',
                       fontSize: '0.78rem',
                       fontWeight: 700,
                       gap: '4px',
                       display: 'inline-flex',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap'
                     }}
                     title="Sign Out of Admin"
                   >
@@ -498,6 +580,7 @@ export const Header = () => {
                   className="btn btn-secondary btn-sm header-student-btn"
                   onClick={() => navigate('/login')}
                   title={lang === 'hi' ? 'विद्यार्थी अथवा पोर्टल लॉगिन' : 'Student or Portal Login'}
+                  style={{ flexShrink: 0, whiteSpace: 'nowrap' }}
                 >
                   <User size={14} />
                   <span>{lang === 'hi' ? 'विद्यार्थी लॉगिन' : 'Student Login'}</span>
@@ -509,6 +592,7 @@ export const Header = () => {
                 className="btn btn-primary btn-sm header-apply-btn"
                 onClick={() => navigate('/apply')}
                 id="header-apply-btn"
+                style={{ flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 <Sparkles size={14} />
                 <span className="apply-btn-label">{t.navApplyNow}</span>

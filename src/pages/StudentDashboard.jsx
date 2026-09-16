@@ -256,33 +256,8 @@ export const StudentDashboard = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <button className="btn btn-outline btn-sm" onClick={() => refreshStudentApplication(false)} title="Check latest updates from scrutiny officer">
-              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-              <span>{refreshing ? 'Updating...' : (lang === 'hi' ? 'लाइव स्थिति रीफ्रेश करें' : 'Refresh Status')}</span>
-            </button>
-            {isApproved && (
-              <button className="btn btn-gold btn-sm" onClick={() => navigate(`/certificate/${student.id}`)}>
-                <Award size={15} />
-                <span>View Certificate</span>
-              </button>
-            )}
-            <button className="btn btn-outline btn-sm" onClick={() => {
-              setActiveStudentApp(null);
-              localStorage.removeItem('jmf_active_student_app');
-              localStorage.removeItem('jmf_active_app_id');
-              localStorage.removeItem('jmf_student_user');
-            }}>
-              <span>{lang === 'hi' ? 'खाता बदलें / खोजें' : 'Switch / Search App'}</span>
-            </button>
-            <button className="btn btn-outline btn-sm" onClick={() => navigate('/merit-list')} style={{ color: '#1E40AF', borderColor: '#93C5FD', backgroundColor: '#EFF6FF' }}>
-              <Award size={15} />
-              <span>{lang === 'hi' ? 'मेरिट सूची' : 'Merit List'}</span>
-            </button>
-            <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
-              <Printer size={15} />
-              <span>{t.btnDownloadReceipt}</span>
-            </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', maxWidth: '100%' }}>
+            {/* Primary Logout Button - Prominent, first, never clipped */}
             <button 
               className="btn btn-sm" 
               onClick={logout} 
@@ -294,14 +269,42 @@ export const StudentDashboard = () => {
                 borderStyle: 'solid', 
                 display: 'inline-flex', 
                 alignItems: 'center', 
-                gap: '6px',
+                gap: '5px',
                 fontWeight: 700,
-                padding: '0.4rem 0.85rem'
+                padding: '0.38rem 0.75rem',
+                flexShrink: 0
               }}
               title={lang === 'hi' ? 'विद्यार्थी सत्र से लॉगआउट करें' : 'Logout from Student Session'}
             >
-              <LogOut size={15} />
+              <LogOut size={14} />
               <span>{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+            </button>
+
+            <button className="btn btn-outline btn-sm" onClick={() => refreshStudentApplication(false)} title="Check latest updates from scrutiny officer" style={{ padding: '0.38rem 0.75rem', flexShrink: 0 }}>
+              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+              <span>{refreshing ? 'Updating...' : (lang === 'hi' ? 'रीफ्रेश' : 'Refresh Status')}</span>
+            </button>
+            {isApproved && (
+              <button className="btn btn-gold btn-sm" onClick={() => navigate(`/certificate/${student.id}`)} style={{ padding: '0.38rem 0.75rem', flexShrink: 0 }}>
+                <Award size={14} />
+                <span>View Certificate</span>
+              </button>
+            )}
+            <button className="btn btn-outline btn-sm" onClick={() => {
+              setActiveStudentApp(null);
+              localStorage.removeItem('jmf_active_student_app');
+              localStorage.removeItem('jmf_active_app_id');
+              localStorage.removeItem('jmf_student_user');
+            }} style={{ padding: '0.38rem 0.75rem', flexShrink: 0 }}>
+              <span>{lang === 'hi' ? 'खाता बदलें' : 'Switch App'}</span>
+            </button>
+            <button className="btn btn-outline btn-sm" onClick={() => navigate('/merit-list')} style={{ color: '#1E40AF', borderColor: '#93C5FD', backgroundColor: '#EFF6FF', padding: '0.38rem 0.75rem', flexShrink: 0 }}>
+              <Award size={14} />
+              <span>{lang === 'hi' ? 'मेरिट सूची' : 'Merit List'}</span>
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={() => window.print()} style={{ padding: '0.38rem 0.75rem', flexShrink: 0 }}>
+              <Printer size={14} />
+              <span>{t.btnDownloadReceipt}</span>
             </button>
           </div>
         </div>

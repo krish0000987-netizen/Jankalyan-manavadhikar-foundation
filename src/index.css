@@ -80,9 +80,9 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
 }
 
 body {
@@ -93,19 +93,23 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
   position: relative;
 }
 
 #root {
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.show-on-laptop-narrow {
+  display: none;
 }
 
 img {
@@ -568,8 +572,19 @@ input, select, textarea {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   flex-shrink: 0;
+  max-width: 100%;
+}
+
+.header-student-badge-chip {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.header-logout-btn {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
 .header-student-btn {
@@ -577,6 +592,7 @@ input, select, textarea {
   font-size: 0.8rem;
   gap: 0.35rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .header-apply-btn {
@@ -1202,9 +1218,72 @@ input, select, textarea {
 }
 
 /* ==========================================================================
-   RESPONSIVE BREAKPOINTS (Desktop -> Tablet -> Mobile)
+   RESPONSIVE BREAKPOINTS (Desktop -> Laptop -> Tablet -> Mobile)
    ========================================================================== */
-@media (max-width: 1160px) {
+
+/* Laptop Resolution Optimization (1200px - 1440px, e.g. 1366x768, 1280x800, 1080p scaled at 125%/150%) */
+@media (max-width: 1440px) {
+  .container-wide {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .header-inner {
+    gap: 0.4rem !important;
+  }
+  .brand-identity {
+    gap: 0.5rem !important;
+  }
+  .brand-logo-img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  .brand-heading {
+    font-size: 0.95rem !important;
+  }
+  .brand-subheading {
+    font-size: 0.62rem !important;
+  }
+  .nav-menu {
+    gap: 0.12rem !important;
+  }
+  .nav-link {
+    padding: 0.3rem 0.42rem !important;
+    font-size: 0.78rem !important;
+  }
+  .header-actions {
+    gap: 0.35rem !important;
+  }
+  .header-student-badge-chip {
+    padding: 0.18rem 0.45rem 0.18rem 0.22rem !important;
+  }
+  .header-logout-btn {
+    padding: 0.32rem 0.55rem !important;
+    font-size: 0.75rem !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+  .header-apply-btn {
+    padding: 0.34rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (max-width: 1320px) {
+  .hide-on-laptop-narrow {
+    display: none !important;
+  }
+  .show-on-laptop-narrow {
+    display: inline-block !important;
+  }
+  .brand-subheading {
+    display: none !important;
+  }
+  .brand-heading {
+    font-size: 0.92rem !important;
+  }
+}
+
+@media (max-width: 1220px) {
   .desktop-nav {
     display: none !important;
   }
