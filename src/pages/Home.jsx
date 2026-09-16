@@ -134,6 +134,16 @@ export const Home = () => {
                   <Search size={18} />
                   <span>{t.heroCtaTrack}</span>
                 </button>
+
+                <button 
+                  className="btn btn-outline-white btn-lg"
+                  onClick={() => navigate('/merit-list')}
+                  id="hero-merit-btn"
+                  style={{ backgroundColor: 'rgba(254, 240, 138, 0.15)', borderColor: '#FEF08A', color: '#FEF08A' }}
+                >
+                  <Award size={18} />
+                  <span>{lang === 'hi' ? 'मेरिट सूची 2026-27' : 'Merit List 2026-27'}</span>
+                </button>
               </div>
             </div>
           </div>

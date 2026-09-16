@@ -257,6 +257,10 @@ export const StudentDashboard = () => {
             }}>
               <span>{lang === 'hi' ? 'खाता बदलें / खोजें' : 'Switch / Search App'}</span>
             </button>
+            <button className="btn btn-outline btn-sm" onClick={() => navigate('/merit-list')} style={{ color: '#1E40AF', borderColor: '#93C5FD', backgroundColor: '#EFF6FF' }}>
+              <Award size={15} />
+              <span>{lang === 'hi' ? 'मेरिट सूची' : 'Merit List'}</span>
+            </button>
             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
               <Printer size={15} />
               <span>{t.btnDownloadReceipt}</span>

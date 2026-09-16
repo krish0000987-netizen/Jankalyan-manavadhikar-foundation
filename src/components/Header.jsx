@@ -64,6 +64,11 @@ export const Header = () => {
       route: '/scholarship',
       badge: '2026'
     },
+    { 
+      label: lang === 'hi' ? 'मेरिट सूची' : 'Merit List', 
+      route: '/merit-list',
+      badge: 'New'
+    },
     { label: lang === 'hi' ? 'आवेदन ट्रैक' : 'Track Status', route: '/track' },
     { label: lang === 'hi' ? 'दस्तावेज़' : 'Documents', route: '/documents' },
     { label: lang === 'hi' ? 'डाउनलोड' : 'Downloads', route: '/downloads' },
@@ -77,6 +82,7 @@ export const Header = () => {
     { label: t.navHome, route: '/' },
     { label: t.navAbout, route: '/about' },
     { label: lang === 'hi' ? '🌟 छात्रवृत्ति योजना 2026 (अंतिम राउंड)' : '🌟 Scholarship Yojna 2026 (Last Round)', route: '/scholarship' },
+    { label: lang === 'hi' ? '🏆 मेरिट चयन सूची 2026-27' : '🏆 Official Merit List 2026-27', route: '/merit-list' },
     { label: t.navTrack, route: '/track' },
     { label: t.navDocuments, route: '/documents' },
     { label: t.navDownloads, route: '/downloads' },

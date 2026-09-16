@@ -19,6 +19,7 @@ import { Legal } from './pages/Legal';
 import { NotFound } from './pages/NotFound';
 import { QrVerify } from './pages/QrVerify';
 import { CertificateView } from './pages/CertificateView';
+import { MeritList } from './pages/MeritList';
 import { Home as HomeIcon, Sparkles, Search, User, LifeBuoy } from 'lucide-react';
 
 const MainRouter = () => {
@@ -79,6 +80,11 @@ const MainRouter = () => {
         return <CertificateView />;
       case '/downloads':
         return <Downloads />;
+      case '/merit-list':
+      case '/merit':
+      case '/selection-list':
+      case '/results':
+        return <MeritList />;
       case '/grievance':
         return <Grievance />;
       case '/faq':

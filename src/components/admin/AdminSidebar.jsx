@@ -45,7 +45,7 @@ export const AdminSidebar = ({
     { id: 'schemes', label: 'Scholarship Schemes', icon: GraduationCap, roles: ['SUPER_ADMIN'] },
     { id: 'commissions', label: 'Commissions', icon: Percent, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'] },
     { id: 'reports', label: 'Reports & MIS', icon: BarChart3, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR'] },
-    { id: 'merit', label: 'Merit Lists', icon: Award, roles: ['SUPER_ADMIN'] },
+    { id: 'merit', label: 'Merit Lists', icon: Award, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION'] },
     { id: 'donors', label: 'CSR & Donors', icon: HeartHandshake, roles: ['SUPER_ADMIN'] },
     { id: 'grievances', label: 'Grievance Redressal', icon: HelpCircle, roles: ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR'] },
     { id: 'notifications', label: 'Notification Center', icon: Bell, roles: ['SUPER_ADMIN'] },

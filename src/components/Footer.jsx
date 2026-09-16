@@ -70,6 +70,12 @@ export const Footer = () => {
                 </button>
               </li>
               <li>
+                <button onClick={() => navigate('/merit-list')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <ChevronRight size={14} color="#DC2626" />
+                  <span>{lang === 'hi' ? 'मेरिट चयन सूची (Merit List)' : 'Official Merit List'}</span>
+                </button>
+              </li>
+              <li>
                 <button onClick={() => navigate('/documents')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <ChevronRight size={14} color="#DC2626" />
                   <span>{t.navDocuments}</span>
