@@ -12,7 +12,14 @@ import {
   Loader2, 
   RefreshCw,
   ShieldCheck,
-  BookOpen
+  BookOpen,
+  Search,
+  Filter,
+  Check,
+  AlertCircle,
+  Clock,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 
 export const SchemesManager = () => {
@@ -22,17 +29,22 @@ export const SchemesManager = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'CLOSED'
 
   const [form, setForm] = useState({
     code: '',
     name: '',
     description: '',
     academic_year: '2026-27',
-    grant_amount: 22000,
+    grant_amount: 12000,
     application_start_date: '2026-09-15',
     application_end_date: '2026-11-30',
     application_fee: 211.30,
-    is_active: true
+    is_active: true,
+    min_percentage: 50,
+    max_annual_income: 300000,
+    eligible_categories: ['General', 'OBC', 'SC', 'ST']
   });
 
   const loadData = async () => {
@@ -41,7 +53,7 @@ export const SchemesManager = () => {
       const { data, error } = await supabase
         .from('scholarship_schemes')
         .select('*, scheme_eligibility_rules(*)')
-        .order('created_at', { ascending: false });
+        .order('grant_amount', { ascending: true });
       if (error) throw error;
       setSchemes(data || []);
     } catch (err) {
@@ -60,44 +72,94 @@ export const SchemesManager = () => {
     if (!form.name || !form.code) return;
     setSubmitting(true);
     try {
+      const grantNum = parseFloat(form.grant_amount) || 12000;
+      const feeNum = parseFloat(form.application_fee) || 211.30;
+      const minMarks = parseFloat(form.min_percentage) || 50;
+      const maxIncome = parseFloat(form.max_annual_income) || 300000;
+
       if (editingScheme) {
+        // 1. Update scholarship_schemes
         const { error } = await supabase
           .from('scholarship_schemes')
           .update({
             name: form.name.trim(),
             description: form.description?.trim() || '',
-            grant_amount: parseFloat(form.grant_amount) || 12000,
+            grant_amount: grantNum,
+            grant_amount_display: `₹${grantNum.toLocaleString('en-IN')}/- Yearly`,
             academic_year: form.academic_year.trim(),
             application_start_date: form.application_start_date,
             application_end_date: form.application_end_date,
-            application_fee: parseFloat(form.application_fee) || 211.30,
+            application_fee: feeNum,
             is_active: form.is_active,
+            eligibility_overview: `Min ${minMarks}% marks in previous exam; family annual income up to ₹${maxIncome.toLocaleString('en-IN')}.`,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingScheme.id);
+
         if (error) throw error;
-        setFeedback({ type: 'success', message: 'Scheme parameters updated successfully!' });
+
+        // 2. Update or insert scheme_eligibility_rules
+        const existingRule = editingScheme.scheme_eligibility_rules?.[0];
+        if (existingRule) {
+          await supabase
+            .from('scheme_eligibility_rules')
+            .update({
+              min_percentage: minMarks,
+              max_annual_income: maxIncome,
+              eligible_categories: form.eligible_categories || ['General', 'OBC', 'SC', 'ST']
+            })
+            .eq('id', existingRule.id);
+        } else {
+          await supabase
+            .from('scheme_eligibility_rules')
+            .insert([{
+              scheme_id: editingScheme.id,
+              min_percentage: minMarks,
+              max_annual_income: maxIncome,
+              eligible_categories: form.eligible_categories || ['General', 'OBC', 'SC', 'ST']
+            }]);
+        }
+
+        setFeedback({ type: 'success', message: `Scheme "${form.name}" updated successfully!` });
         setEditingScheme(null);
       } else {
-        const { error } = await supabase
+        // Insert new scheme
+        const { data: newScheme, error } = await supabase
           .from('scholarship_schemes')
           .insert([{
             code: form.code.trim().toUpperCase(),
             name: form.name.trim(),
             description: form.description?.trim() || '',
             academic_year: form.academic_year.trim(),
-            grant_amount: parseFloat(form.grant_amount) || 12000,
+            grant_amount: grantNum,
+            grant_amount_display: `₹${grantNum.toLocaleString('en-IN')}/- Yearly`,
             application_start_date: form.application_start_date,
             application_end_date: form.application_end_date,
-            application_fee: parseFloat(form.application_fee) || 211.30,
+            application_fee: feeNum,
             is_fee_applicable: true,
-            is_active: form.is_active
-          }]);
+            is_active: form.is_active,
+            eligibility_overview: `Min ${minMarks}% marks; family annual income up to ₹${maxIncome.toLocaleString('en-IN')}.`
+          }])
+          .select()
+          .single();
+
         if (error) throw error;
-        setFeedback({ type: 'success', message: 'New scholarship scheme published successfully!' });
+
+        if (newScheme) {
+          await supabase
+            .from('scheme_eligibility_rules')
+            .insert([{
+              scheme_id: newScheme.id,
+              min_percentage: minMarks,
+              max_annual_income: maxIncome,
+              eligible_categories: form.eligible_categories || ['General', 'OBC', 'SC', 'ST']
+            }]);
+        }
+
+        setFeedback({ type: 'success', message: 'New scholarship scheme created and published successfully!' });
         setShowAddModal(false);
       }
-      loadData();
+      await loadData();
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Failed to save scheme.' });
     } finally {
@@ -106,20 +168,61 @@ export const SchemesManager = () => {
     }
   };
 
+  const handleToggleStatus = async (scheme) => {
+    const nextStatus = !scheme.is_active;
+    try {
+      const { error } = await supabase
+        .from('scholarship_schemes')
+        .update({ is_active: nextStatus, updated_at: new Date().toISOString() })
+        .eq('id', scheme.id);
+
+      if (error) throw error;
+
+      setSchemes(prev => prev.map(s => s.id === scheme.id ? { ...s, is_active: nextStatus } : s));
+      setFeedback({ 
+        type: 'success', 
+        message: `Scheme "${scheme.name}" is now ${nextStatus ? 'ACTIVE (Open for Applications)' : 'CLOSED'}` 
+      });
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (err) {
+      alert('Error updating status: ' + err.message);
+    }
+  };
+
   const startEdit = (scheme) => {
+    const rules = scheme.scheme_eligibility_rules?.[0] || {};
     setEditingScheme(scheme);
     setForm({
       code: scheme.code,
       name: scheme.name,
       description: scheme.description || '',
-      academic_year: scheme.academic_year,
-      grant_amount: scheme.grant_amount,
+      academic_year: scheme.academic_year || '2026-27',
+      grant_amount: scheme.grant_amount || 12000,
       application_start_date: scheme.application_start_date || '2026-09-15',
       application_end_date: scheme.application_end_date || '2026-11-30',
-      application_fee: scheme.application_fee || 211.30,
-      is_active: scheme.is_active
+      application_fee: scheme.application_fee !== undefined ? scheme.application_fee : 211.30,
+      is_active: scheme.is_active !== undefined ? scheme.is_active : true,
+      min_percentage: rules.min_percentage !== undefined ? rules.min_percentage : 50,
+      max_annual_income: rules.max_annual_income !== undefined ? rules.max_annual_income : 300000,
+      eligible_categories: rules.eligible_categories || ['General', 'OBC', 'SC', 'ST']
     });
   };
+
+  // Filter schemes by search and status
+  const filteredSchemes = schemes.filter(s => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch = !q || 
+      s.name.toLowerCase().includes(q) || 
+      s.code.toLowerCase().includes(q) ||
+      (s.description || '').toLowerCase().includes(q);
+
+    const matchStatus = 
+      filterStatus === 'ALL' ||
+      (filterStatus === 'ACTIVE' && s.is_active) ||
+      (filterStatus === 'CLOSED' && !s.is_active);
+
+    return matchSearch && matchStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -128,10 +231,10 @@ export const SchemesManager = () => {
         <div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <GraduationCap size={24} color="#1E40AF" />
-            <span>Scholarship Schemes & Eligibility Criteria</span>
+            <span>Scholarship Schemes & Financial Grant Slabs</span>
           </h2>
           <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-            Configure financial grant amounts, application deadline windows, and applicant eligibility rules.
+            Manage and edit all scholarship tiers (₹4,000 to ₹22,000), eligibility cutoff rules, and application deadlines.
           </p>
         </div>
 
@@ -143,15 +246,18 @@ export const SchemesManager = () => {
           <button className="btn btn-primary btn-sm" onClick={() => {
             setEditingScheme(null);
             setForm({
-              code: `SCHEME-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`,
+              code: `JMF-SCH-0${schemes.length + 1}`,
               name: '',
               description: '',
               academic_year: '2026-27',
-              grant_amount: 22000,
+              grant_amount: 12000,
               application_start_date: '2026-09-15',
               application_end_date: '2026-11-30',
               application_fee: 211.30,
-              is_active: true
+              is_active: true,
+              min_percentage: 50,
+              max_annual_income: 300000,
+              eligible_categories: ['General', 'OBC', 'SC', 'ST']
             });
             setShowAddModal(true);
           }}>
@@ -179,86 +285,171 @@ export const SchemesManager = () => {
         </div>
       )}
 
+      {/* Filter & Search Bar */}
+      <div className="card" style={{ padding: '1rem 1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+            <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input 
+              type="text"
+              className="form-control"
+              placeholder="Search schemes by title, code (e.g. JMF-SCH-01), or keyword..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ paddingLeft: '2.25rem', fontSize: '0.85rem' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.35rem' }}>
+            {[
+              { id: 'ALL', label: `All Schemes (${schemes.length})` },
+              { id: 'ACTIVE', label: `Active (${schemes.filter(s => s.is_active).length})` },
+              { id: 'CLOSED', label: `Closed (${schemes.filter(s => !s.is_active).length})` }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterStatus(tab.id)}
+                style={{
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  border: '1px solid',
+                  borderColor: filterStatus === tab.id ? '#1E40AF' : '#E2E8F0',
+                  backgroundColor: filterStatus === tab.id ? '#EFF6FF' : '#FFFFFF',
+                  color: filterStatus === tab.id ? '#1E40AF' : '#64748B',
+                  cursor: 'pointer'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Schemes Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.5rem' }}>
         {loading ? (
           <div className="card" style={{ padding: '3rem', textAlign: 'center', gridColumn: '1 / -1', color: '#64748B' }}>
             <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem' }} />
-            <span>Loading schemes...</span>
+            <span>Loading scholarship schemes...</span>
+          </div>
+        ) : filteredSchemes.length === 0 ? (
+          <div className="card" style={{ padding: '3rem', textAlign: 'center', gridColumn: '1 / -1', color: '#64748B' }}>
+            No scholarship schemes match your search filter.
           </div>
         ) : (
-          schemes.map(scheme => {
+          filteredSchemes.map(scheme => {
             const rules = scheme.scheme_eligibility_rules?.[0] || {};
             return (
-              <div key={scheme.id} className="card" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', borderTop: `4px solid ${scheme.is_active ? '#1E40AF' : '#94A3B8'}` }}>
+              <div 
+                key={scheme.id} 
+                className="card" 
+                style={{ 
+                  padding: '1.75rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  borderTop: `4px solid ${scheme.is_active ? '#1E40AF' : '#94A3B8'}`,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
+                  position: 'relative'
+                }}
+              >
                 
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem', gap: '0.5rem' }}>
                   <div>
-                    <span className="badge badge-navy" style={{ marginBottom: '0.4rem' }}>{scheme.code}</span>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>
+                    <span className="badge badge-navy" style={{ marginBottom: '0.35rem', fontFamily: 'monospace', fontWeight: 700 }}>
+                      {scheme.code}
+                    </span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>
                       {scheme.name}
                     </h3>
                     {scheme.description && (
-                      <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '0.35rem', lineHeight: 1.4 }}>
                         {scheme.description}
                       </div>
                     )}
                   </div>
 
-                  <span className={`badge ${scheme.is_active ? 'badge-green' : 'badge-red'}`}>
-                    {scheme.is_active ? 'Active' : 'Closed'}
-                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => handleToggleStatus(scheme)}
+                    title="Click to toggle Active/Closed status"
+                    style={{
+                      border: 'none',
+                      background: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '2px'
+                    }}
+                  >
+                    <span className={`badge ${scheme.is_active ? 'badge-green' : 'badge-red'}`} style={{ cursor: 'pointer' }}>
+                      {scheme.is_active ? '✓ Active' : '✕ Closed'}
+                    </span>
+                    <span style={{ fontSize: '0.65rem', color: '#64748B' }}>Click to toggle</span>
+                  </button>
                 </div>
 
                 {/* Key Metrics */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', backgroundColor: '#F8FAFC', padding: '0.85rem 1rem', borderRadius: '10px', marginBottom: '1.25rem' }}>
                   <div>
                     <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Grant Amount</div>
-                    <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16A34A', display: 'flex', alignItems: 'center', marginTop: '0.1rem' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#16A34A', display: 'flex', alignItems: 'center', marginTop: '0.1rem' }}>
                       <IndianRupee size={15} />
                       <span>{Number(scheme.grant_amount || 12000).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Academic Session</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Session</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', marginTop: '0.1rem' }}>
                       {scheme.academic_year}
                     </div>
                   </div>
 
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Registration Fee</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Reg. Fee</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E40AF', marginTop: '0.1rem' }}>
-                      ₹{Number(scheme.application_fee || 211.30).toFixed(2)}
+                      ₹{Number(scheme.application_fee !== undefined ? scheme.application_fee : 211.30).toFixed(2)}
                     </div>
                   </div>
                 </div>
 
                 {/* Application Window */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#475569', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#475569', marginBottom: '1rem' }}>
                   <Calendar size={15} color="#1E40AF" />
                   <span>
                     Application Window: <strong>{scheme.application_start_date || '2026-09-15'}</strong> to <strong>{scheme.application_end_date || '2026-11-30'}</strong>
                   </span>
                 </div>
 
-                {/* Eligibility Rules */}
-                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', marginBottom: '1.25rem' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                    Eligibility Criteria
+                {/* Eligibility Criteria Box */}
+                <div style={{ 
+                  borderTop: '1px solid #E2E8F0', 
+                  paddingTop: '0.85rem', 
+                  marginBottom: '1.25rem',
+                  backgroundColor: '#F8FAFC',
+                  padding: '0.85rem',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <ShieldCheck size={14} />
+                    <span>Eligibility Parameters</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.8rem', color: '#334155' }}>
-                    <div>• Minimum Qualifying Marks: <strong>{rules.min_percentage || 50}%</strong> in previous exam</div>
-                    <div>• Maximum Annual Family Income: <strong>₹{Number(rules.max_annual_income || 300000).toLocaleString('en-IN')}</strong></div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: '#334155' }}>
+                    <div>• Min Qualifying Marks: <strong>{rules.min_percentage !== undefined ? rules.min_percentage : 50}%</strong></div>
+                    <div>• Max Family Income: <strong>₹{Number(rules.max_annual_income || 300000).toLocaleString('en-IN')}/year</strong></div>
                     <div>• Eligible Categories: <strong>{(rules.eligible_categories || ['General', 'OBC', 'SC', 'ST']).join(', ')}</strong></div>
                   </div>
                 </div>
 
-                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => startEdit(scheme)}>
+                {/* Card Action Button */}
+                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <button className="btn btn-outline btn-sm" onClick={() => startEdit(scheme)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Edit3 size={14} />
-                    <span>Configure Scheme</span>
+                    <span>Configure / Edit Scheme</span>
                   </button>
                 </div>
 
@@ -273,19 +464,21 @@ export const SchemesManager = () => {
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 999
+          zIndex: 999,
+          padding: '1rem'
         }}>
-          <div className="card" style={{ width: '560px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.4rem' }}>
-              {editingScheme ? `Configure Scheme: ${editingScheme.code}` : 'Create New Scholarship Scheme'}
+          <div className="card" style={{ width: '620px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Edit3 size={20} color="#1E40AF" />
+              <span>{editingScheme ? `Configure Scheme: ${editingScheme.code}` : 'Create New Scholarship Scheme'}</span>
             </h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '1.5rem' }}>
-              Adjust grant disbursal amount, academic session dates, and application parameters.
+            <p style={{ fontSize: '0.82rem', color: '#64748B', marginBottom: '1.5rem' }}>
+              Modify grant disbursal amounts, application deadlines, portal fee, and qualifying eligibility criteria.
             </p>
 
             <form onSubmit={handleSave} className="space-y-4">
@@ -297,16 +490,19 @@ export const SchemesManager = () => {
                     className="form-control"
                     required
                     disabled={!!editingScheme}
+                    placeholder="e.g. JMF-SCH-01"
                     value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                   />
+                  {editingScheme && <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>Scheme code cannot be changed once assigned</span>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label required">Academic Year</label>
+                  <label className="form-label required">Academic Session</label>
                   <input 
                     type="text"
                     className="form-control"
                     required
+                    placeholder="2026-27"
                     value={form.academic_year}
                     onChange={(e) => setForm({ ...form, academic_year: e.target.value })}
                   />
@@ -314,23 +510,23 @@ export const SchemesManager = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label required">Scheme Title</label>
+                <label className="form-label required">Scheme Title (Bilingual / Descriptive)</label>
                 <input 
                   type="text"
                   className="form-control"
                   required
-                  placeholder="e.g. Jankalyan Post-Matric Merit Scholarship Scheme"
+                  placeholder="e.g. Class 11th & 12th Higher Secondary Scholarship"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Description / Scope</label>
+                <label className="form-label">Description / Scope & Target Students</label>
                 <textarea 
                   className="form-control"
                   rows={2}
-                  placeholder="Brief details about beneficiaries and qualification..."
+                  placeholder="Describe student category, target qualification, or coverage..."
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
@@ -338,11 +534,13 @@ export const SchemesManager = () => {
 
               <div className="form-row-2">
                 <div className="form-group">
-                  <label className="form-label required">Grant Amount (₹ per student)</label>
+                  <label className="form-label required">Grant Amount (₹ per Student)</label>
                   <input 
                     type="number"
                     className="form-control"
                     required
+                    min="1000"
+                    step="500"
                     value={form.grant_amount}
                     onChange={(e) => setForm({ ...form, grant_amount: e.target.value })}
                   />
@@ -383,7 +581,40 @@ export const SchemesManager = () => {
                 </div>
               </div>
 
-              <div className="form-group">
+              {/* Eligibility Parameters Section */}
+              <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                  Candidate Eligibility Thresholds
+                </div>
+
+                <div className="form-row-2">
+                  <div className="form-group">
+                    <label className="form-label required">Min Qualifying Exam Marks (%)</label>
+                    <input 
+                      type="number"
+                      className="form-control"
+                      required
+                      min="33"
+                      max="95"
+                      value={form.min_percentage}
+                      onChange={(e) => setForm({ ...form, min_percentage: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label required">Max Annual Family Income Ceiling (₹)</label>
+                    <input 
+                      type="number"
+                      className="form-control"
+                      required
+                      step="10000"
+                      value={form.max_annual_income}
+                      onChange={(e) => setForm({ ...form, max_annual_income: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginTop: '0.5rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
                   <input 
                     type="checkbox"
