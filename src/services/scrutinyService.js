@@ -1,4 +1,5 @@
 import { supabase } from '../api/supabase';
+import { notificationService } from './notificationService';
 
 const SUPER_ADMIN_UUID = '0dae62d6-310e-4564-8c4d-7da1f8db672f';
 const isValidUUID = (id) => typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
@@ -197,6 +198,41 @@ export const scrutinyService = {
       }
     }
 
+    // 6. Automated Stage Notification Dispatch to Student Email & In-App Center
+    try {
+      let studentEmail = null;
+      let studentName = null;
+      let studentUserId = updatedApp?.student_id || current?.student_id;
+
+      if (studentUserId) {
+        const { data: sData } = await supabase
+          .from('students')
+          .select('email, full_name, user_id')
+          .eq('id', studentUserId)
+          .maybeSingle();
+
+        if (sData) {
+          studentEmail = sData.email;
+          studentName = sData.full_name;
+          if (sData.user_id) studentUserId = sData.user_id;
+        }
+      }
+
+      await notificationService.sendStageStatusEmail({
+        applicationId: appId,
+        studentEmail: studentEmail || `student_${appId}@jankalyan.org`,
+        studentName: studentName || 'Scholarship Applicant',
+        stage,
+        status: rawStatus,
+        remarks: remarks || '',
+        utrNumber: utr || updatedApp?.utr_number || current?.utr_number || '',
+        amount: updatedApp?.disbursed_amount || current?.disbursed_amount || 12000,
+        userId: studentUserId
+      });
+    } catch (notifErr) {
+      console.warn('Stage status email dispatch note:', notifErr?.message);
+    }
+
     return updatedApp;
   },
 
@@ -273,6 +309,30 @@ export const scrutinyService = {
           updated_at: new Date().toISOString()
         })
         .eq('id', targetAppId);
+
+      // Email student about document defect/correction needed
+      try {
+        const { data: aData } = await supabase
+          .from('applications')
+          .select('student_id, students(email, full_name, user_id)')
+          .eq('id', targetAppId)
+          .maybeSingle();
+
+        const student = aData?.students;
+        if (student?.email) {
+          notificationService.sendStageStatusEmail({
+            applicationId: targetAppId,
+            studentEmail: student.email,
+            studentName: student.full_name,
+            stage: 2,
+            status: 'CORRECTION_REQUESTED',
+            remarks: `${extra.docKey ? extra.docKey.toUpperCase() + ': ' : ''}${remarks || 'Please re-upload requested document.'}`,
+            userId: student.user_id
+          });
+        }
+      } catch (err) {
+        console.warn('Doc defect email dispatch note:', err?.message);
+      }
     }
 
     // Record scrutiny log

@@ -45,6 +45,7 @@ import { paymentService } from '../services/paymentService';
 import { scrutinyService } from '../services/scrutinyService';
 import { reportService } from '../services/reportService';
 import { commissionService } from '../services/commissionService';
+import { notificationService } from '../services/notificationService';
 import { grievanceService } from '../services/grievanceService';
 import { meritService } from '../services/meritService';
 import { donorService } from '../services/donorService';
@@ -159,9 +160,31 @@ export const Admin = () => {
     remarks: 'Manually transferred via Net Banking'
   });
 
-  // Commissions state
+  // Commissions & Coordinator state
   const [commissionRates, setCommissionRates] = useState([]);
   const [commissionsList, setCommissionsList] = useState([]);
+  const [coordinatorsList, setCoordinatorsList] = useState([]);
+  const [commissionSubTab, setCommissionSubTab] = useState('ledger'); // 'ledger' | 'coordinators' | 'slabs'
+  const [isAddCoordinatorOpen, setIsAddCoordinatorOpen] = useState(false);
+  const [newCoordinatorForm, setNewCoordinatorForm] = useState({
+    fullName: '',
+    email: '',
+    mobile: '',
+    role: 'DISTRICT_COORDINATOR',
+    district: 'Jabalpur',
+    block: '',
+    institution: ''
+  });
+  const [isGiveCommissionOpen, setIsGiveCommissionOpen] = useState(false);
+  const [manualCommissionForm, setManualCommissionForm] = useState({
+    coordinatorId: '',
+    role: 'DISTRICT_COORDINATOR',
+    amount: 100,
+    applicationId: '',
+    status: 'PAID',
+    utrNumber: '',
+    remarks: 'Manual verification & mobilization incentive'
+  });
 
   // CMS Form State
   const [cmsForm, setCmsForm] = useState({ ...cms });
@@ -186,6 +209,7 @@ export const Admin = () => {
     reportService.getDashboardSummary().then(setMisSummary);
     commissionService.getCommissionRates().then(setCommissionRates);
     commissionService.getCommissions().then(setCommissionsList);
+    commissionService.getCoordinators().then(setCoordinatorsList);
     auditService.getAuditLogs().then(setAuditLogs);
     certificateService.getCertificates().then(setIssuedCertificates);
     meritService.getMeritLists().then(setMeritLists);
@@ -672,11 +696,89 @@ export const Admin = () => {
         } catch (cErr) {}
       }
 
+      // 5. Automated Stage Notification Dispatch to Student Email & In-App Center
+      try {
+        await notificationService.sendStageStatusEmail({
+          applicationId: markingTransferredApp.id,
+          studentEmail: markingTransferredApp.email || `student_${markingTransferredApp.id}@jankalyan.org`,
+          studentName: markingTransferredApp.studentName,
+          stage: 5,
+          status: isFullPayout ? 'SCHOLARSHIP_RELEASED' : 'PARTIALLY_DISBURSED',
+          remarks: `${transferModalForm.remarks || 'DBT Transfer executed'}. Paid: ₹${installment.toLocaleString('en-IN')}, Remaining: ₹${newRemaining.toLocaleString('en-IN')}`,
+          utrNumber: utr,
+          amount: installment,
+          remainingAmount: newRemaining,
+          userId: markingTransferredApp.studentId
+        });
+      } catch (mailErr) {
+        console.warn('Payment confirmation email dispatch note:', mailErr?.message);
+      }
+
       alert(`✓ DBT Payment recorded for ${markingTransferredApp.studentName}!\nPaid Installment: ₹${installment.toLocaleString('en-IN')}\nTotal Disbursed: ₹${newTotalPaid.toLocaleString('en-IN')}\nRemaining Balance: ₹${newRemaining.toLocaleString('en-IN')}\nStatus: ${nextStatus}`);
       setMarkingTransferredApp(null);
       await loadApplications(authRole, jurisdiction);
     } catch (err) {
       alert('Failed to record transfer: ' + err.message);
+    }
+  };
+
+  // Register new coordinator
+  const handleCreateCoordinator = async (e) => {
+    e.preventDefault();
+    if (!newCoordinatorForm.fullName || !newCoordinatorForm.mobile) {
+      alert('Please enter coordinator full name and mobile number.');
+      return;
+    }
+    try {
+      await commissionService.createCoordinator(newCoordinatorForm);
+      const updated = await commissionService.getCoordinators();
+      setCoordinatorsList(updated);
+      setIsAddCoordinatorOpen(false);
+      setNewCoordinatorForm({
+        fullName: '',
+        email: '',
+        mobile: '',
+        role: 'DISTRICT_COORDINATOR',
+        district: 'Jabalpur',
+        block: '',
+        institution: ''
+      });
+      alert(`✓ Coordinator "${newCoordinatorForm.fullName}" registered successfully!`);
+    } catch (err) {
+      alert('Failed to register coordinator: ' + (err.message || 'Error'));
+    }
+  };
+
+  // Manually grant commission
+  const handleGiveCommission = async (e) => {
+    e.preventDefault();
+    if (!manualCommissionForm.coordinatorId) {
+      alert('Please select a coordinator.');
+      return;
+    }
+    if (!manualCommissionForm.amount || isNaN(manualCommissionForm.amount) || parseFloat(manualCommissionForm.amount) <= 0) {
+      alert('Please enter a valid commission amount.');
+      return;
+    }
+    try {
+      const coord = coordinatorsList.find(c => c.id === manualCommissionForm.coordinatorId);
+      await commissionService.addManualCommission({
+        beneficiaryUserId: manualCommissionForm.coordinatorId,
+        beneficiaryRole: coord?.role || manualCommissionForm.role || 'DISTRICT_COORDINATOR',
+        applicationId: manualCommissionForm.applicationId || null,
+        amount: manualCommissionForm.amount,
+        status: manualCommissionForm.status || 'PAID',
+        approvedBy: authUser?.id && authUser.id.length === 36 ? authUser.id : null,
+        remarks: manualCommissionForm.remarks,
+        utrNumber: manualCommissionForm.utrNumber
+      });
+
+      const updatedComms = await commissionService.getCommissions();
+      setCommissionsList(updatedComms);
+      setIsGiveCommissionOpen(false);
+      alert(`✓ Commission of ₹${manualCommissionForm.amount} recorded for ${coord?.fullName || 'Coordinator'} successfully!`);
+    } catch (err) {
+      alert('Failed to grant commission: ' + (err.message || 'Error'));
     }
   };
 
@@ -2483,116 +2585,675 @@ export const Admin = () => {
           )}
 
           {/* ====================================================================
-              MODULE 6: COMMISSIONS MANAGEMENT
+              MODULE 6: COMMISSIONS & COORDINATOR MANAGEMENT
               ==================================================================== */}
           {activeTab === 'commissions' && (
             <div className="animate-fade-in">
-              <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A' }}>
-                  Commission Rates & Coordinator Settlements
-                </h2>
-                <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
-                  Configure role-based commission amounts per approved application and manage payouts
-                </p>
+              {/* Header with Quick Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <span>Coordinators & Commission Management</span>
+                    <span className="badge badge-navy" style={{ fontSize: '0.8rem', padding: '0.3rem 0.75rem' }}>
+                      Manual & Automated
+                    </span>
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    Manage registered coordinators across District, Block, Institution, and CSC Centers, and manually grant commissions & incentives.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => setIsAddCoordinatorOpen(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#0B2B82', borderColor: '#0B2B82' }}
+                  >
+                    <Plus size={16} />
+                    <span>Add New Coordinator</span>
+                  </button>
+
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => setIsGiveCommissionOpen(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#16A34A', borderColor: '#16A34A', fontWeight: 700 }}
+                  >
+                    <Award size={16} />
+                    <span>+ Give / Add Commission</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Commission Rates Configurator */}
-              <div className="card" style={{ padding: '1.75rem', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
-                  Configured Role Commission Slabs
-                </h3>
+              {/* Subtab Navigation Pills */}
+              <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem', marginBottom: '1.75rem', flexWrap: 'wrap' }}>
+                <button 
+                  className={`btn btn-sm ${commissionSubTab === 'ledger' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setCommissionSubTab('ledger')}
+                  style={{ borderRadius: '20px', padding: '0.4rem 1.25rem' }}
+                >
+                  <span>Commission Ledger</span>
+                  <span style={{ marginLeft: '6px', opacity: 0.85, fontSize: '0.75rem', backgroundColor: commissionSubTab === 'ledger' ? 'rgba(255,255,255,0.25)' : '#E2E8F0', padding: '1px 6px', borderRadius: '10px', color: commissionSubTab === 'ledger' ? '#FFFFFF' : '#334155' }}>
+                    {commissionsList.length}
+                  </span>
+                </button>
 
-                <div className="grid-4" style={{ gap: '1rem' }}>
-                  {commissionRates.map(rate => (
-                    <div key={rate.id} style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-                        {rate.role_id.replace('_', ' ')}
+                <button 
+                  className={`btn btn-sm ${commissionSubTab === 'coordinators' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setCommissionSubTab('coordinators')}
+                  style={{ borderRadius: '20px', padding: '0.4rem 1.25rem' }}
+                >
+                  <Users size={14} />
+                  <span>Registered Coordinators</span>
+                  <span style={{ marginLeft: '6px', opacity: 0.85, fontSize: '0.75rem', backgroundColor: commissionSubTab === 'coordinators' ? 'rgba(255,255,255,0.25)' : '#E2E8F0', padding: '1px 6px', borderRadius: '10px', color: commissionSubTab === 'coordinators' ? '#FFFFFF' : '#334155' }}>
+                    {coordinatorsList.length}
+                  </span>
+                </button>
+
+                <button 
+                  className={`btn btn-sm ${commissionSubTab === 'slabs' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setCommissionSubTab('slabs')}
+                  style={{ borderRadius: '20px', padding: '0.4rem 1.25rem' }}
+                >
+                  <Sliders size={14} />
+                  <span>Configured Role Rates</span>
+                  <span style={{ marginLeft: '6px', opacity: 0.85, fontSize: '0.75rem', backgroundColor: commissionSubTab === 'slabs' ? 'rgba(255,255,255,0.25)' : '#E2E8F0', padding: '1px 6px', borderRadius: '10px', color: commissionSubTab === 'slabs' ? '#FFFFFF' : '#334155' }}>
+                    {commissionRates.length}
+                  </span>
+                </button>
+              </div>
+
+              {/* TAB 1: COMMISSION LEDGER */}
+              {commissionSubTab === 'ledger' && (
+                <div>
+                  {/* Summary Metric Cards */}
+                  <div className="grid-3" style={{ gap: '1rem', marginBottom: '1.75rem' }}>
+                    <div className="metric-card" style={{ padding: '1.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Total Commissions Disbursed
                       </div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#16A34A', margin: '0.25rem 0' }}>
-                        ₹{parseFloat(rate.rate_amount).toFixed(2)}
+                      <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#16A34A', marginTop: '0.25rem' }}>
+                        ₹{commissionsList.reduce((acc, c) => acc + (parseFloat(c.amount) || 0), 0).toLocaleString('en-IN')}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                        Model: {rate.model_type}
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>
+                        Across all field coordinators & centers
                       </div>
+                    </div>
+
+                    <div className="metric-card" style={{ padding: '1.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Total Payout Transactions
+                      </div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1E40AF', marginTop: '0.25rem' }}>
+                        {commissionsList.length}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#1E40AF', marginTop: '0.25rem' }}>
+                        {commissionsList.filter(c => c.status === 'PAID' || c.status === 'APPROVED').length} Settled / Paid
+                      </div>
+                    </div>
+
+                    <div className="metric-card" style={{ padding: '1.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Pending Approvals
+                      </div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#D97706', marginTop: '0.25rem' }}>
+                        {commissionsList.filter(c => c.status !== 'PAID' && c.status !== 'APPROVED').length}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#D97706', marginTop: '0.25rem' }}>
+                        Awaiting administrator signoff
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Commissions Table */}
+                  <div className="card" style={{ padding: '1.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                        Manual & Accrued Commission Records
+                      </h3>
                       <button 
                         className="btn btn-outline btn-sm"
-                        style={{ marginTop: '0.75rem', width: '100%', fontSize: '0.75rem' }}
                         onClick={async () => {
-                          const newRate = prompt(`Enter new commission rate (₹) for ${rate.role_id}:`, rate.rate_amount);
-                          if (newRate && !isNaN(newRate)) {
-                            await commissionService.updateCommissionRate(rate.role_id, parseFloat(newRate));
-                            const updated = await commissionService.getCommissionRates();
-                            setCommissionRates(updated);
-                          }
+                          const list = await commissionService.getCommissions();
+                          setCommissionsList(list);
                         }}
                       >
-                        <Edit3 size={12} />
-                        <span>Edit Rate</span>
+                        <RefreshCw size={13} />
+                        <span>Refresh Ledger</span>
                       </button>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Generated Commissions Table */}
-              <div className="card" style={{ padding: '1.75rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '1rem' }}>
-                  Coordinator Commission Ledger
-                </h3>
-
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Beneficiary</th>
-                        <th>Role</th>
-                        <th>Application ID</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {commissionsList.map(c => (
-                        <tr key={c.id}>
-                          <td style={{ fontWeight: 700 }}>{c.profiles?.full_name || 'Coordinator'}</td>
-                          <td><span className="badge badge-navy">{c.beneficiary_role}</span></td>
-                          <td style={{ fontFamily: 'monospace' }}>{c.application_id}</td>
-                          <td style={{ fontWeight: 700, color: '#16A34A' }}>₹{c.amount}</td>
-                          <td>
-                            <span className={`badge ${c.status === 'APPROVED' ? 'badge-green' : 'badge-yellow'}`}>
-                              {c.status}
-                            </span>
-                          </td>
-                          <td>
-                            {c.status !== 'APPROVED' ? (
-                              <button 
-                                className="btn btn-secondary btn-sm"
-                                onClick={async () => {
-                                  await commissionService.approveCommission(c.id, authUser?.id);
-                                  const updated = await commissionService.getCommissions();
-                                  setCommissionsList(updated);
-                                }}
-                              >
-                                Approve
-                              </button>
-                            ) : (
-                              <span style={{ fontSize: '0.8rem', color: '#16A34A' }}>Settled</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                      {commissionsList.length === 0 && (
-                        <tr>
-                          <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
-                            Commissions automatically accrue upon application verification and DBT approval.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                    <div className="data-table-container">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Coordinator / Beneficiary</th>
+                            <th>Role</th>
+                            <th>Application Reference</th>
+                            <th>Commission Amount</th>
+                            <th>Payout Status</th>
+                            <th>Date & Record</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {commissionsList.map(c => (
+                            <tr key={c.id}>
+                              <td>
+                                <div style={{ fontWeight: 800, color: '#0F172A' }}>
+                                  {c.profiles?.full_name || 'Coordinator'}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                                  {c.profiles?.mobile || c.profiles?.email || 'Field Staff'}
+                                </div>
+                              </td>
+                              <td>
+                                <span className="badge badge-navy" style={{ fontSize: '0.72rem' }}>
+                                  {(c.beneficiary_role || '').replace('_', ' ')}
+                                </span>
+                              </td>
+                              <td>
+                                <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF' }}>
+                                  {c.application_id || 'GENERAL'}
+                                </div>
+                                {c.applications?.institutions?.name && (
+                                  <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                                    {c.applications.institutions.name}
+                                  </div>
+                                )}
+                              </td>
+                              <td>
+                                <div style={{ fontWeight: 900, color: '#16A34A', fontSize: '1.1rem' }}>
+                                  ₹{parseFloat(c.amount || 0).toLocaleString('en-IN')}
+                                </div>
+                              </td>
+                              <td>
+                                <span className={`badge ${c.status === 'PAID' || c.status === 'APPROVED' ? 'badge-green' : 'badge-yellow'}`}>
+                                  {c.status === 'PAID' ? 'PAID ✓' : (c.status === 'APPROVED' ? 'APPROVED' : c.status)}
+                                </span>
+                              </td>
+                              <td>
+                                <div style={{ fontSize: '0.8rem', color: '#0F172A' }}>
+                                  {c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '-'}
+                                </div>
+                                {c.approved_at && (
+                                  <div style={{ fontSize: '0.7rem', color: '#16A34A' }}>
+                                    Settled: {new Date(c.approved_at).toLocaleDateString('en-IN')}
+                                  </div>
+                                )}
+                              </td>
+                              <td>
+                                {c.status !== 'PAID' && c.status !== 'APPROVED' ? (
+                                  <button 
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={async () => {
+                                      await commissionService.approveCommission(c.id, authUser?.id);
+                                      const updated = await commissionService.getCommissions();
+                                      setCommissionsList(updated);
+                                    }}
+                                  >
+                                    Approve & Pay
+                                  </button>
+                                ) : (
+                                  <span style={{ fontSize: '0.8rem', color: '#16A34A', fontWeight: 700 }}>
+                                    ✓ Settled
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                          {commissionsList.length === 0 && (
+                            <tr>
+                              <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>
+                                <Award size={32} color="#94A3B8" style={{ margin: '0 auto 0.5rem auto', display: 'block' }} />
+                                <div>No commission transactions recorded yet.</div>
+                                <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                                  Use the <strong>"+ Give / Add Commission"</strong> button above to manually award incentives to coordinators.
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 2: REGISTERED COORDINATORS DIRECTORY */}
+              {commissionSubTab === 'coordinators' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                        Field Coordinators & Verification Cells Directory
+                      </h3>
+                      <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
+                        District officers, Block officers, School/College Nodal Officers, and CSC Facilitators
+                      </p>
+                    </div>
+
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={() => setIsAddCoordinatorOpen(true)}
+                    >
+                      <Plus size={14} />
+                      <span>Register Coordinator</span>
+                    </button>
+                  </div>
+
+                  <div className="grid-3" style={{ gap: '1.25rem' }}>
+                    {coordinatorsList.map(coord => {
+                      const totalEarned = commissionsList
+                        .filter(c => c.beneficiary_user_id === coord.id)
+                        .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+
+                      return (
+                        <div key={coord.id} className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                              <span className="badge badge-navy" style={{ fontSize: '0.72rem' }}>
+                                {(coord.role || '').replace('_', ' ')}
+                              </span>
+                              <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>
+                                Active
+                              </span>
+                            </div>
+
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem' }}>
+                              {coord.fullName}
+                            </h4>
+
+                            <div style={{ fontSize: '0.8rem', color: '#64748B', lineHeight: 1.6, marginBottom: '1rem' }}>
+                              <div>📱 {coord.mobile}</div>
+                              {coord.email && <div>✉️ {coord.email}</div>}
+                              {coord.district && <div>📍 District: <strong>{coord.district}</strong></div>}
+                              {coord.block && <div>🏢 Block: <strong>{coord.block}</strong></div>}
+                              {coord.institution && <div>🏫 Institution: <strong>{coord.institution}</strong></div>}
+                            </div>
+                          </div>
+
+                          <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                              <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Total Earned:</span>
+                              <strong style={{ color: '#16A34A', fontSize: '1.05rem', fontWeight: 800 }}>
+                                ₹{totalEarned.toLocaleString('en-IN')}
+                              </strong>
+                            </div>
+
+                            <button 
+                              className="btn btn-outline btn-sm"
+                              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: '#16A34A', borderColor: '#86EFAC', backgroundColor: '#F0FDF4', fontWeight: 700 }}
+                              onClick={() => {
+                                setManualCommissionForm(prev => ({
+                                  ...prev,
+                                  coordinatorId: coord.id,
+                                  role: coord.role || 'DISTRICT_COORDINATOR'
+                                }));
+                                setIsGiveCommissionOpen(true);
+                              }}
+                            >
+                              <Award size={14} />
+                              <span>Give Commission</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: ROLE RATES SLABS */}
+              {commissionSubTab === 'slabs' && (
+                <div className="card" style={{ padding: '1.75rem' }}>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                      Configured Role Commission Slabs
+                    </h3>
+                    <p style={{ color: '#64748B', fontSize: '0.85rem', marginTop: '0.2rem' }}>
+                      Standard rates per approved student verification. Admin can override or manually pay any amount at any time.
+                    </p>
+                  </div>
+
+                  <div className="grid-4" style={{ gap: '1.25rem' }}>
+                    {commissionRates.map(rate => (
+                      <div key={rate.id} style={{ backgroundColor: '#F8FAFC', padding: '1.5rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                          {rate.role_id.replace('_', ' ')}
+                        </div>
+                        <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16A34A', margin: '0.5rem 0' }}>
+                          ₹{parseFloat(rate.rate_amount).toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '1rem' }}>
+                          Model: {rate.model_type}
+                        </div>
+                        <button 
+                          className="btn btn-outline btn-sm"
+                          style={{ width: '100%', fontSize: '0.78rem' }}
+                          onClick={async () => {
+                            const newRate = prompt(`Enter new commission rate (₹) for ${rate.role_id}:`, rate.rate_amount);
+                            if (newRate && !isNaN(newRate)) {
+                              await commissionService.updateCommissionRate(rate.role_id, parseFloat(newRate));
+                              const updated = await commissionService.getCommissionRates();
+                              setCommissionRates(updated);
+                            }
+                          }}
+                        >
+                          <Edit3 size={13} />
+                          <span>Edit Rate</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL 1: ADD NEW COORDINATOR */}
+              {isAddCoordinatorOpen && (
+                <div style={{
+                  position: 'fixed',
+                  inset: 0,
+                  backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1200,
+                  padding: '1rem'
+                }}>
+                  <div className="animate-fade-in" style={{
+                    maxWidth: '560px',
+                    width: '100%',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '16px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+                    padding: '2rem',
+                    maxHeight: '90vh',
+                    overflowY: 'auto'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                          Register New Coordinator
+                        </h3>
+                        <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
+                          Add a field officer or online center to manage scrutiny and receive commissions
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => setIsAddCoordinatorOpen(false)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleCreateCoordinator} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div className="form-group">
+                        <label className="form-label required">Full Name</label>
+                        <input 
+                          type="text"
+                          required
+                          className="form-control"
+                          placeholder="e.g. Ramesh Chandra Sharma"
+                          value={newCoordinatorForm.fullName}
+                          onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, fullName: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid-2" style={{ gap: '1rem' }}>
+                        <div className="form-group">
+                          <label className="form-label required">Coordinator Role</label>
+                          <select 
+                            className="form-control"
+                            value={newCoordinatorForm.role}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, role: e.target.value })}
+                          >
+                            <option value="DISTRICT_COORDINATOR">District Coordinator</option>
+                            <option value="BLOCK_COORDINATOR">Block Coordinator</option>
+                            <option value="INSTITUTION">Institutional Nodal Officer</option>
+                            <option value="ONLINE_CENTER">CSC / Online Center Facilitator</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label required">Mobile Number</label>
+                          <input 
+                            type="tel"
+                            required
+                            maxLength="10"
+                            className="form-control"
+                            placeholder="e.g. 9826110005"
+                            value={newCoordinatorForm.mobile}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, mobile: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Email Address (Optional)</label>
+                        <input 
+                          type="email"
+                          className="form-control"
+                          placeholder="e.g. coordinator.jabalpur@jankalyan.org"
+                          value={newCoordinatorForm.email}
+                          onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, email: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid-2" style={{ gap: '1rem' }}>
+                        <div className="form-group">
+                          <label className="form-label">Assigned District</label>
+                          <input 
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. Jabalpur / Indore / Bhopal"
+                            value={newCoordinatorForm.district}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, district: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Assigned Block</label>
+                          <input 
+                            type="text"
+                            className="form-control"
+                            placeholder="e.g. Patan / Panagar / Depalpur"
+                            value={newCoordinatorForm.block}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, block: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Institution / CSC Center Name (Optional)</label>
+                        <input 
+                          type="text"
+                          className="form-control"
+                          placeholder="e.g. Govt Model HSS or Shri Ram CSC Kendra"
+                          value={newCoordinatorForm.institution}
+                          onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, institution: e.target.value })}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline"
+                          onClick={() => setIsAddCoordinatorOpen(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary" style={{ backgroundColor: '#0B2B82', borderColor: '#0B2B82' }}>
+                          <CheckCircle2 size={16} />
+                          <span>Register Coordinator</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL 2: GIVE / ADD COMMISSION MANUALLY */}
+              {isGiveCommissionOpen && (
+                <div style={{
+                  position: 'fixed',
+                  inset: 0,
+                  backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1200,
+                  padding: '1rem'
+                }}>
+                  <div className="animate-fade-in" style={{
+                    maxWidth: '560px',
+                    width: '100%',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '16px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+                    padding: '2rem',
+                    maxHeight: '90vh',
+                    overflowY: 'auto'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                          Grant / Add Manual Commission
+                        </h3>
+                        <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
+                          Award verification incentives or operational honorarium to a field coordinator
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => setIsGiveCommissionOpen(false)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleGiveCommission} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {/* Coordinator Selector */}
+                      <div className="form-group">
+                        <label className="form-label required">Select Coordinator / Beneficiary</label>
+                        <select 
+                          required
+                          className="form-control"
+                          value={manualCommissionForm.coordinatorId}
+                          onChange={(e) => {
+                            const chosen = coordinatorsList.find(c => c.id === e.target.value);
+                            setManualCommissionForm({
+                              ...manualCommissionForm,
+                              coordinatorId: e.target.value,
+                              role: chosen?.role || 'DISTRICT_COORDINATOR'
+                            });
+                          }}
+                        >
+                          <option value="">-- Choose Coordinator --</option>
+                          {coordinatorsList.map(coord => (
+                            <option key={coord.id} value={coord.id}>
+                              {coord.fullName} ({coord.role.replace('_', ' ')}) - {coord.mobile}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Amount & Status */}
+                      <div className="grid-2" style={{ gap: '1rem' }}>
+                        <div className="form-group">
+                          <label className="form-label required">Commission Amount (₹)</label>
+                          <input 
+                            type="number"
+                            required
+                            min="1"
+                            step="1"
+                            className="form-control"
+                            style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16A34A' }}
+                            value={manualCommissionForm.amount}
+                            onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, amount: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label required">Payout Status</label>
+                          <select 
+                            className="form-control"
+                            value={manualCommissionForm.status}
+                            onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, status: e.target.value })}
+                          >
+                            <option value="PAID">PAID (Transferred Offline / UPI)</option>
+                            <option value="APPROVED">APPROVED (Ready for Settlement)</option>
+                            <option value="PENDING">PENDING (Awaiting Review)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Linked Application / Student Reference */}
+                      <div className="form-group">
+                        <label className="form-label">Linked Application Reference (Optional)</label>
+                        <select 
+                          className="form-control"
+                          value={manualCommissionForm.applicationId}
+                          onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, applicationId: e.target.value })}
+                        >
+                          <option value="">-- General Field Verification / Non-specific --</option>
+                          {applications.slice(0, 30).map(app => (
+                            <option key={app.id} value={app.id}>
+                              {app.id} - {app.studentName} ({app.institution || app.district})
+                            </option>
+                          ))}
+                        </select>
+                        <span style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.2rem', display: 'block' }}>
+                          If blank, commission is recorded under general mobilization honorarium.
+                        </span>
+                      </div>
+
+                      {/* UTR Reference & Remarks */}
+                      <div className="form-group">
+                        <label className="form-label">Payment UTR / Transaction Reference (Optional)</label>
+                        <input 
+                          type="text"
+                          className="form-control"
+                          placeholder="e.g. UPI/62819283918 or SBIN-COMM-2026"
+                          value={manualCommissionForm.utrNumber}
+                          onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, utrNumber: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Purpose / Remarks</label>
+                        <input 
+                          type="text"
+                          className="form-control"
+                          placeholder="e.g. Field verification incentive for Session 2026-27"
+                          value={manualCommissionForm.remarks}
+                          onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, remarks: e.target.value })}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline"
+                          onClick={() => setIsGiveCommissionOpen(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="submit" 
+                          className="btn btn-primary"
+                          style={{ backgroundColor: '#16A34A', borderColor: '#16A34A', fontWeight: 800 }}
+                        >
+                          <Award size={16} />
+                          <span>Grant & Record Commission</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
 
             </div>
           )}

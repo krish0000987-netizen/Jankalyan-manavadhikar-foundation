@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { certificateService } from '../services/certificateService';
 import { supabase } from '../api/supabase';
+import { getPublicUrl } from '../api/storage';
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { 
   Printer, 
@@ -13,13 +14,16 @@ import {
   Building2,
   Copy,
   Check,
-  ExternalLink
+  ExternalLink,
+  User
 } from 'lucide-react';
 
 export const CertificateView = ({ certId = '' }) => {
   const { lang, navigate, activeStudentApp } = useApp();
   const [cert, setCert] = useState(null);
   const [appDetails, setAppDetails] = useState(null);
+  const [studentPhoto, setStudentPhoto] = useState('');
+  const [photoError, setPhotoError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -29,6 +33,7 @@ export const CertificateView = ({ certId = '' }) => {
       try {
         let found = null;
         let appData = null;
+        let resolvedPhotoUrl = '';
 
         // 1. Try resolving certificate from certificates table
         if (certId) {
@@ -39,23 +44,48 @@ export const CertificateView = ({ certId = '' }) => {
           found = await certificateService.getCertificateByAppId(activeStudentApp.id);
         }
 
-        // 2. Fetch linked application data with joined student profile
+        // 2. Fetch linked application data with joined student profile & documents
         const targetAppId = found?.application_id || certId || activeStudentApp?.id;
         if (targetAppId) {
           try {
             const { data: aRec } = await supabase
               .from('applications')
-              .select('*, students(*)')
+              .select('*, students(*), application_documents(*)')
               .eq('id', targetAppId)
               .maybeSingle();
 
             if (aRec) {
               appData = aRec;
+              const photoDoc = aRec.application_documents?.find(d => 
+                d.document_type_id === 'photo' || 
+                (d.file_path && d.file_path.toLowerCase().includes('photo'))
+              );
+              if (photoDoc?.file_path) {
+                const rawP = photoDoc.file_path;
+                if (rawP.startsWith('http://') || rawP.startsWith('https://') || rawP.startsWith('data:')) {
+                  resolvedPhotoUrl = rawP;
+                } else {
+                  resolvedPhotoUrl = getPublicUrl('student-documents', rawP);
+                }
+              }
             }
           } catch (appErr) {
             console.warn('App fetch error:', appErr);
           }
         }
+
+        if (!resolvedPhotoUrl && activeStudentApp?.documents?.photo) {
+          const p = activeStudentApp.documents.photo;
+          const pVal = p.file || p.url || p.filePath || (typeof p === 'string' ? p : '');
+          if (pVal) {
+            if (pVal.startsWith('http') || pVal.startsWith('data:') || pVal.startsWith('/assets/')) {
+              resolvedPhotoUrl = pVal;
+            } else {
+              resolvedPhotoUrl = getPublicUrl('student-documents', pVal);
+            }
+          }
+        }
+        setStudentPhoto(resolvedPhotoUrl);
 
         // 3. Fallback / enrichment if certificate was not pre-created or using student state
         if (!found && (appData || activeStudentApp)) {
@@ -196,11 +226,104 @@ export const CertificateView = ({ certId = '' }) => {
               />
             </div>
 
+            {/* Embedded CSS for responsive & print layout */}
+            <style>{`
+              @media (max-width: 768px) {
+                .certificate-photo-box {
+                  position: static !important;
+                  margin: 0 auto 1.25rem auto !important;
+                }
+              }
+              @media print {
+                .certificate-photo-box {
+                  position: absolute !important;
+                  top: 26px !important;
+                  right: 28px !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+              }
+            `}</style>
+
+            {/* Official Applicant Passport Photograph */}
+            <div className="certificate-photo-box" style={{
+              position: 'absolute',
+              top: '26px',
+              right: '28px',
+              width: '108px',
+              border: '2.5px solid #0B2B82',
+              borderRadius: '4px',
+              backgroundColor: '#FFFFFF',
+              boxShadow: '0 4px 14px rgba(11,43,130,0.18)',
+              overflow: 'hidden',
+              zIndex: 10,
+              textAlign: 'center'
+            }}>
+              {/* Photo Box Image Frame */}
+              <div style={{ position: 'relative', width: '100%', height: '124px', backgroundColor: '#EFF6FF', overflow: 'hidden' }}>
+                {studentPhoto && !photoError ? (
+                  <img 
+                    src={studentPhoto} 
+                    alt={cert?.student_name || 'Applicant'} 
+                    onError={() => setPhotoError(true)}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
+                  />
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#F8FAFC',
+                    color: '#0B2B82'
+                  }}>
+                    <User size={46} strokeWidth={1.5} color="#0B2B82" />
+                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#64748B', marginTop: '4px', letterSpacing: '0.05em' }}>
+                      PHOTO
+                    </span>
+                  </div>
+                )}
+
+                {/* Verified Green Badge */}
+                <div style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  backgroundColor: '#16A34A',
+                  color: '#FFFFFF',
+                  borderRadius: '50%',
+                  width: '18px',
+                  height: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
+                }} title="Verified Beneficiary Photograph">
+                  <Check size={11} strokeWidth={3} />
+                </div>
+              </div>
+
+              {/* Verified Strip Caption */}
+              <div style={{
+                backgroundColor: '#0B2B82',
+                color: '#FFFFFF',
+                fontSize: '0.62rem',
+                fontWeight: 800,
+                padding: '3px 2px',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase'
+              }}>
+                Verified Photo
+              </div>
+            </div>
+
             {/* Content Layer */}
             <div style={{ position: 'relative', zIndex: 1 }}>
               
               {/* Top Header: Foundation Logo & Official Registration */}
-              <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+              <div style={{ textAlign: 'center', marginBottom: '1.75rem', maxWidth: '680px', margin: '0 auto 1.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '0.6rem' }}>
                   <img 
                     src="/assets/logo.png" 

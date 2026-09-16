@@ -1,6 +1,7 @@
 import { supabase } from '../api/supabase.js';
 import { uploadFile } from '../api/storage.js';
 import { getAllStates, getDistrictsByState, getBlocksByDistrict, findStateByDistrict, INDIA_STATES_DATA } from '../data/indiaLocations.js';
+import { notificationService } from './notificationService.js';
 
 export const FALLBACK_APPLICATIONS = [
   {
@@ -1057,6 +1058,21 @@ export const applicationService = {
       });
     } catch (histErr) {
       console.warn('Status history insert note:', histErr?.message);
+    }
+
+    // 11. Dispatch Stage 1 Confirmation Email to Student
+    try {
+      const studentEmail = formData.email || `student_${formData.mobile}@jankalyan.org`;
+      await notificationService.sendStageStatusEmail({
+        applicationId: newApp.id,
+        studentEmail,
+        studentName: formData.fullName || 'Applicant',
+        stage: 1,
+        status: 'SUBMITTED',
+        remarks: 'Application successfully received and enrolled for Session 2026-27 scrutiny.'
+      });
+    } catch (mailErr) {
+      console.warn('Submission confirmation email dispatch note:', mailErr?.message);
     }
 
     const fetchedApp = await this.getApplicationById(newApp.id);
