@@ -51,12 +51,13 @@ export const DistrictsManager = () => {
 
   const allStates = useMemo(() => getAllStates(), []);
 
-  const loadData = async () => {
+  const loadData = async (stateToLoad = selectedState) => {
     setLoading(true);
     try {
       const { data: dData, error: dErr } = await supabase
         .from('districts')
         .select('*, blocks(*)')
+        .eq('state', stateToLoad)
         .order('name', { ascending: true });
       if (dErr) throw dErr;
       setDistricts(dData || []);
@@ -68,8 +69,8 @@ export const DistrictsManager = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(selectedState);
+  }, [selectedState]);
 
   // Compute merged districts for selected state
   const stateDistricts = useMemo(() => {
@@ -82,14 +83,28 @@ export const DistrictsManager = () => {
 
     // 2. Get master districts for this state from indiaLocations
     const masterDistList = getDistrictsByState(selectedState);
-    const merged = [...dbDistricts];
+    const merged = dbDistricts.map((d, dIdx) => {
+      const existingBlocks = d.blocks || [];
+      if (existingBlocks.length === 0) {
+        const masterBlocks = getBlocksByDistrict(selectedState, d.name).map((b, bIdx) => ({
+          id: `master-blk-${d.id || dIdx}-${bIdx}`,
+          district_id: d.id,
+          name: b,
+          code: `${d.name.slice(0, 3).toUpperCase()}-${bIdx + 1}`,
+          is_active: true,
+          isMasterVirtual: true
+        }));
+        return { ...d, blocks: masterBlocks };
+      }
+      return d;
+    });
 
     masterDistList.forEach((masterName, idx) => {
       if (!dbMap.has(masterName.toLowerCase())) {
         const fallbackBlocks = getBlocksByDistrict(selectedState, masterName).map((b, bIdx) => ({
           id: `fb-blk-${idx}-${bIdx}`,
           name: b,
-          code: `${masterName.slice(0, 3).toUpperCase()}-${bIdx + 1}`,
+          code: `${INDIA_STATES_DATA[selectedState]?.code || 'IN'}-${masterName.slice(0, 3).toUpperCase()}`,
           is_active: true
         }));
 

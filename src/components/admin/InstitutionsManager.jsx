@@ -49,24 +49,55 @@ export const InstitutionsManager = () => {
     is_active: true
   });
 
+  const [formBlocks, setFormBlocks] = useState([]);
+
+  // Dynamically resolve blocks whenever district changes in modal
+  useEffect(() => {
+    if (!form.district_id) {
+      setFormBlocks([]);
+      return;
+    }
+    const selectedDist = districts.find(d => d.id === form.district_id);
+    const distName = selectedDist?.name || '';
+    const masterBlks = getBlocksByDistrict(form.state, distName).map((name, i) => ({
+      id: `m-blk-${i}`,
+      name
+    }));
+
+    supabase
+      .from('blocks')
+      .select('id, name')
+      .eq('district_id', form.district_id)
+      .order('name', { ascending: true })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setFormBlocks(data);
+          if (!form.block_id || !data.some(b => b.id === form.block_id)) {
+            setForm(prev => ({ ...prev, block_id: data[0].id }));
+          }
+        } else {
+          setFormBlocks(masterBlks);
+          if (!form.block_id || !masterBlks.some(b => b.id === form.block_id)) {
+            setForm(prev => ({ ...prev, block_id: masterBlks[0]?.id || '' }));
+          }
+        }
+      });
+  }, [form.district_id, form.state, districts]);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [{ data: instData }, { data: distData }, { data: blkData }] = await Promise.all([
+      const [{ data: instData }, { data: distData }] = await Promise.all([
         supabase.from('institutions').select('*, districts(name, state), blocks(name)').order('name', { ascending: true }),
-        supabase.from('districts').select('id, name, state').order('name', { ascending: true }),
-        supabase.from('blocks').select('id, name, district_id').order('name', { ascending: true })
+        supabase.from('districts').select('id, name, state').order('name', { ascending: true })
       ]);
       setInstitutions(instData || []);
       setDistricts(distData || []);
-      setBlocks(blkData || []);
       if (distData?.length > 0 && !form.district_id) {
         const firstDistId = distData[0].id;
-        const matchingBlk = (blkData || []).find(b => b.district_id === firstDistId);
         setForm(prev => ({ 
           ...prev, 
-          district_id: firstDistId,
-          block_id: matchingBlk?.id || ''
+          district_id: firstDistId
         }));
       }
     } catch (err) {
@@ -475,11 +506,9 @@ export const InstitutionsManager = () => {
                     disabled={!form.district_id}
                   >
                     <option value="">-- Select Block --</option>
-                    {blocks
-                      .filter(b => !form.district_id || b.district_id === form.district_id)
-                      .map(b => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
+                    {formBlocks.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
