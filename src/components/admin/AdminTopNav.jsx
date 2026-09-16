@@ -58,33 +58,35 @@ export const AdminTopNav = ({
     }}>
       
       {/* Left: Mobile Toggle & Global Search */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: '1 1 auto', minWidth: '110px', maxWidth: '300px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 auto', minWidth: '80px', maxWidth: '280px' }}>
         <button 
+          type="button"
           className="admin-menu-toggle"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{
-            display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             width: '36px',
             height: '36px',
             borderRadius: '8px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid #CBD5E1',
             backgroundColor: '#FFFFFF',
             cursor: 'pointer',
             flexShrink: 0
           }}
+          title="Toggle Navigation Menu"
+          aria-label="Open menu"
         >
           <Menu size={18} color="#0F172A" />
         </button>
 
-        <div style={{ position: 'relative', width: '100%', minWidth: '80px' }}>
-          <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+        <div style={{ position: 'relative', width: '100%', minWidth: '60px' }}>
+          <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
             type="text"
-            className="form-control"
+            className="form-control admin-topnav-search"
             placeholder="Search..."
-            style={{ paddingLeft: '2.2rem', height: '36px', fontSize: '0.82rem', backgroundColor: '#F8FAFC' }}
+            style={{ paddingLeft: '2rem', height: '34px', fontSize: '0.8rem', backgroundColor: '#F8FAFC' }}
             value={searchValue}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
           />
@@ -92,7 +94,7 @@ export const AdminTopNav = ({
       </div>
 
       {/* Right: Role Switcher / Scope Badge, Public Link, Profile & High-Priority Sign Out */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0, marginLeft: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, marginLeft: 'auto' }}>
         
         {/* Direct Beneficiary Bank Records Desk Button */}
         {setActiveTab && (
@@ -103,7 +105,7 @@ export const AdminTopNav = ({
               display: 'flex',
               alignItems: 'center',
               gap: '0.35rem',
-              padding: '0.35rem 0.65rem',
+              padding: '0.35rem 0.6rem',
               borderRadius: '8px',
               backgroundColor: activeTab === 'payments' ? '#D97706' : '#FEF3C7',
               border: activeTab === 'payments' ? '1px solid #B45309' : '1px solid #FCD34D',
@@ -116,15 +118,15 @@ export const AdminTopNav = ({
               flexShrink: 0,
               whiteSpace: 'nowrap'
             }}
-            title="Open Beneficiary Bank Records to view verified students ready for manual scholarship transfer"
+            title="Open Beneficiary Bank Records"
           >
             <CreditCard size={14} color={activeTab === 'payments' ? '#FEF08A' : '#D97706'} />
-            <span className="hide-on-laptop-narrow">Bank Records</span>
+            <span className="hide-on-laptop-narrow hide-on-mobile">Bank Records</span>
             <span style={{
               backgroundColor: activeTab === 'payments' ? '#FEF08A' : '#D97706',
               color: activeTab === 'payments' ? '#92400E' : '#FFFFFF',
               borderRadius: '999px',
-              padding: '0.1rem 0.45rem',
+              padding: '0.1rem 0.4rem',
               fontSize: '0.7rem',
               fontWeight: 900
             }}>
@@ -135,7 +137,7 @@ export const AdminTopNav = ({
 
         {/* Official Super Administrator Statewide Governance Badge */}
         <div 
-          className="hide-on-laptop-narrow"
+          className="hide-on-laptop-narrow hide-on-mobile"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -194,7 +196,7 @@ export const AdminTopNav = ({
 
         {/* Exit to Public Website Button */}
         <button 
-          className="btn btn-outline btn-sm hide-on-laptop-narrow"
+          className="btn btn-outline btn-sm hide-on-laptop-narrow hide-on-mobile"
           onClick={onExitPublic}
           style={{ fontSize: '0.78rem', height: '34px', padding: '0 0.65rem', flexShrink: 0, whiteSpace: 'nowrap' }}
           title="Open Public Website"

@@ -37,6 +37,7 @@ export const Header = () => {
   const studentFirstName = studentName.split(' ')[0] || studentName;
   const studentAppId = activeStudentApp?.id || authUser?.user_metadata?.applicationId || '';
   const isAdminLoggedIn = Boolean(
+    authUser &&
     authRole && 
     authRole !== 'guest' && 
     authRole !== 'guest-view' && 
@@ -858,7 +859,7 @@ export const Header = () => {
                       className="btn btn-outline btn-sm"
                       style={{ width: '100%', justifyContent: 'center' }}
                       onClick={() => {
-                        navigate('/admin');
+                        navigate(isAdminLoggedIn ? '/admin' : '/admin/login');
                         setMobileMenuOpen(false);
                       }}
                     >

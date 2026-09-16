@@ -79,9 +79,17 @@ const MainRouter = () => {
       case '/district-login':
       case '/block-login':
       case '/admin/login':
-        return <AdminLogin />;
-      case '/admin':
+        return <AdminLogin defaultRole="SUPER_ADMIN" />;
+      case '/admin': {
+        const isAdmin = Boolean(
+          authUser && 
+          ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'].includes(authRole)
+        );
+        if (!isAdmin) {
+          return <AdminLogin defaultRole="SUPER_ADMIN" />;
+        }
         return <Admin />;
+      }
       case '/certificate':
         return <CertificateView />;
       case '/downloads':

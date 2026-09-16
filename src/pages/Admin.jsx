@@ -87,6 +87,17 @@ export const Admin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
 
+  // Auth Guard: Ensure unauthenticated users are redirected to login
+  useEffect(() => {
+    const isAuthorized = Boolean(
+      authUser && 
+      ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'].includes(authRole)
+    );
+    if (!isAuthorized) {
+      navigate('/admin/login');
+    }
+  }, [authUser, authRole, navigate]);
+
   // Indian States master list
   const allStates = useMemo(() => getAllStates(), []);
 
@@ -510,7 +521,7 @@ export const Admin = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8FAFC' }}>
+    <div className="admin-layout" style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8FAFC', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
       
       {/* Left Sidebar */}
       <AdminSidebar 
@@ -524,7 +535,7 @@ export const Admin = () => {
       />
 
       {/* Main Admin Content Canvas */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div className="admin-main-canvas" style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: '100%', overflowX: 'hidden' }}>
         
         {/* Top Navigation */}
         <AdminTopNav 
@@ -544,7 +555,7 @@ export const Admin = () => {
         />
 
         {/* Content Body */}
-        <main style={{ flex: 1, padding: '2rem' }}>
+        <main className="admin-main-content">
           
           {/* ====================================================================
               MODULE 1: DASHBOARD

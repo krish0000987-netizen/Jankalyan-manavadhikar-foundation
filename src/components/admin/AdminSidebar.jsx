@@ -23,7 +23,8 @@ import {
   Settings, 
   LogOut,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  X
 } from 'lucide-react';
 
 export const AdminSidebar = ({ 
@@ -81,35 +82,40 @@ export const AdminSidebar = ({
 
       <aside 
         className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}
-        style={{
-          width: '270px',
-          backgroundColor: '#0F172A',
-          color: '#F8FAFC',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          borderRight: '1px solid #1E293B',
-          transition: 'transform 0.3s ease'
-        }}
       >
-        {/* Brand Header */}
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid #1E293B' }}>
+        {/* Brand Header with Mobile Close Button */}
+        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Sparkles size={20} color="#FEF08A" />
             </div>
             <div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
                 Jankalyan Mission
               </div>
-              <div style={{ fontSize: '0.68rem', color: '#F87171', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
-                SUPER ADMIN DIRECTORATE
+              <div style={{ fontSize: '0.65rem', color: '#F87171', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
+                {role || 'SUPER ADMIN DIRECTORATE'}
               </div>
             </div>
           </div>
+
+          <button 
+            type="button"
+            className="admin-sidebar-close-btn"
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: '#CBD5E1',
+              cursor: 'pointer',
+              padding: '0.35rem',
+              borderRadius: '8px'
+            }}
+            title="Close navigation"
+            aria-label="Close sidebar"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Menu Navigation */}

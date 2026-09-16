@@ -291,7 +291,12 @@ export const AppProvider = ({ children }) => {
   // Authenticated User & Role State
   const [authUser, setAuthUser] = useState(null);
   const [authRole, setAuthRole] = useState(() => {
-    return localStorage.getItem('jmf_role') || 'SUPER_ADMIN';
+    const saved = localStorage.getItem('jmf_role');
+    // Do not default unauthenticated sessions to SUPER_ADMIN
+    if (saved && saved !== 'SUPER_ADMIN' && saved !== 'admin') {
+      return saved;
+    }
+    return 'guest';
   });
   const [jurisdiction, setJurisdiction] = useState(() => {
     try {
@@ -407,24 +412,16 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  // Check Current Auth Session on mount & auto-authenticate admin workspace
+  // Check Current Auth Session on mount
   useEffect(() => {
     async function initSessionAndData() {
       try {
-        let current = await authService.getCurrentUser();
-        // If no active session and on admin route or local admin, authenticate with Super Admin account
-        if (!current && (window.location.pathname.startsWith('/admin') || localStorage.getItem('jmf_role') === 'admin' || localStorage.getItem('jmf_role') === 'SUPER_ADMIN')) {
-          try {
-            current = await authService.signIn('admin@jankalyan.org', 'Admin@JMF2026!');
-          } catch (autoLoginErr) {
-            console.warn('Auto admin login fallback:', autoLoginErr);
-          }
-        }
-        if (current) {
+        const current = await authService.getCurrentUser();
+        if (current && current.user) {
           setAuthUser(current.user);
-          setAuthRole(current.role || 'SUPER_ADMIN');
+          setAuthRole(current.role || 'guest');
           setJurisdiction(current.jurisdiction || {});
-          localStorage.setItem('jmf_role', current.role || 'SUPER_ADMIN');
+          localStorage.setItem('jmf_role', current.role || 'guest');
 
           // If student is logged in, refresh active student record with live DB data
           if (current.role === 'STUDENT') {

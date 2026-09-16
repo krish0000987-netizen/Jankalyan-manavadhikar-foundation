@@ -363,10 +363,10 @@ export const DistrictsManager = () => {
       </div>
 
       {/* 2-Column Hierarchical Layout: Districts on Left (Level 2), Blocks on Right (Level 3) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div className="districts-manager-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         
         {/* Left: Districts in selected state */}
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '650px' }}>
+        <div className="card districts-manager-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '650px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div>
               <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -458,7 +458,7 @@ export const DistrictsManager = () => {
         </div>
 
         {/* Right: Blocks for Selected District (Level 3) */}
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '650px' }}>
+        <div className="card districts-manager-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '650px' }}>
           {selectedDistrict ? (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
