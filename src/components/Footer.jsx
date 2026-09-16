@@ -49,48 +49,76 @@ export const Footer = () => {
 
           {/* Col 2: Student Services */}
           <div className="footer-col">
-            <h4>{t.footerColStudents}</h4>
+            <h4>{t.footerColStudents || (lang === 'hi' ? 'विद्यार्थी सेवाएं' : 'Student Services')}</h4>
             <ul className="footer-links">
               <li>
-                <button onClick={() => navigate('/apply')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#DC2626" />
-                  <span>{t.navApplyNow}</span>
+                <button 
+                  onClick={() => navigate('/apply')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#DC2626" style={{ flexShrink: 0 }} />
+                  <span>{t.navApplyNow || (lang === 'hi' ? 'ऑनलाइन आवेदन करें' : 'Apply Online')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/track')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#DC2626" />
-                  <span>{t.navTrack}</span>
+                <button 
+                  onClick={() => navigate('/track')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#DC2626" style={{ flexShrink: 0 }} />
+                  <span>{t.navTrack || (lang === 'hi' ? 'आवेदन स्थिति ट्रैक करें' : 'Track Application Status')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/student-dashboard')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#DC2626" />
-                  <span>{t.navStudentLogin}</span>
+                <button 
+                  onClick={() => navigate('/student-dashboard')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#DC2626" style={{ flexShrink: 0 }} />
+                  <span>{t.navStudentLogin || (lang === 'hi' ? 'विद्यार्थी पोर्टल लॉगिन' : 'Student Portal Login')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/merit-list')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#DC2626" />
-                  <span>{lang === 'hi' ? 'मेरिट चयन सूची (Merit List)' : 'Official Merit List'}</span>
+                <button 
+                  onClick={() => navigate('/merit-list')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#DC2626" style={{ flexShrink: 0 }} />
+                  <span>{lang === 'hi' ? 'मेरिट चयन सूची (Merit List)' : 'Official Merit List 2026-27'}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/documents')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#DC2626" />
-                  <span>{t.navDocuments}</span>
+                <button 
+                  onClick={() => navigate('/documents')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#DC2626" style={{ flexShrink: 0 }} />
+                  <span>{t.navDocuments || (lang === 'hi' ? 'आवश्यक दस्तावेज़' : 'Required Documents')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/downloads')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#DC2626" />
-                  <span>{t.navDownloads}</span>
+                <button 
+                  onClick={() => navigate('/downloads')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#DC2626" style={{ flexShrink: 0 }} />
+                  <span>{t.navDownloads || (lang === 'hi' ? 'फॉर्म एवं विवरणिका डाउनलोड' : 'Downloads & Forms')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/faq')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#DC2626" />
-                  <span>{t.navFaq}</span>
+                <button 
+                  onClick={() => navigate('/faq')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#DC2626" style={{ flexShrink: 0 }} />
+                  <span>{t.navFaq || (lang === 'hi' ? 'प्रश्नोत्तरी एवं सहायता' : 'FAQ & Helpdesk')}</span>
                 </button>
               </li>
             </ul>
@@ -98,42 +126,76 @@ export const Footer = () => {
 
           {/* Col 3: Policies & Institutional Guidelines */}
           <div className="footer-col">
-            <h4>{t.footerColImportant}</h4>
+            <h4>{t.footerColImportant || (lang === 'hi' ? 'नीतियां एवं दिशानिर्देश' : 'Policies & Guidelines')}</h4>
             <ul className="footer-links">
               <li>
-                <button onClick={() => navigate('/scholarship')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#F59E0B" />
-                  <span>{t.overviewEligibilityTitle}</span>
+                <button 
+                  onClick={() => navigate('/scholarship')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span>{t.overviewEligibilityTitle || (lang === 'hi' ? 'पात्रता एवं चयन मापदंड' : 'Eligibility Criteria')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/scholarship')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#F59E0B" />
-                  <span>{t.docTitle}</span>
+                <button 
+                  onClick={() => navigate('/documents')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span>{t.docTitle || (lang === 'hi' ? 'दस्तावेज़ सत्यापन नीति' : 'Document Verification Policy')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/grievance')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#F59E0B" />
-                  <span>{t.navGrievance}</span>
+                <button 
+                  onClick={() => navigate('/grievance')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span>{t.navGrievance || (lang === 'hi' ? 'शिकायत निवारण प्रक्रिया' : 'Grievance Redressal')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/privacy')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#F59E0B" />
-                  <span>{t.footerPrivacy}</span>
+                <button 
+                  onClick={() => navigate('/privacy')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span>{t.footerPrivacy || (lang === 'hi' ? 'गोपनीयता नीति (Privacy Policy)' : 'Privacy Policy')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/terms')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#F59E0B" />
-                  <span>{t.footerTerms}</span>
+                <button 
+                  onClick={() => navigate('/terms')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span>{t.footerTerms || (lang === 'hi' ? 'नियम एवं शर्तें (Terms)' : 'Terms & Conditions')}</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => navigate('/admin')} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ChevronRight size={14} color="#F59E0B" />
-                  <span>{t.navAdmin}</span>
+                <button 
+                  onClick={() => navigate('/disclaimer')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span>{t.footerDisclaimer || (lang === 'hi' ? 'अस्वीकरण (Disclaimer)' : 'Institutional Disclaimer')}</span>
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigate('/admin/login')} 
+                  className="footer-link-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
+                >
+                  <ChevronRight size={14} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span>{t.navAdmin || (lang === 'hi' ? 'प्रशासनिक लॉगिन' : 'Administrative Portal')}</span>
                 </button>
               </li>
             </ul>

@@ -1040,22 +1040,28 @@ input, select, textarea {
   padding-bottom: 2rem;
   margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 10;
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.25fr;
-  gap: 3rem;
+  grid-template-columns: 2fr 1.15fr 1.15fr 1.25fr;
+  gap: 2.5rem;
   margin-bottom: 3.5rem;
 }
 
 .footer-col h4 {
-  color: #FFFFFF;
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 1.25rem;
-  position: relative;
-  padding-bottom: 0.5rem;
+  color: #FFFFFF !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  margin-bottom: 1.25rem !important;
+  position: relative !important;
+  padding-bottom: 0.6rem !important;
+  letter-spacing: -0.01em;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .footer-col h4::after {
@@ -1063,26 +1069,66 @@ input, select, textarea {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 32px;
-  height: 2px;
+  width: 36px;
+  height: 2.5px;
   background-color: var(--brand-red);
+  border-radius: 2px;
 }
 
 .footer-links {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  visibility: visible !important;
 }
 
+.footer-links li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: block;
+}
+
+.footer-links button,
 .footer-links a {
-  color: #94A3B8;
-  font-size: 0.9rem;
-  transition: color 0.15s ease;
+  color: #CBD5E1 !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  width: 100% !important;
+  padding: 0.25rem 0 !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  line-height: 1.4 !important;
+  text-decoration: none !important;
+  font-family: inherit !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
+.footer-links button:hover,
 .footer-links a:hover {
-  color: #FFFFFF;
+  color: #FFFFFF !important;
+  transform: translateX(4px);
+}
+
+.footer-links button:hover svg,
+.footer-links a:hover svg {
+  transform: translateX(2px);
+}
+
+.footer-links button span,
+.footer-links a span {
+  color: inherit !important;
+  font-size: inherit !important;
 }
 
 .footer-bottom {
@@ -1092,9 +1138,22 @@ input, select, textarea {
   align-items: center;
   justify-content: space-between;
   font-size: 0.825rem;
-  color: #64748B;
+  color: #94A3B8;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+.footer-bottom button {
+  color: #94A3B8 !important;
+  transition: color 0.15s ease;
+  font-size: 0.8rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.footer-bottom button:hover {
+  color: #FFFFFF !important;
 }
 
 /* Printable Receipt & Certificate Styles */
