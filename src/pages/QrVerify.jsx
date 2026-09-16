@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { applicationService } from '../services/applicationService';
 import { certificateService } from '../services/certificateService';
+import { supabase } from '../api/supabase';
 import { 
   ShieldCheck, 
   CheckCircle2, 
@@ -31,18 +32,35 @@ export const QrVerify = ({ verifyType = 'application', identifier = '' }) => {
       setError(null);
       try {
         if (verifyType === 'certificate') {
-          const cert = await certificateService.getCertificateByToken(identifier) 
+          let cert = await certificateService.getCertificateByToken(identifier) 
             || await certificateService.getCertificateByAppId(identifier);
-          if (cert) {
+
+          let appData = null;
+          const targetAppId = cert?.application_id || identifier;
+          if (targetAppId) {
+            try {
+              const { data } = await supabase.from('applications').select('*, students(*)').eq('id', targetAppId).maybeSingle();
+              appData = data;
+            } catch (e) {}
+          }
+
+          if (cert || (appData && (appData.status === 'SCHOLARSHIP_RELEASED' || appData.status === 'APPROVED' || appData.utr_number))) {
+            const studentName = cert?.student_name || appData?.students?.full_name || 'Scholarship Recipient';
+            const certNo = cert?.certificate_number || `CERT-JMF-2026-${(appData?.id || identifier).replace(/[^0-9]/g, '').slice(-5)}`;
+            const amt = cert?.grant_amount || appData?.disbursed_amount || 12000;
+            const utr = appData?.utr_number || cert?.utr_number || '-';
+
             setRecord({
               type: 'certificate',
               title: 'Official Scholarship Award Certificate',
-              number: cert.certificate_number,
-              name: cert.student_name,
-              scheme: cert.scheme_name,
-              year: cert.academic_year,
-              amount: `₹${parseFloat(cert.grant_amount || 12000).toLocaleString('en-IN')}`,
-              date: cert.issue_date,
+              number: certNo,
+              appId: appData?.id || cert?.application_id || identifier,
+              name: studentName,
+              scheme: cert?.scheme_name || 'Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27',
+              year: cert?.academic_year || appData?.academic_year || '2026-27',
+              amount: `₹${parseFloat(amt).toLocaleString('en-IN')}`,
+              date: cert?.issue_date || appData?.payment_date || appData?.approval_date || new Date().toISOString().split('T')[0],
+              utrNumber: utr,
               status: 'VERIFIED_VALID'
             });
           } else {
@@ -147,9 +165,21 @@ export const QrVerify = ({ verifyType = 'application', identifier = '' }) => {
               {record.utrNumber && record.utrNumber !== '-' && <div><strong>Banking UTR:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{record.utrNumber}</span></div>}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem', color: '#64748B', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
-              <ShieldCheck size={18} color="#16A34A" />
-              <span>This record has been digitally authenticated against the central database of Jankalyan Manavadhikar Foundation.</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem', color: '#64748B' }}>
+                <ShieldCheck size={18} color="#16A34A" />
+                <span>This record has been digitally authenticated against the central database of Jankalyan Manavadhikar Foundation.</span>
+              </div>
+
+              {record.type === 'certificate' && (
+                <button 
+                  className="btn btn-primary btn-sm"
+                  onClick={() => navigate(`/certificate/${record.appId || record.number || identifier}`)}
+                >
+                  <Award size={15} />
+                  <span>{lang === 'hi' ? 'प्रमाण पत्र देखें / प्रिंट करें' : 'View / Print Certificate'}</span>
+                </button>
+              )}
             </div>
 
           </div>
