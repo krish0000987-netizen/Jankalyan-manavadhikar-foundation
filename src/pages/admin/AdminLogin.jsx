@@ -46,12 +46,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
       descriptionHi: 'छात्रवृत्ति आवेदन स्थिति, रेजरपे द्वारा ₹ 211.30 पंजीकरण शुल्क भुगतान, डीबीटी स्थिति एवं प्रमाण पत्र देखें।',
       inputLabel: lang === 'hi' ? 'आवेदन क्रमांक / मोबाइल नंबर' : 'Application ID / Registered Mobile',
       inputPlaceholder: 'JMF-2026-108234 or 9826112233',
-      identifierType: 'student',
-      demoChips: [
-        { label: 'Pooja Sharma (Released)', id: 'JMF-2026-108234', pin: 'pooja123', subtitle: 'Class 12th • Jabalpur • Fee Paid' },
-        { label: 'Rahul Verma (Verification)', id: 'JMF-2026-109482', pin: 'rahul123', subtitle: 'Excellence School • Bhopal' },
-        { label: 'Ananya Patel (Approved)', id: 'JMF-2026-110294', pin: 'ananya123', subtitle: 'Holkar College • Indore' }
-      ]
+      identifierType: 'student'
     },
     {
       id: 'SUPER_ADMIN',
@@ -66,10 +61,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
       descriptionHi: 'केंद्रीकृत प्रशासन: आवेदन अनुमोदन, रेजरपे भुगतान प्रबंधन, सीएमएस संपादन एवं संपूर्ण पोर्टल नियंत्रण।',
       inputLabel: lang === 'hi' ? 'सुपर एडमिन ईमेल' : 'Super Admin Email',
       inputPlaceholder: 'admin@jankalyan.org',
-      identifierType: 'email',
-      demoChips: [
-        { label: 'Super Administrator', email: 'admin@jankalyan.org', pass: 'Admin@JMF2026!', subtitle: 'Full Statewide Governance' }
-      ]
+      identifierType: 'email'
     }
   ];
 
@@ -271,34 +263,6 @@ export const AdminLogin = ({ defaultRole = null }) => {
     }
   };
 
-  // Instant one-click demo login
-  const handleQuickDemoClick = async (chip) => {
-    setLoading(true);
-    setErrorMessage('');
-    setSuccessMessage('');
-
-    try {
-      if (activeRole === 'STUDENT') {
-        setIdentifier(chip.id);
-        setPassword(chip.pin || '123456');
-        await loginStudent(chip.id, chip.pin);
-        setSuccessMessage(`Authenticated as ${chip.label}! Redirecting...`);
-        setTimeout(() => navigate('/student-dashboard'), 500);
-      } else {
-        setIdentifier(chip.email);
-        setPassword(chip.pass);
-        await login(chip.email, chip.pass);
-        setSuccessMessage(`Authenticated as ${chip.label}! Redirecting...`);
-        setTimeout(() => navigate('/admin'), 500);
-      }
-    } catch (err) {
-      console.error('Quick login failed:', err);
-      setErrorMessage(err.message || 'Demo access failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="section-py" style={{ 
       backgroundColor: '#0B132B', 
@@ -307,7 +271,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
       alignItems: 'center',
       padding: '2.5rem 1rem'
     }}>
-      <div className="container" style={{ maxWidth: '980px' }}>
+      <div className="container" style={{ maxWidth: '640px', width: '100%', margin: '0 auto' }}>
         
         {/* Top Header Card */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -330,10 +294,10 @@ export const AdminLogin = ({ defaultRole = null }) => {
             <span>{lang === 'hi' ? 'एकीकृत डिजिटल पोर्टल प्रवेश' : 'UNIFIED GOVERNANCE & STUDENT ACCESS PORTAL'}</span>
           </div>
           
-          <h1 style={{ color: '#FFFFFF', fontSize: '2.2rem', fontWeight: 800, margin: '0 0 0.5rem 0', lineHeight: 1.2 }}>
+          <h1 style={{ color: '#FFFFFF', fontSize: '2rem', fontWeight: 800, margin: '0 0 0.5rem 0', lineHeight: 1.2 }}>
             {lang === 'hi' ? 'जनकल्याण मानवाधिकार फाउंडेशन' : 'Jankalyan Manavadhikar Foundation'}
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '1rem', maxWidth: '620px', margin: '0 auto' }}>
+          <p style={{ color: '#94A3B8', fontSize: '0.92rem', maxWidth: '580px', margin: '0 auto' }}>
             {lang === 'hi' 
               ? 'कृपया अपना अधिकृत पोर्टल चुनें — विद्यार्थी पोर्टल या केंद्रीय सुपर एडमिनिस्ट्रेटर।' 
               : 'Select your designated portal to continue — Student Applicant Portal or Super Administrator.'}
@@ -341,11 +305,11 @@ export const AdminLogin = ({ defaultRole = null }) => {
         </div>
 
         {/* Dual Portal Switcher: Student vs Super Admin */}
-        <div style={{ 
+        <div className="login-portal-switcher" style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-          gap: '1rem', 
-          marginBottom: '2rem' 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '0.75rem', 
+          marginBottom: '1.75rem' 
         }}>
           {ROLE_CONFIGS.map(roleItem => {
             const Icon = roleItem.icon;
@@ -365,8 +329,8 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1.25rem 1.5rem',
+                  gap: '0.85rem',
+                  padding: '1rem 1.15rem',
                   borderRadius: '16px',
                   border: isSelected ? `2.5px solid ${roleItem.color}` : '1px solid rgba(255, 255, 255, 0.12)',
                   backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.65)',
@@ -379,9 +343,9 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 }}
               >
                 <div style={{
-                  width: '52px',
-                  height: '52px',
-                  borderRadius: '14px',
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '12px',
                   backgroundColor: isSelected ? roleItem.color : 'rgba(255, 255, 255, 0.06)',
                   display: 'flex',
                   alignItems: 'center',
@@ -390,35 +354,33 @@ export const AdminLogin = ({ defaultRole = null }) => {
                   flexShrink: 0,
                   transition: 'all 0.2s ease'
                 }}>
-                  <Icon size={26} />
+                  <Icon size={24} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: '0.7rem',
+                    fontSize: '0.68rem',
                     fontWeight: 800,
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     color: isSelected ? roleItem.color : '#94A3B8',
-                    marginBottom: '2px'
+                    marginBottom: '2px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}>
                     {lang === 'hi' ? roleItem.badgeHi : roleItem.badgeEn}
                   </div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {lang === 'hi' ? roleItem.labelHi : roleItem.labelEn}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '3px' }}>
-                    {roleItem.id === 'STUDENT'
-                      ? (lang === 'hi' ? 'आवेदन, रेजरपे शुल्क एवं स्थिति ट्रैकिंग' : 'Applications, Razorpay fee & DBT status')
-                      : (lang === 'hi' ? 'केंद्रीकृत राज्यव्यापी प्रशासन एवं नियंत्रण' : 'Statewide mission governance & control')}
                   </div>
                 </div>
                 {isSelected && (
                   <div style={{
                     position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    width: '10px',
-                    height: '10px',
+                    top: '10px',
+                    right: '10px',
+                    width: '8px',
+                    height: '8px',
                     borderRadius: '50%',
                     backgroundColor: roleItem.color,
                     boxShadow: `0 0 10px ${roleItem.color}`
@@ -430,17 +392,18 @@ export const AdminLogin = ({ defaultRole = null }) => {
         </div>
 
         {/* Active Login Form Container */}
-        <div className="card animate-fade-in" style={{
+        <div className="login-auth-card card animate-fade-in" style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '20px',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.45)',
           overflow: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: window.innerWidth > 768 ? '1.15fr 0.85fr' : '1fr'
+          width: '100%',
+          maxWidth: activeRole === 'STUDENT' && studentMode === 'register' ? '640px' : '520px',
+          margin: '0 auto'
         }}>
 
-          {/* Left Column: Form Section */}
-          <div style={{ padding: '2.5rem' }}>
+          {/* Form Content */}
+          <div className="login-card-content" style={{ padding: '2.25rem 2rem' }}>
             
             {/* Role Header Badge */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }}>
@@ -657,7 +620,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 </div>
 
                 {/* Mobile Number & Email */}
-                <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div className="form-row-responsive" style={{ marginBottom: '1rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
                       {lang === 'hi' ? 'मोबाइल नंबर (10 Digit)' : 'Mobile Number (10 Digit)'}
@@ -722,7 +685,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 </div>
 
                 {/* State > District > Block Cascading Workflow */}
-                <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div className="form-row-responsive" style={{ marginBottom: '1rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
                       {lang === 'hi' ? 'राज्य (State / UT)' : 'State / UT'}
@@ -774,7 +737,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 </div>
 
                 {/* Block & School/College */}
-                <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div className="form-row-responsive" style={{ marginBottom: '1rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
                       {lang === 'hi' ? 'ब्लॉक / तहसील (Block)' : 'Block / Tehsil'}
@@ -806,7 +769,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 </div>
 
                 {/* Create PIN / Password */}
-                <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <div className="form-row-responsive" style={{ marginBottom: '1.25rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
                       {lang === 'hi' ? 'पासवर्ड / 4-6 अंकों का पिन' : 'Create PIN / Password'}
@@ -958,7 +921,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label className="form-label required" style={{ fontSize: '0.825rem', fontWeight: 700 }}>
                       {activeRole === 'STUDENT' 
-                        ? (lang === 'hi' ? 'पासवर्ड / जन्मतिथि / पिन (वैकल्पिक)' : 'Password / DOB / PIN (Optional for Demo)') 
+                        ? (lang === 'hi' ? 'पासवर्ड / जन्मतिथि / पिन' : 'Password / PIN') 
                         : (lang === 'hi' ? 'सुरक्षा पासवर्ड' : 'Password')}
                     </label>
                     {activeRole === 'STUDENT' && (
@@ -1044,6 +1007,26 @@ export const AdminLogin = ({ defaultRole = null }) => {
               </div>
             )}
 
+            {/* Bottom Security Note */}
+            <div style={{
+              marginTop: '1.75rem',
+              padding: '0.85rem 1rem',
+              backgroundColor: '#F8FAFC',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <FileCheck size={20} color="#10B981" style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
+                <strong>{lang === 'hi' ? 'सुरक्षित प्रमाणीकरण:' : 'Verified Access:'}</strong>{' '}
+                {lang === 'hi' 
+                  ? 'सभी लॉगिन सत्र 256-बिट एन्क्रिप्शन एवं सुरक्षा ऑडिट ट्रेल द्वारा सुरक्षित हैं।' 
+                  : 'All portal sessions are encrypted with secure RBAC session protection.'}
+              </div>
+            </div>
+
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
               <button
                 type="button"
@@ -1053,98 +1036,6 @@ export const AdminLogin = ({ defaultRole = null }) => {
                 {lang === 'hi' ? '← मुख्य वेबसाइट पर वापस जाएं' : '← Back to Public Website'}
               </button>
             </div>
-          </div>
-
-          {/* Right Column: Instant One-Click Demo Access Cards */}
-          <div style={{
-            backgroundColor: '#F8FAFC',
-            borderLeft: '1px solid #E2E8F0',
-            padding: '2.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
-          }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
-                <Sparkles size={16} color={currentRoleConfig.color} />
-                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  {lang === 'hi' ? 'त्वरित डेमो परीक्षण लॉगिन' : 'Instant One-Click Demo Access'}
-                </span>
-              </div>
-              
-              <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '1.25rem', lineHeight: 1.4 }}>
-                {lang === 'hi'
-                  ? 'नीचे दिए गए किसी भी परीक्षण खाते पर क्लिक करके सीधे उस भूमिका के अधिकृत डैशबोर्ड में प्रवेश करें:'
-                  : `Click any pre-configured sample ${currentRoleConfig.labelEn.toLowerCase()} profile below to log in instantly without typing:`}
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                {currentRoleConfig.demoChips.map((chip, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleQuickDemoClick(chip)}
-                    disabled={loading}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '10px',
-                      border: '1px solid #E2E8F0',
-                      backgroundColor: '#FFFFFF',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = currentRoleConfig.color;
-                      e.currentTarget.style.backgroundColor = currentRoleConfig.bgLight;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#E2E8F0';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0F172A' }}>
-                        {chip.label}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
-                        {chip.id || chip.email}
-                      </div>
-                      {chip.subtitle && (
-                        <div style={{ fontSize: '0.7rem', color: currentRoleConfig.color, fontWeight: 600 }}>
-                          {chip.subtitle}
-                        </div>
-                      )}
-                    </div>
-                    <ArrowRight size={14} color="#94A3B8" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Bottom Security Note */}
-            <div style={{
-              marginTop: '2rem',
-              padding: '1rem',
-              backgroundColor: '#FFFFFF',
-              borderRadius: '10px',
-              border: '1px solid #E2E8F0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem'
-            }}>
-              <FileCheck size={24} color="#10B981" style={{ flexShrink: 0 }} />
-              <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.4 }}>
-                <strong>{lang === 'hi' ? 'सुरक्षित प्रमाणीकरण:' : 'Verified Access:'}</strong>{' '}
-                {lang === 'hi' 
-                  ? 'सभी लॉगिन सत्र 256-बिट एन्क्रिप्शन एवं लाइव ऑडिट ट्रेल द्वारा सुरक्षित हैं।' 
-                  : 'All portal sessions are encrypted with live Supabase RBAC session protection.'}
-              </div>
-            </div>
-
           </div>
 
         </div>

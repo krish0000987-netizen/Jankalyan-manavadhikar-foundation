@@ -289,13 +289,30 @@ export const AppProvider = ({ children }) => {
   const [grievances, setGrievances] = useState([]);
 
   // Authenticated User & Role State
-  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authUser, setAuthUser] = useState(() => {
+    try {
+      const savedRole = localStorage.getItem('jmf_role');
+      const savedAdmin = localStorage.getItem('jmf_admin_user');
+      if (savedAdmin && savedRole && savedRole !== 'guest') {
+        return JSON.parse(savedAdmin);
+      }
+      const savedStudent = localStorage.getItem('jmf_student_user');
+      if (savedStudent && savedRole === 'STUDENT') {
+        return JSON.parse(savedStudent);
+      }
+    } catch (e) {}
+    return null;
+  });
   const [authRole, setAuthRole] = useState(() => {
-    const saved = localStorage.getItem('jmf_role');
-    // Do not default unauthenticated sessions to SUPER_ADMIN
-    if (saved && saved !== 'SUPER_ADMIN' && saved !== 'admin') {
-      return saved;
-    }
+    try {
+      const savedRole = localStorage.getItem('jmf_role');
+      const savedAdmin = localStorage.getItem('jmf_admin_user');
+      const savedStudent = localStorage.getItem('jmf_student_user');
+      if (savedRole && (savedAdmin || savedStudent)) {
+        return savedRole;
+      }
+    } catch (e) {}
     return 'guest';
   });
   const [jurisdiction, setJurisdiction] = useState(() => {
@@ -488,6 +505,8 @@ export const AppProvider = ({ children }) => {
       } catch (err) {
         console.warn('Auth initialization error:', err);
         await loadApplications();
+      } finally {
+        setAuthLoading(false);
       }
     }
     initSessionAndData();
@@ -655,6 +674,7 @@ export const AppProvider = ({ children }) => {
     setAuthRole(result.role);
     setJurisdiction(result.jurisdiction || {});
     localStorage.setItem('jmf_role', result.role);
+    localStorage.setItem('jmf_admin_user', JSON.stringify(result.user));
     localStorage.setItem('jmf_jurisdiction', JSON.stringify(result.jurisdiction || {}));
     await loadApplications(result.role, result.jurisdiction || {});
     return result;
@@ -674,6 +694,7 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('jmf_student_user', JSON.stringify(result.user));
     }
     localStorage.setItem('jmf_role', 'STUDENT');
+    localStorage.removeItem('jmf_admin_user');
     localStorage.removeItem('jmf_jurisdiction');
     return result;
   };
@@ -693,6 +714,7 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('jmf_student_user', JSON.stringify(result.user));
     }
     localStorage.setItem('jmf_role', 'STUDENT');
+    localStorage.removeItem('jmf_admin_user');
     localStorage.removeItem('jmf_jurisdiction');
     await loadLiveCounters();
     return result;
@@ -731,6 +753,7 @@ export const AppProvider = ({ children }) => {
     setJurisdiction({});
     setActiveStudentApp(null);
     localStorage.setItem('jmf_role', 'guest');
+    localStorage.removeItem('jmf_admin_user');
     localStorage.removeItem('jmf_jurisdiction');
     localStorage.removeItem('jmf_active_student_app');
     localStorage.removeItem('jmf_active_app_id');
@@ -765,6 +788,7 @@ export const AppProvider = ({ children }) => {
       submitGrievance,
       authUser,
       authRole,
+      authLoading,
       setAuthRole,
       switchRole,
       jurisdiction,

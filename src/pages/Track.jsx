@@ -118,34 +118,7 @@ export const Track = () => {
             </button>
           </form>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', fontSize: '0.8rem', color: '#64748B' }}>
-            <span>{lang === 'hi' ? 'त्वरित डेमो परीक्षण:' : 'Quick Demo Search:'}</span>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button 
-                type="button" 
-                onClick={() => handleSearch(null, 'JMF-2026-108234')}
-                style={{ color: '#1E40AF', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                Released Demo
-              </button>
-              <span>•</span>
-              <button 
-                type="button" 
-                onClick={() => handleSearch(null, 'JMF-2026-100001')}
-                style={{ color: '#1E40AF', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                Under Verification
-              </button>
-              <span>•</span>
-              <button 
-                type="button" 
-                onClick={() => handleSearch(null, 'JMF-2026-112048')}
-                style={{ color: '#DC2626', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                Correction Required
-              </button>
-            </div>
-          </div>
+
 
           {activeStudentApp && (
             <div style={{ marginTop: '0.85rem', padding: '0.65rem 1rem', backgroundColor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>

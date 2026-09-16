@@ -157,16 +157,16 @@ export const StudentDashboard = () => {
   if (!student) {
     return (
       <div className="section-py" style={{ backgroundColor: '#F8FAFC', minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
-        <div className="container" style={{ maxWidth: '640px' }}>
-          <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+        <div className="container" style={{ maxWidth: '580px', width: '100%', margin: '0 auto' }}>
+          <div className="card student-dashboard-login-card" style={{ textAlign: 'center' }}>
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#EFF6FF', color: '#1E40AF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
               <User size={32} />
             </div>
             <span className="badge badge-navy" style={{ marginBottom: '0.75rem' }}>STUDENT PORTAL</span>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem' }}>
+            <h2 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem' }}>
               {lang === 'hi' ? 'विद्यार्थी डैशबोर्ड लॉगिन / खोज' : 'Access Your Student Dashboard'}
             </h2>
-            <p style={{ color: '#64748B', fontSize: '0.9rem', marginBottom: '2rem' }}>
+            <p style={{ color: '#64748B', fontSize: '0.88rem', marginBottom: '1.75rem', lineHeight: 1.5 }}>
               {lang === 'hi'
                 ? 'अपने आवेदन पत्र की स्थिति, छात्रवृत्ति डीबीटी विवरण एवं प्रमाण पत्र देखने के लिए अपना आवेदन क्रमांक दर्ज करें।'
                 : 'Enter your Application ID (e.g. JMF-2026-108234) or registered mobile number to access your portal.'}
@@ -196,14 +196,6 @@ export const StudentDashboard = () => {
 
             <div style={{ marginTop: '2rem', borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <button 
-                  type="button"
-                  className="btn btn-outline btn-sm" 
-                  onClick={() => handleLookup(null, 'JMF-2026-108234')}
-                  style={{ color: '#1E40AF', borderColor: '#BFDBFE', fontWeight: 700 }}
-                >
-                  Try Demo: JMF-2026-108234
-                </button>
                 <button className="btn btn-primary btn-sm" onClick={() => navigate('/student-register')} style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700 }}>
                   ✨ {lang === 'hi' ? 'नया आवेदक खाता बनाएं' : 'Create New Applicant'}
                 </button>

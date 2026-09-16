@@ -122,9 +122,9 @@ export const authService = {
     // 2. Check Demo / Seed Account registry
     if (DEMO_ACCOUNTS[cleanEmail]) {
       const demo = DEMO_ACCOUNTS[cleanEmail];
-      return {
+      const payload = {
         user: demo.user,
-        session: { access_token: 'demo-session-token' },
+        session: { access_token: 'admin-session-token' },
         roles: demo.roles,
         role: demo.role,
         jurisdiction: demo.jurisdiction,
@@ -135,6 +135,14 @@ export const authService = {
           is_active: true
         }
       };
+      try {
+        localStorage.setItem('jmf_role', demo.role);
+        localStorage.setItem('jmf_admin_user', JSON.stringify(demo.user));
+        localStorage.setItem('jmf_jurisdiction', JSON.stringify(demo.jurisdiction || {}));
+      } catch (e) {
+        console.warn('Could not save admin session to localStorage:', e);
+      }
+      return payload;
     }
 
     // 3. Fallback error if credentials match neither
@@ -609,38 +617,63 @@ export const authService = {
    * Get current authenticated session user
    */
   async getCurrentUser() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      // Check for saved Student session in localStorage
-      try {
-        const savedRole = localStorage.getItem('jmf_role');
-        if (savedRole === 'STUDENT') {
-          const savedUser = localStorage.getItem('jmf_student_user');
-          const savedApp = localStorage.getItem('jmf_active_student_app');
-          if (savedUser) {
-            const parsedUser = JSON.parse(savedUser);
-            const parsedApp = savedApp ? JSON.parse(savedApp) : null;
-            return {
-              user: parsedUser,
-              session: { access_token: 'student-session' },
-              role: 'STUDENT',
-              roles: ['STUDENT'],
-              studentApp: parsedApp,
-              jurisdiction: {}
-            };
-          }
-        }
-      } catch (e) {
-        console.warn('Student session rehydration error:', e);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const roleInfo = await this.getUserProfileAndRole(session.user.id);
+        return {
+          user: session.user,
+          session,
+          ...roleInfo
+        };
       }
-      return null;
+    } catch (e) {
+      console.warn('Supabase getSession check failed:', e);
     }
-    const roleInfo = await this.getUserProfileAndRole(session.user.id);
-    return {
-      user: session.user,
-      session,
-      ...roleInfo
-    };
+
+    // Check for saved Admin session in localStorage
+    try {
+      const savedRole = localStorage.getItem('jmf_role');
+      const savedAdmin = localStorage.getItem('jmf_admin_user');
+      if (savedAdmin && savedRole && ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'].includes(savedRole)) {
+        const parsedAdmin = JSON.parse(savedAdmin);
+        const savedJurisdiction = localStorage.getItem('jmf_jurisdiction');
+        return {
+          user: parsedAdmin,
+          session: { access_token: 'admin-persisted-session' },
+          role: savedRole,
+          roles: [savedRole],
+          jurisdiction: savedJurisdiction ? JSON.parse(savedJurisdiction) : {}
+        };
+      }
+    } catch (e) {
+      console.warn('Admin session rehydration error:', e);
+    }
+
+    // Check for saved Student session in localStorage
+    try {
+      const savedRole = localStorage.getItem('jmf_role');
+      if (savedRole === 'STUDENT') {
+        const savedUser = localStorage.getItem('jmf_student_user');
+        const savedApp = localStorage.getItem('jmf_active_student_app');
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          const parsedApp = savedApp ? JSON.parse(savedApp) : null;
+          return {
+            user: parsedUser,
+            session: { access_token: 'student-session' },
+            role: 'STUDENT',
+            roles: ['STUDENT'],
+            studentApp: parsedApp,
+            jurisdiction: {}
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Student session rehydration error:', e);
+    }
+
+    return null;
   },
 
   /**
@@ -652,6 +685,7 @@ export const authService = {
     } catch (e) {}
     try {
       localStorage.removeItem('jmf_role');
+      localStorage.removeItem('jmf_admin_user');
       localStorage.removeItem('jmf_jurisdiction');
       localStorage.removeItem('jmf_active_student_app');
       localStorage.removeItem('jmf_active_app_id');

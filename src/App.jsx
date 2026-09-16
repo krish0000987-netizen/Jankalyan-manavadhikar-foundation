@@ -23,7 +23,7 @@ import { MeritList } from './pages/MeritList';
 import { Home as HomeIcon, Sparkles, Search, User, LifeBuoy } from 'lucide-react';
 
 const MainRouter = () => {
-  const { currentRoute, navigate, lang, authRole, activeStudentApp, authUser } = useApp();
+  const { currentRoute, navigate, lang, authRole, activeStudentApp, authUser, authLoading } = useApp();
 
   const isStudentLoggedIn = Boolean(
     authRole === 'STUDENT' || 
@@ -81,6 +81,17 @@ const MainRouter = () => {
       case '/admin/login':
         return <AdminLogin defaultRole="SUPER_ADMIN" />;
       case '/admin': {
+        if (authLoading) {
+          return (
+            <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div className="animate-spin" style={{ width: '40px', height: '40px', border: '3.5px solid #E2E8F0', borderTopColor: '#DC2626', borderRadius: '50%', margin: '0 auto 1.25rem' }} />
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A' }}>Verifying Administrative Access...</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.35rem' }}>Jankalyan Manavadhikar Foundation</div>
+              </div>
+            </div>
+          );
+        }
         const isAdmin = Boolean(
           authUser && 
           ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'].includes(authRole)

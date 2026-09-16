@@ -1846,3 +1846,61 @@ input, select, textarea {
   }
 }
 
+/* ====================================================================
+   RESPONSIVE AUTHENTICATION & LOGIN CARDS (STUDENT & ADMIN)
+   ==================================================================== */
+.login-auth-card {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  transition: max-width 0.3s ease;
+}
+
+.login-card-content {
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.student-dashboard-login-card {
+  padding: 2.5rem 2rem !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.form-row-responsive {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-portal-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .login-card-content {
+    padding: 1.5rem 1.15rem !important;
+  }
+
+  .student-dashboard-login-card {
+    padding: 1.75rem 1.15rem !important;
+  }
+
+  .form-row-responsive {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.85rem !important;
+  }
+
+  .login-portal-switcher {
+    grid-template-columns: 1fr !important;
+    gap: 0.6rem !important;
+  }
+}
+
+
