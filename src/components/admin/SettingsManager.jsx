@@ -26,7 +26,7 @@ export const SettingsManager = () => {
     academicSession: '2026-27',
     grantAmount: 22000,
     registrationFeeAmount: 211.30,
-    razorpayKeyId: 'rzp_test_51PLACEHOLDER',
+    razorpayKeyId: 'rzp_live_TceflpS8ncUJPO',
     applicationStartDate: '15/09/2026',
     applicationClosingDate: '30/11/2026',
     officialMobile: '8871557054',
@@ -261,8 +261,13 @@ export const SettingsManager = () => {
                 value={settings.razorpayKeyId}
                 onChange={(e) => setSettings({ ...settings, razorpayKeyId: e.target.value })}
               />
-              <span style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '3px', display: 'block' }}>
-                Public Key ID from your Razorpay Dashboard (API Keys).
+              <span style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span>Public Key ID from your Razorpay Dashboard (API Keys).</span>
+                {settings.razorpayKeyId?.startsWith('rzp_live_') ? (
+                  <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '1px 6px', borderRadius: '4px', fontWeight: 800, fontSize: '0.68rem' }}>🟢 LIVE PRODUCTION</span>
+                ) : (
+                  <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: '4px', fontWeight: 800, fontSize: '0.68rem' }}>🟡 TEST SANDBOX</span>
+                )}
               </span>
             </div>
           </div>

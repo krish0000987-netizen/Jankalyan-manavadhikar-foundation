@@ -28,7 +28,7 @@ import {
   RefreshCw,
   LogOut
 } from 'lucide-react';
-import { initiateScholarshipFeePayment } from '../services/razorpayService';
+import { initiateScholarshipFeePayment, isRazorpayTestMode } from '../services/razorpayService';
 
 export const StudentDashboard = () => {
   const { lang, t, navigate, activeStudentApp, setActiveStudentApp, updateStudentFeePayment, cms, grievances, logout } = useApp();
@@ -629,7 +629,11 @@ export const StudentDashboard = () => {
                   >
                     <Sparkles size={14} />
                     <span>{payingFee ? 'Processing...' : 'Pay ₹ 211.30 via Razorpay'}</span>
-                    <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>TEST MODE</span>
+                    {isRazorpayTestMode() ? (
+                      <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>TEST MODE</span>
+                    ) : (
+                      <span style={{ backgroundColor: '#DCFCE7', color: '#166534', fontSize: '0.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>LIVE SECURED</span>
+                    )}
                   </button>
                 )}
               </div>

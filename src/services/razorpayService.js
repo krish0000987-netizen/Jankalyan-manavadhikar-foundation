@@ -1,9 +1,10 @@
 /**
- * Jankalyan Manavadhikar Foundation - Razorpay Payment Service (Test Mode)
- * Handles scholarship application registration fee payments via Razorpay Gateway.
+ * Jankalyan Manavadhikar Foundation - Razorpay Payment Service
+ * Handles scholarship application registration fee payments via Razorpay Gateway (Live Production & Test).
  */
 
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
+const DEFAULT_KEY_ID = 'rzp_live_TceflpS8ncUJPO';
 
 let scriptLoadingPromise = null;
 
@@ -24,7 +25,7 @@ export const loadRazorpayScript = () => {
       resolve(true);
     };
     script.onerror = () => {
-      console.warn('Razorpay SDK failed to load from CDN. Fallback simulation available.');
+      console.warn('Razorpay SDK failed to load from CDN.');
       resolve(false);
     };
     document.body.appendChild(script);
@@ -37,9 +38,9 @@ export const loadRazorpayScript = () => {
  * Checks if Razorpay is currently operating in Test Mode
  */
 export const isRazorpayTestMode = () => {
-  const mode = (import.meta.env.VITE_RAZORPAY_MODE || 'test').toLowerCase();
-  const key = import.meta.env.VITE_RAZORPAY_KEY_ID || '';
-  return mode === 'test' || !key || key.startsWith('rzp_test_');
+  const mode = (import.meta.env.VITE_RAZORPAY_MODE || 'live').toLowerCase();
+  const key = import.meta.env.VITE_RAZORPAY_KEY_ID || DEFAULT_KEY_ID;
+  return mode === 'test' || key.startsWith('rzp_test_');
 };
 
 /**
@@ -47,7 +48,7 @@ export const isRazorpayTestMode = () => {
  * @param {Object} params
  * @param {number} params.amountInRupees - Amount in INR (e.g. 211.30)
  * @param {Object} params.student - Student info { fullName, email, mobile, applicationId }
- * @param {Function} params.onSuccess - Callback receiving { paymentId, amount, date }
+ * @param {Function} params.onSuccess - Callback receiving { paymentId, orderId, signature, amount, date }
  * @param {Function} params.onFailure - Callback receiving error object
  * @param {Function} params.onDismiss - Callback when checkout is closed
  */
@@ -59,84 +60,123 @@ export const initiateScholarshipFeePayment = async ({
   onDismiss
 }) => {
   const isLoaded = await loadRazorpayScript();
-  const configuredKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_JMF2026Scholarship';
-  const mode = (import.meta.env.VITE_RAZORPAY_MODE || 'test').toLowerCase();
+  const configuredKey = import.meta.env.VITE_RAZORPAY_KEY_ID || DEFAULT_KEY_ID;
+  const isTest = isRazorpayTestMode();
   const amountInPaise = Math.round(amountInRupees * 100); // 21130 paise
 
-  // Check if a real registered key was supplied by the user
-  const isCustomRealKey = configuredKey && 
-    (configuredKey.startsWith('rzp_test_') || configuredKey.startsWith('rzp_live_')) &&
-    configuredKey.length > 20 &&
-    !configuredKey.includes('placeholder') &&
-    configuredKey !== 'rzp_test_JMF2026Scholarship';
-
-  // If a valid custom key is configured and Razorpay SDK is loaded
-  if (isLoaded && window.Razorpay && isCustomRealKey) {
-    try {
-      const options = {
-        key: configuredKey,
-        amount: amountInPaise,
-        currency: 'INR',
-        name: 'Jankalyan Manavadhikar Foundation',
-        description: 'Scholarship Application Fee (Session 2026-27) [TEST MODE]',
-        image: 'https://jankalyanmanavadhikar.in/logo.png',
-        handler: function (response) {
-          if (response && response.razorpay_payment_id) {
-            onSuccess && onSuccess({
-              paymentId: response.razorpay_payment_id,
-              orderId: response.razorpay_order_id || null,
-              signature: response.razorpay_signature || null,
-              amount: amountInRupees,
-              method: 'RAZORPAY_TEST',
-              date: new Date().toISOString()
-            });
-          } else {
-            onFailure && onFailure(new Error('Payment failed or ID not returned by Razorpay.'));
-          }
-        },
-        prefill: {
-          name: student.fullName || student.name || 'Scholarship Applicant',
-          email: student.email || 'applicant@jankalyan.org',
-          contact: (student.mobile || '').replace(/[^0-9]/g, '') || '9876543210'
-        },
-        notes: {
-          application_id: student.applicationId || student.id || 'NEW_APPLICATION',
-          purpose: 'Scholarship Registration Fee ₹211.30 (Test Mode)',
-          environment: 'test'
-        },
-        theme: {
-          color: '#1E40AF'
-        },
-        modal: {
-          ondismiss: function () {
-            if (onDismiss) onDismiss();
-          }
-        }
-      };
-
-      const rzpInstance = new window.Razorpay(options);
-      rzpInstance.on('payment.failed', function (response) {
-        console.error('Razorpay test payment failed:', response.error);
-        if (onFailure) {
-          onFailure(new Error(response.error?.description || 'Transaction declined by bank/gateway.'));
-        }
+  // If SDK failed to load
+  if (!isLoaded || !window.Razorpay) {
+    if (isTest) {
+      openRazorpayTestSandboxModal({
+        amountInRupees,
+        student,
+        onSuccess,
+        onFailure,
+        onDismiss
       });
-      rzpInstance.open();
       return;
-    } catch (err) {
-      console.warn('Live Razorpay open failed, falling back to simulated test checkout:', err);
+    } else {
+      if (onFailure) {
+        onFailure(new Error('Razorpay payment gateway failed to load. Please check your internet connection and try again.'));
+      }
+      return;
     }
   }
 
-  // Interactive Razorpay Test Sandbox Modal
-  // Guarantees 100% reliable test payments with authentic Razorpay styling
-  openRazorpayTestSandboxModal({
-    amountInRupees,
-    student,
-    onSuccess,
-    onFailure,
-    onDismiss
-  });
+  // Create official Razorpay Order ID
+  let orderId = null;
+  try {
+    const orderRes = await fetch('/api/create-razorpay-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amountInRupees,
+        applicationId: student.applicationId || student.id || 'NEW_APP',
+        studentName: student.fullName || student.name || 'Scholarship Applicant'
+      })
+    });
+    if (orderRes.ok) {
+      const orderData = await orderRes.json();
+      if (orderData.orderId) {
+        orderId = orderData.orderId;
+      }
+    }
+  } catch (err) {
+    console.warn('Razorpay order creation call note:', err);
+  }
+
+  try {
+    const options = {
+      key: configuredKey,
+      amount: amountInPaise,
+      currency: 'INR',
+      name: 'Jankalyan Manavadhikar Foundation',
+      description: isTest
+        ? 'Scholarship Application Fee (Session 2026-27) [TEST MODE]'
+        : 'Scholarship Registration Fee (Session 2026-27)',
+      image: 'https://jankalyanmanavadhikar.in/logo.png',
+      ...(orderId ? { order_id: orderId } : {}),
+      handler: function (response) {
+        if (response && response.razorpay_payment_id) {
+          onSuccess && onSuccess({
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id || orderId || null,
+            signature: response.razorpay_signature || null,
+            amount: amountInRupees,
+            method: isTest ? 'RAZORPAY_TEST' : 'RAZORPAY_LIVE',
+            date: new Date().toISOString()
+          });
+        } else {
+          onFailure && onFailure(new Error('Payment was not completed or transaction ID was not returned by gateway.'));
+        }
+      },
+      prefill: {
+        name: student.fullName || student.name || 'Scholarship Applicant',
+        email: student.email || 'applicant@jankalyan.org',
+        contact: (student.mobile || '').replace(/[^0-9]/g, '') || '9876543210'
+      },
+      notes: {
+        application_id: student.applicationId || student.id || 'NEW_APPLICATION',
+        purpose: 'Scholarship Registration Fee ₹211.30',
+        environment: isTest ? 'test' : 'live'
+      },
+      theme: {
+        color: '#1E40AF'
+      },
+      modal: {
+        ondismiss: function () {
+          if (onDismiss) onDismiss();
+        }
+      }
+    };
+
+    const rzpInstance = new window.Razorpay(options);
+    rzpInstance.on('payment.failed', function (response) {
+      console.error('Razorpay payment failed:', response.error);
+      if (onFailure) {
+        onFailure(new Error(response.error?.description || 'Transaction declined by issuing bank/gateway.'));
+      }
+    });
+    rzpInstance.open();
+    return;
+  } catch (err) {
+    console.error('Razorpay gateway launch failed:', err);
+    if (!isTest) {
+      if (onFailure) {
+        onFailure(new Error('Payment gateway could not be launched: ' + (err.message || 'Unknown error')));
+      }
+      return;
+    }
+
+    // Only in test mode can we fallback to sandbox modal
+    openRazorpayTestSandboxModal({
+      amountInRupees,
+      student,
+      onSuccess,
+      onFailure,
+      onDismiss
+    });
+  }
 };
 
 /**

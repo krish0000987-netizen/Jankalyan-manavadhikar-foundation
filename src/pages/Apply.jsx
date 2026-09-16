@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { applicationService } from '../services/applicationService';
-import { initiateScholarshipFeePayment } from '../services/razorpayService';
+import { initiateScholarshipFeePayment, isRazorpayTestMode } from '../services/razorpayService';
 
 export const SCHOLARSHIP_SLABS = [
   { id: 'slab-1', nameHi: '5वीं से 7वीं', nameEn: 'Class 5th - 7th', amount: 4000, amountDisplay: '₹4,000/-', period: 'वार्षिक', color: '#0284C7', bg: '#F0F9FF', border: '#BAE6FD', defaultCourse: 'Class 6th' },
@@ -2033,7 +2033,11 @@ export const Apply = () => {
                       >
                         <Sparkles size={16} />
                         <span>{isPayingFee ? 'Opening Razorpay...' : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें' : 'Pay ₹ 211.30 via Razorpay')}</span>
-                        <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>TEST MODE</span>
+                        {isRazorpayTestMode() ? (
+                          <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>TEST MODE</span>
+                        ) : (
+                          <span style={{ backgroundColor: '#DCFCE7', color: '#166534', fontSize: '0.65rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>LIVE SECURED</span>
+                        )}
                       </button>
                     </div>
                   )}
