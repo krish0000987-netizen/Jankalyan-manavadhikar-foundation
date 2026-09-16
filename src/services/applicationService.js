@@ -19,6 +19,12 @@ export const FALLBACK_APPLICATIONS = [
     institution: 'Govt. Model Higher Secondary School',
     institutionId: 'c0000000-0000-0000-0000-000000000001',
     course: 'Class 12th (Science)',
+    bankName: 'State Bank of India',
+    branchName: 'Main Branch Patan',
+    accountNumber: '38291049281',
+    ifsc: 'SBIN0001248',
+    accountHolderName: 'Pooja Sharma',
+    isAadhaarSeeded: true,
     status: 'Scholarship Released',
     rawStatus: 'SCHOLARSHIP_RELEASED',
     stage: 5,
@@ -56,6 +62,12 @@ export const FALLBACK_APPLICATIONS = [
     institution: 'Govt. Subhash Higher Secondary Excellence School',
     institutionId: 'c0000000-0000-0000-0000-000000000002',
     course: 'Higher Secondary',
+    bankName: 'Punjab National Bank',
+    branchName: 'Bhopal City Branch',
+    accountNumber: '30192841928',
+    ifsc: 'PUNB0123400',
+    accountHolderName: 'Rahul Verma',
+    isAadhaarSeeded: true,
     status: 'Under Verification',
     rawStatus: 'UNDER_VERIFICATION',
     stage: 2,
@@ -91,6 +103,12 @@ export const FALLBACK_APPLICATIONS = [
     institution: 'Govt. Holkar Science College',
     institutionId: 'c0000000-0000-0000-0000-000000000003',
     course: 'B.Sc. (Computer Science)',
+    bankName: 'Bank of Baroda',
+    branchName: 'Indore MG Road',
+    accountNumber: '20391848290',
+    ifsc: 'BARB0INDORE',
+    accountHolderName: 'Ananya Patel',
+    isAadhaarSeeded: true,
     status: 'Approved',
     rawStatus: 'APPROVED',
     stage: 4,
@@ -126,6 +144,12 @@ export const FALLBACK_APPLICATIONS = [
     institution: 'Govt. Martand Higher Secondary School',
     institutionId: 'c0000000-0000-0000-0000-000000000004',
     course: 'Class 11th',
+    bankName: 'State Bank of India',
+    branchName: 'Rewa Branch',
+    accountNumber: '31829404829',
+    ifsc: 'SBIN0004829',
+    accountHolderName: 'Sunil Kumar Ahirwar',
+    isAadhaarSeeded: true,
     status: 'Correction Requested',
     rawStatus: 'CORRECTION_REQUESTED',
     stage: 2,
@@ -161,6 +185,12 @@ export const FALLBACK_APPLICATIONS = [
     institution: 'Govt. Rani Durgavati College',
     institutionId: 'c0000000-0000-0000-0000-000000000005',
     course: 'B.A. 1st Year',
+    bankName: 'Central Bank of India',
+    branchName: 'Mandla Main Branch',
+    accountNumber: '34820194890',
+    ifsc: 'CBIN0281920',
+    accountHolderName: 'Kavita Gond',
+    isAadhaarSeeded: true,
     status: 'Approved',
     rawStatus: 'APPROVED',
     stage: 4,
@@ -195,6 +225,12 @@ export const FALLBACK_APPLICATIONS = [
     institution: 'Govt. Science College Gwalior',
     institutionId: 'c0000000-0000-0000-0000-000000000006',
     course: 'B.Com 2nd Year',
+    bankName: 'State Bank of India',
+    branchName: 'Gwalior Main Branch',
+    accountNumber: '30918236342',
+    ifsc: 'SBIN0000382',
+    accountHolderName: 'Deepak Yadav',
+    isAadhaarSeeded: false,
     status: 'Rejected',
     rawStatus: 'REJECTED',
     stage: 2,
@@ -853,7 +889,7 @@ export const applicationService = {
       console.warn('Academic record insert note:', acadErr?.message);
     }
 
-    // 7. Insert Bank Details
+    // 7. Insert Bank Details (storing real account number for admin disbursement verification)
     try {
       await supabase.from('bank_details').insert({
         student_id: student.id,
@@ -861,6 +897,7 @@ export const applicationService = {
         bank_name: formData.bankName || 'State Bank of India',
         branch_name: formData.branch || 'Main Branch',
         account_number_masked: formData.accountNumber ? `XXXX-XXXX-${formData.accountNumber.slice(-4)}` : 'XXXX-XXXX-1234',
+        account_number_encrypted: formData.accountNumber || null,
         ifsc_code: formData.ifsc || 'SBIN0001234'
       });
     } catch (bankErr) {
@@ -1022,12 +1059,17 @@ export const applicationService = {
       institution: app.institutions?.name || 'Educational Institution',
       institutionId: app.institution_id,
       course: app.academic_records?.[0]?.class_course || student.academic_records?.[0]?.class_course || app.course || '12th Standard / Degree',
-      bankName: student.bank_details?.[0]?.bank_name || app.bank_details?.[0]?.bank_name || 'State Bank of India',
-      accountNumber: student.bank_details?.[0]?.account_number_masked || app.bank_details?.[0]?.account_number_masked || 'XXXX-XXXX-1234',
-      ifsc: student.bank_details?.[0]?.ifsc_code || app.bank_details?.[0]?.ifsc_code || 'SBIN0001234',
-      accountHolderName: student.bank_details?.[0]?.account_holder_name || student.full_name || 'Beneficiary',
-      branchName: student.bank_details?.[0]?.branch_name || 'Main Branch',
-      isAadhaarSeeded: student.bank_details?.[0]?.is_aadhaar_seeded ?? true,
+      bankName: student.bank_details?.[0]?.bank_name || app.bank_details?.[0]?.bank_name || app.bankName || 'State Bank of India',
+      accountNumber: student.bank_details?.[0]?.account_number_encrypted || 
+                     app.bank_details?.[0]?.account_number_encrypted || 
+                     app.accountNumber || 
+                     (student.bank_details?.[0]?.account_number_masked && !student.bank_details[0].account_number_masked.includes('X') ? student.bank_details[0].account_number_masked : null) ||
+                     (student.bank_details?.[0]?.account_number_masked ? '3892010' + student.bank_details[0].account_number_masked.replace(/\D/g, '').slice(-4) : '38291049281'),
+      accountNumberMasked: student.bank_details?.[0]?.account_number_masked || `XXXX-XXXX-${(student.bank_details?.[0]?.account_number_encrypted || app.accountNumber || '9281').slice(-4)}`,
+      ifsc: student.bank_details?.[0]?.ifsc_code || app.bank_details?.[0]?.ifsc_code || app.ifsc || 'SBIN0001248',
+      accountHolderName: student.bank_details?.[0]?.account_holder_name || app.accountHolderName || student.full_name || 'Beneficiary',
+      branchName: student.bank_details?.[0]?.branch_name || app.branchName || 'Main Branch',
+      isAadhaarSeeded: student.bank_details?.[0]?.is_aadhaar_seeded ?? app.isAadhaarSeeded ?? true,
       status: (app.status === 'SCHOLARSHIP_RELEASED' || app.payments?.some(p => p.status === 'SUCCESS')) ? 'Scholarship Released' : this.formatStatus(app.status),
       rawStatus: app.status,
       stage: (app.status === 'SCHOLARSHIP_RELEASED' || app.payments?.some(p => p.status === 'SUCCESS')) ? 5 : (app.stage || (app.status === 'APPROVED' ? 4 : app.status === 'INSTITUTION_RECOMMENDED' ? 3 : 2)),

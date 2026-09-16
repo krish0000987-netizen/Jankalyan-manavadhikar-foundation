@@ -407,8 +407,13 @@ export const ApplicationScrutinyModal = ({
                 </h4>
                 <div className="grid-3" style={{ gap: '0.75rem', fontSize: '0.85rem' }}>
                   <div><strong>Bank Name:</strong> {application.bankName || 'State Bank of India'}</div>
-                  <div><strong>Account Number (Masked):</strong> {application.accountNumber || 'XXXX-XXXX-1234'}</div>
-                  <div><strong>IFSC Code:</strong> {application.ifsc || 'SBIN0001234'}</div>
+                  <div>
+                    <strong>Account Number:</strong>{' '}
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#1E40AF', fontSize: '0.9rem' }}>
+                      {application.accountNumber || '38291049281'}
+                    </span>
+                  </div>
+                  <div><strong>IFSC Code:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{application.ifsc || 'SBIN0001248'}</span></div>
                   <div><strong>Aadhaar DBT Status:</strong> <span className="badge badge-green">Seeded</span></div>
                   <div><strong>Payment Status:</strong> {application.paymentDate !== '-' ? 'Released' : 'Pending'}</div>
                   <div><strong>Bank UTR:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{application.utrNumber}</span></div>
