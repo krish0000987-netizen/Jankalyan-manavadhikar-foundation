@@ -191,7 +191,7 @@ export const Home = () => {
               {t.overviewAmountTitle}
             </div>
             <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1B2A4E', margin: '0.4rem 0' }}>
-              <span className="editable-field">{cms.scholarshipAmount}</span>
+              <span className="editable-field">{cms.scholarshipAmount || '₹4,000/- to ₹22,000/- Yearly'}</span>
             </div>
             <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
               {t.overviewAmountDesc}
@@ -207,7 +207,7 @@ export const Home = () => {
               {t.overviewStartTitle}
             </div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1B2A4E', margin: '0.4rem 0' }}>
-              <span className="editable-field">{cms.applicationStartDate}</span>
+              <span className="editable-field">{cms.applicationStartDate || '15/09/2026'}</span>
             </div>
             <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
               {t.overviewStartDesc}
@@ -223,7 +223,7 @@ export const Home = () => {
               {t.overviewLastTitle}
             </div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1B2A4E', margin: '0.4rem 0' }}>
-              <span className="editable-field">{cms.applicationLastDate}</span>
+              <span className="editable-field">{cms.applicationLastDate || '30 November 2026'}</span>
             </div>
             <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
               {t.overviewLastDesc}

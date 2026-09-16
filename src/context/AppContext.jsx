@@ -10,13 +10,13 @@ const AppContext = createContext();
 
 // Verified CMS Defaults as robust baseline
 const INITIAL_CMS = {
-  scholarshipAmount: "₹4,000 to ₹22,000 / Academic Session",
+  scholarshipAmount: "₹4,000/- to ₹22,000/- Yearly",
   registrationFee: "₹ 211.30/-",
   registrationFeeNote: "₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)",
-  applicationStartDate: "2026-08-01",
-  applicationLastDate: "2026-10-31",
+  applicationStartDate: "15/09/2026",
+  applicationLastDate: "30 November 2026",
   eligibilityCriteria: "Class 5th to Post Graduation & Diploma Courses in recognized institutions.",
-  officeAddress: "Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Madhya Pradesh – 482002",
+  officeAddress: "Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002",
   registrationDetails: "JMF/MP/NGO/2026/894",
   officialEmail: "jankalyanmanavadhikar@gmail.com",
   officialMobile: "8871557054",
@@ -523,17 +523,31 @@ export const AppProvider = ({ children }) => {
       ...newFields
     }));
     // Also persist scheme settings if grant amount or dates changed
-    if (cms.schemeId && (newFields.scholarshipAmount || newFields.applicationStartDate || newFields.applicationLastDate)) {
+    if (cms.schemeId && (newFields.scholarshipAmount || newFields.applicationStartDate || newFields.applicationLastDate || newFields.eligibilityCriteria)) {
       try {
         await cmsService.updateSchemeSettings(cms.schemeId, {
-          grant_amount: parseFloat((newFields.scholarshipAmount || '').replace(/[^0-9.]/g, '')) || 12000,
-          grant_amount_display: newFields.scholarshipAmount,
-          application_start_date: newFields.applicationStartDate,
-          application_end_date: newFields.applicationLastDate,
-          eligibility_overview: newFields.eligibilityCriteria
+          grant_amount: parseFloat((newFields.scholarshipAmount || '').replace(/[^0-9.]/g, '')) || 22000,
+          grant_amount_display: newFields.scholarshipAmount || cms.scholarshipAmount,
+          application_start_date: newFields.applicationStartDate || cms.applicationStartDate,
+          application_end_date: newFields.applicationLastDate || cms.applicationLastDate,
+          eligibility_overview: newFields.eligibilityCriteria || cms.eligibilityCriteria
         });
       } catch (err) {
         console.warn('Could not save scheme to database:', err);
+      }
+    }
+    // Persist officeAddress & contacts if updated
+    if (newFields.officeAddress || newFields.officialMobile || newFields.officialEmail) {
+      try {
+        await cmsService.updatePortalConfig({
+          office_address: newFields.officeAddress || cms.officeAddress,
+          official_email: newFields.officialEmail || cms.officialEmail,
+          helpline_mobile: newFields.officialMobile || cms.officialMobile,
+          helpline_telephone: newFields.officialTelephone || cms.officialTelephone,
+          registration_number: newFields.registrationDetails || cms.registrationDetails
+        });
+      } catch (err) {
+        console.warn('Could not save portal config to database:', err);
       }
     }
   };

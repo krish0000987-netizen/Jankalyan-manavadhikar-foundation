@@ -1585,8 +1585,9 @@ export const Admin = () => {
                   <div className="form-group">
                     <label className="form-label required">Application Start Date</label>
                     <input 
-                      type="date"
+                      type="text"
                       className="form-control"
+                      placeholder="e.g. 15/09/2026"
                       value={cmsForm.applicationStartDate || ''}
                       onChange={(e) => setCmsForm({ ...cmsForm, applicationStartDate: e.target.value })}
                     />
@@ -1595,8 +1596,9 @@ export const Admin = () => {
                   <div className="form-group">
                     <label className="form-label required">Application Last Date</label>
                     <input 
-                      type="date"
+                      type="text"
                       className="form-control"
+                      placeholder="e.g. 30 November 2026"
                       value={cmsForm.applicationLastDate || ''}
                       onChange={(e) => setCmsForm({ ...cmsForm, applicationLastDate: e.target.value })}
                     />

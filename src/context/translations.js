@@ -36,8 +36,8 @@ export const translations = {
     heroCtaTrack: "Track Application",
     
     // Overview Cards
-    overviewAmountTitle: "Scholarship Amount",
-    overviewAmountDesc: "Direct Benefit Transfer to Student's Account",
+    overviewAmountTitle: "Annual Scholarship Grant Range",
+    overviewAmountDesc: "✓ Direct Benefit Transfer (DBT) directly into Student Bank Account",
     overviewStartTitle: "Application Start Date",
     overviewStartDesc: "Online Portal Open for Eligible Students",
     overviewLastTitle: "Application Last Date",
@@ -344,8 +344,8 @@ export const translations = {
     heroCtaTrack: "आवेदन की स्थिति देखें",
     
     // Overview Cards
-    overviewAmountTitle: "छात्रवृत्ति राशि",
-    overviewAmountDesc: "विद्यार्थी के बैंक खाते में सीधा अंतरण (DBT)",
+    overviewAmountTitle: "वार्षिक छात्रवृत्ति अनुदान सीमा (Grant Range)",
+    overviewAmountDesc: "✓ विद्यार्थी के बैंक खाते में सीधा प्रत्यक्ष लाभ अंतरण (DBT)",
     overviewStartTitle: "आवेदन प्रारंभ तिथि",
     overviewStartDesc: "पात्र विद्यार्थियों हेतु ऑनलाइन पोर्टल खुला है",
     overviewLastTitle: "आवेदन की अंतिम तिथि",

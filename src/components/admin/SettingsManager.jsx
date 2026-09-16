@@ -24,15 +24,15 @@ export const SettingsManager = () => {
 
   const [settings, setSettings] = useState({
     academicSession: '2026-27',
-    grantAmount: 12000,
+    grantAmount: 22000,
     registrationFeeAmount: 211.30,
     razorpayKeyId: 'rzp_test_51PLACEHOLDER',
-    applicationStartDate: '2026-08-01',
-    applicationClosingDate: '2026-10-31',
-    officialMobile: '+91 761 2400123',
+    applicationStartDate: '15/09/2026',
+    applicationClosingDate: '30 November 2026',
+    officialMobile: '8871557054',
     officialTelephone: '0761-2400123',
-    officialEmail: 'scholarship@jankalyan.org',
-    officeAddress: 'Jankalyan Bhawan, Civic Centre, Marhatal, Jabalpur, Madhya Pradesh - 482002',
+    officialEmail: 'jankalyanmanavadhikar@gmail.com',
+    officeAddress: 'Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002',
     dbtMode: 'MANUAL_DBT',
     maintenanceMode: false,
     autoApproveInstitutions: false
@@ -178,9 +178,10 @@ export const SettingsManager = () => {
             <div className="form-group">
               <label className="form-label required">Application Opening Date</label>
               <input 
-                type="date"
+                type="text"
                 className="form-control"
                 required
+                placeholder="e.g. 15/09/2026"
                 value={settings.applicationStartDate}
                 onChange={(e) => setSettings({ ...settings, applicationStartDate: e.target.value })}
               />
@@ -189,9 +190,10 @@ export const SettingsManager = () => {
             <div className="form-group">
               <label className="form-label required">Application Closing Deadline</label>
               <input 
-                type="date"
+                type="text"
                 className="form-control"
                 required
+                placeholder="e.g. 30 November 2026"
                 value={settings.applicationClosingDate}
                 onChange={(e) => setSettings({ ...settings, applicationClosingDate: e.target.value })}
               />

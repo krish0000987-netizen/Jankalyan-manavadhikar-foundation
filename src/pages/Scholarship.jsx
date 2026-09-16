@@ -930,7 +930,7 @@ export const Scholarship = () => {
                   {cms.officeAddress}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '0.4rem' }}>
-                  Ward No. 30, Dixit Colony, Pin: 482002
+                  {isHindi ? 'जबलपुर, मध्य प्रदेश - 482002' : 'Jabalpur, Madhya Pradesh - 482002'}
                 </div>
               </div>
             </div>

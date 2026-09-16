@@ -28,9 +28,9 @@ export const SchemesManager = () => {
     name: '',
     description: '',
     academic_year: '2026-27',
-    grant_amount: 12000,
-    application_start_date: '2026-08-01',
-    application_end_date: '2026-10-31',
+    grant_amount: 22000,
+    application_start_date: '2026-09-15',
+    application_end_date: '2026-11-30',
     application_fee: 211.30,
     is_active: true
   });
@@ -114,8 +114,8 @@ export const SchemesManager = () => {
       description: scheme.description || '',
       academic_year: scheme.academic_year,
       grant_amount: scheme.grant_amount,
-      application_start_date: scheme.application_start_date || '2026-08-01',
-      application_end_date: scheme.application_end_date || '2026-10-31',
+      application_start_date: scheme.application_start_date || '2026-09-15',
+      application_end_date: scheme.application_end_date || '2026-11-30',
       application_fee: scheme.application_fee || 211.30,
       is_active: scheme.is_active
     });
@@ -147,9 +147,9 @@ export const SchemesManager = () => {
               name: '',
               description: '',
               academic_year: '2026-27',
-              grant_amount: 12000,
-              application_start_date: '2026-08-01',
-              application_end_date: '2026-10-31',
+              grant_amount: 22000,
+              application_start_date: '2026-09-15',
+              application_end_date: '2026-11-30',
               application_fee: 211.30,
               is_active: true
             });
@@ -239,7 +239,7 @@ export const SchemesManager = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#475569', marginBottom: '1.25rem' }}>
                   <Calendar size={15} color="#1E40AF" />
                   <span>
-                    Application Window: <strong>{scheme.application_start_date || '2026-08-01'}</strong> to <strong>{scheme.application_end_date || '2026-10-31'}</strong>
+                    Application Window: <strong>{scheme.application_start_date || '2026-09-15'}</strong> to <strong>{scheme.application_end_date || '2026-11-30'}</strong>
                   </span>
                 </div>
 

@@ -35,22 +35,22 @@ export const cmsService = {
       const activeScheme = schemesRes.data || {};
 
       return {
-        scholarshipAmount: activeScheme.grant_amount_display || '₹4,000 to ₹22,000 / Academic Session',
-        grantAmountRaw: activeScheme.grant_amount || 16000,
+        scholarshipAmount: activeScheme.grant_amount_display || settingsMap.grantAmountDisplay || '₹4,000/- to ₹22,000/- Yearly',
+        grantAmountRaw: activeScheme.grant_amount || 22000,
         registrationFee: portalConfig.registration_fee || '₹ 211.30/-',
         registrationFeeNote: '₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)',
-        applicationStartDate: activeScheme.application_start_date || '2026-08-01',
-        applicationLastDate: activeScheme.application_end_date || '2026-10-31',
+        applicationStartDate: settingsMap.applicationStartDate || (activeScheme.application_start_date === '2026-09-15' ? '15/09/2026' : activeScheme.application_start_date) || '15/09/2026',
+        applicationLastDate: settingsMap.applicationClosingDate || (activeScheme.application_end_date === '2026-11-30' ? '30 November 2026' : activeScheme.application_end_date) || '30 November 2026',
         eligibilityCriteria: activeScheme.eligibility_overview || 'Class 5th to Post Graduation & Diploma Courses in recognized institutions.',
         academicYear: activeScheme.academic_year || '2026-27',
         schemeId: activeScheme.id,
         
         // Contacts & Org
-        officeAddress: portalConfig.office_address || 'Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Madhya Pradesh – 482002',
+        officeAddress: settingsMap.officeAddress || portalConfig.office_address || 'Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002',
         registrationDetails: portalConfig.registration_number || 'JMF/MP/NGO/2026/894',
-        officialEmail: portalConfig.official_email || 'jankalyanmanavadhikar@gmail.com',
-        officialMobile: portalConfig.helpline_mobile || '8871557054',
-        officialTelephone: portalConfig.helpline_telephone || '0761-4500054',
+        officialEmail: settingsMap.officialEmail || portalConfig.official_email || 'jankalyanmanavadhikar@gmail.com',
+        officialMobile: settingsMap.officialMobile || portalConfig.helpline_mobile || '8871557054',
+        officialTelephone: settingsMap.officialTelephone || portalConfig.helpline_telephone || '0761-4500054',
         helplineHours: portalConfig.helpline_hours || 'सुबह 10:00 बजे से शाम 7:00 बजे तक (10:00 AM – 07:00 PM)',
         officialWebsite: 'https://jankalyanmanavadhikar.in',
         
@@ -95,6 +95,13 @@ export const cmsService = {
    * Update Portal Settings (Contacts, Registration, Address)
    */
   async updatePortalConfig(configObj) {
+    if (configObj.office_address) {
+      await supabase.from('system_settings').upsert({
+        key: 'officeAddress',
+        value: configObj.office_address,
+        updated_at: new Date().toISOString()
+      });
+    }
     const { data, error } = await supabase
       .from('system_settings')
       .upsert({
