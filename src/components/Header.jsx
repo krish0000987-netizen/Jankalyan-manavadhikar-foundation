@@ -848,7 +848,7 @@ export const Header = () => {
                       className="btn btn-secondary btn-sm"
                       style={{ width: '100%', justifyContent: 'center' }}
                       onClick={() => {
-                        navigate('/student-dashboard');
+                        navigate(isStudentLoggedIn ? '/student-dashboard' : '/student-login');
                         setMobileMenuOpen(false);
                       }}
                     >

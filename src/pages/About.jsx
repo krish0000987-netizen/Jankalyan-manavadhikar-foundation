@@ -171,7 +171,7 @@ export const About = () => {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                   <CheckCircle size={20} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
                   <span style={{ fontSize: '0.95rem', color: '#1E293B' }}>
-                    {lang === 'hi' ? 'पूर्णतः निःशुल्क ऑनलाइन आवेदन एवं पारदर्शी ट्रैकिंग' : 'Completely fee-free application with live status tracking'}
+                    {lang === 'hi' ? 'सुरक्षित ऑनलाइन आवेदन एवं पारदर्शी स्टेटस ट्रैकिंग' : 'Secure online application with live status tracking'}
                   </span>
                 </div>
               </div>

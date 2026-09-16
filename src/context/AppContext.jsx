@@ -239,8 +239,8 @@ const INITIAL_CMS = {
       id: "FAQ-04",
       qEn: "Is there any application fee to apply?",
       qHi: "क्या आवेदन करने का कोई शुल्क है?",
-      aEn: "The foundation does not charge any application fee. The online submission portal is free for eligible students.",
-      aHi: "फाउंडेशन द्वारा आवेदन हेतु कोई शुल्क नहीं लिया जाता है। पात्र विद्यार्थियों के लिए ऑनलाइन पोर्टल पूर्णतः निःशुल्क है।"
+      aEn: "Yes, a nominal application registration and scrutiny processing fee of ₹ 211.30 is required. It is payable securely online via Razorpay (UPI, Debit/Credit Card, Net Banking) during application submission.",
+      aHi: "हाँ, सत्र 2026-27 हेतु छात्रवृत्ति आवेदन पंजीकरण एवं दस्तावेज़ संवीक्षा प्रक्रिया हेतु ₹ 211.30 का नाममात्र शुल्क अनिवार्य है। इसका भुगतान रेजरपे के माध्यम से ऑनलाइन (UPI, कार्ड, नेट बैंकिंग) सुरक्षित रूप से किया जाता है।"
     },
     {
       id: "FAQ-05",

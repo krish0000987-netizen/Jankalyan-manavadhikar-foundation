@@ -123,15 +123,20 @@ export const AdminLogin = ({ defaultRole = null }) => {
     { id: 'a0000000-0000-0000-0000-000000000006', name: 'Gwalior', block: 'Gwalior', blockId: 'b0000000-0000-0000-0000-000000000009', defaultSchool: 'Madhav Institute of Technology', instId: 'c0000000-0000-0000-0000-000000000006' }
   ];
 
-  // Update active role if route changes
+  // Update active role if route or defaultRole changes
   useEffect(() => {
-    if (currentRoute === '/admin/login' || currentRoute === '/admin') {
+    if (defaultRole) {
+      setActiveRole(defaultRole);
+      if (defaultRole === 'STUDENT') {
+        setStudentMode(currentRoute === '/student-register' ? 'register' : 'login');
+      }
+    } else if (currentRoute === '/admin/login' || currentRoute === '/admin') {
       setActiveRole('SUPER_ADMIN');
     } else {
       setActiveRole('STUDENT');
       setStudentMode(currentRoute === '/student-register' ? 'register' : 'login');
     }
-  }, [currentRoute]);
+  }, [currentRoute, defaultRole]);
 
   const currentRoleConfig = ROLE_CONFIGS.find(r => r.id === activeRole) || ROLE_CONFIGS[0];
 

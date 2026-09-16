@@ -199,7 +199,11 @@ export const StudentDashboard = () => {
                 <button className="btn btn-primary btn-sm" onClick={() => navigate('/student-register')} style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700 }}>
                   ✨ {lang === 'hi' ? 'नया आवेदक खाता बनाएं' : 'Create New Applicant'}
                 </button>
-                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/apply')}>
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate('/student-login')}>
+                  <User size={14} />
+                  <span>{lang === 'hi' ? 'विद्यार्थी लॉगिन पोर्टल' : 'Student Login Portal'}</span>
+                </button>
+                <button className="btn btn-outline btn-sm" onClick={() => navigate('/apply')}>
                   {lang === 'hi' ? 'आवेदन फॉर्म भरें' : 'Fill Application Form'}
                 </button>
               </div>

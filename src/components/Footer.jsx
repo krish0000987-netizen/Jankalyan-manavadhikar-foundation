@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Phone, Mail, MapPin, ShieldCheck, Award, FileText, ChevronRight, Globe, ExternalLink, Clock } from 'lucide-react';
 
 export const Footer = () => {
-  const { lang, setSpecificLanguage, t, navigate, cms } = useApp();
+  const { lang, setSpecificLanguage, t, navigate, cms, isStudentLoggedIn } = useApp();
 
   return (
     <footer className="site-footer no-print">
@@ -73,7 +73,7 @@ export const Footer = () => {
               </li>
               <li>
                 <button 
-                  onClick={() => navigate('/student-dashboard')} 
+                  onClick={() => navigate(isStudentLoggedIn ? '/student-dashboard' : '/student-login')} 
                   className="footer-link-btn"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#CBD5E1', fontSize: '0.88rem', textAlign: 'left', width: '100%' }}
                 >

@@ -73,6 +73,7 @@ const MainRouter = () => {
       case '/portal-login':
       case '/student-login':
       case '/student-register':
+        return <AdminLogin defaultRole="STUDENT" />;
       case '/school-login':
       case '/college-login':
       case '/institution-login':
@@ -177,8 +178,17 @@ const MainRouter = () => {
           </button>
 
           <button 
-            onClick={() => navigate('/student-dashboard')}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', color: currentRoute === '/student-dashboard' ? '#DC2626' : '#64748B', fontSize: '0.7rem', fontWeight: 600, position: 'relative' }}
+            onClick={() => navigate(isStudentLoggedIn ? '/student-dashboard' : '/student-login')}
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              gap: '2px', 
+              color: (currentRoute === '/student-dashboard' || currentRoute === '/student-login' || currentRoute === '/login' || currentRoute === '/student-register') ? '#DC2626' : '#64748B', 
+              fontSize: '0.7rem', 
+              fontWeight: 600, 
+              position: 'relative' 
+            }}
           >
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <User size={18} />
