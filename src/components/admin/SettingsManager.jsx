@@ -28,7 +28,7 @@ export const SettingsManager = () => {
     registrationFeeAmount: 211.30,
     razorpayKeyId: 'rzp_test_51PLACEHOLDER',
     applicationStartDate: '15/09/2026',
-    applicationClosingDate: '30 November 2026',
+    applicationClosingDate: '30/11/2026',
     officialMobile: '8871557054',
     officialTelephone: '0761-2400123',
     officialEmail: 'jankalyanmanavadhikar@gmail.com',
@@ -193,7 +193,7 @@ export const SettingsManager = () => {
                 type="text"
                 className="form-control"
                 required
-                placeholder="e.g. 30 November 2026"
+                placeholder="e.g. 30/11/2026"
                 value={settings.applicationClosingDate}
                 onChange={(e) => setSettings({ ...settings, applicationClosingDate: e.target.value })}
               />

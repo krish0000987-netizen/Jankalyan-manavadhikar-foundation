@@ -40,7 +40,7 @@ export const cmsService = {
         registrationFee: portalConfig.registration_fee || '₹ 211.30/-',
         registrationFeeNote: '₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)',
         applicationStartDate: settingsMap.applicationStartDate || (activeScheme.application_start_date === '2026-09-15' ? '15/09/2026' : activeScheme.application_start_date) || '15/09/2026',
-        applicationLastDate: settingsMap.applicationClosingDate || (activeScheme.application_end_date === '2026-11-30' ? '30 November 2026' : activeScheme.application_end_date) || '30 November 2026',
+        applicationLastDate: settingsMap.applicationClosingDate || (activeScheme.application_end_date === '2026-11-30' ? '30/11/2026' : activeScheme.application_end_date) || '30/11/2026',
         eligibilityCriteria: activeScheme.eligibility_overview || 'Class 5th to Post Graduation & Diploma Courses in recognized institutions.',
         academicYear: activeScheme.academic_year || '2026-27',
         schemeId: activeScheme.id,

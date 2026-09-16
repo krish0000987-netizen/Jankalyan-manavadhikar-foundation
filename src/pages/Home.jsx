@@ -223,7 +223,7 @@ export const Home = () => {
               {t.overviewLastTitle}
             </div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1B2A4E', margin: '0.4rem 0' }}>
-              <span className="editable-field">{cms.applicationLastDate || '30 November 2026'}</span>
+              <span className="editable-field">{cms.applicationLastDate || '30/11/2026'}</span>
             </div>
             <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
               {t.overviewLastDesc}

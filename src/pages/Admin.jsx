@@ -1598,7 +1598,7 @@ export const Admin = () => {
                     <input 
                       type="text"
                       className="form-control"
-                      placeholder="e.g. 30 November 2026"
+                      placeholder="e.g. 30/11/2026"
                       value={cmsForm.applicationLastDate || ''}
                       onChange={(e) => setCmsForm({ ...cmsForm, applicationLastDate: e.target.value })}
                     />

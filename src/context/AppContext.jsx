@@ -14,7 +14,7 @@ const INITIAL_CMS = {
   registrationFee: "₹ 211.30/-",
   registrationFeeNote: "₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)",
   applicationStartDate: "15/09/2026",
-  applicationLastDate: "30 November 2026",
+  applicationLastDate: "30/11/2026",
   eligibilityCriteria: "Class 5th to Post Graduation & Diploma Courses in recognized institutions.",
   officeAddress: "Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002",
   registrationDetails: "JMF/MP/NGO/2026/894",

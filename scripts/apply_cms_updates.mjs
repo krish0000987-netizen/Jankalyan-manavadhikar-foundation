@@ -7,7 +7,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const OFFICE_ADDRESS = 'Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002';
 const START_DATE = '15/09/2026';
-const END_DATE = '30 November 2026';
+const END_DATE = '30/11/2026';
 const GRANT_AMOUNT_DISPLAY = '₹4,000/- to ₹22,000/- Yearly';
 
 async function updateDatabase() {
