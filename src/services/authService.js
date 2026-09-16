@@ -275,7 +275,8 @@ export const authService = {
     institutionId = 'c0000000-0000-0000-0000-000000000001',
     classCourse = 'Class 12th',
     slab = 'slab-3',
-    scholarshipAmount = 12000
+    scholarshipAmount = 12000,
+    paymentData = null
   }) {
     const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
     if (!cleanMobile || cleanMobile.length < 10) {
@@ -368,8 +369,13 @@ export const authService = {
 
       if (existingApp) {
         appRecord = applicationService.normalizeApplication(existingApp);
+        // If payment was made and existing app had no payment, update it
+        if (paymentData?.paymentId && existingApp.registration_fee_status !== 'PAID') {
+          await applicationService.updateFeePayment(existingApp.id, paymentData);
+          appRecord = await applicationService.getApplicationById(existingApp.id);
+        }
       } else {
-        // Create initial application
+        // Create initial application with verified Razorpay payment
         const { data: newApp, error: appErr } = await supabase
           .from('applications')
           .insert({
@@ -381,12 +387,32 @@ export const authService = {
             status: 'UNDER_VERIFICATION',
             stage: 1,
             submission_date: new Date().toISOString().split('T')[0],
-            disbursed_amount: scholarshipAmount || 12000.00
+            disbursed_amount: scholarshipAmount || 12000.00,
+            registration_fee_status: paymentData?.paymentId ? 'PAID' : 'PENDING',
+            registration_fee_amount: paymentData?.amount || 211.30,
+            razorpay_payment_id: paymentData?.paymentId || null,
+            fee_payment_date: paymentData?.date || (paymentData?.paymentId ? new Date().toISOString() : null)
           })
           .select()
           .single();
 
         if (!appErr && newApp) {
+          // Record payment transaction into payments table
+          if (paymentData?.paymentId) {
+            try {
+              await supabase.from('payments').insert({
+                application_id: newApp.id,
+                amount: paymentData.amount || 211.30,
+                payment_method: paymentData.method || 'RAZORPAY_LIVE',
+                utr_number: paymentData.paymentId,
+                status: 'SUCCESS',
+                payment_date: new Date().toISOString().split('T')[0]
+              });
+            } catch (pe) {
+              console.warn('Payment record insert note:', pe);
+            }
+          }
+
           // Add academic record
           try {
             await supabase.from('academic_records').insert({
@@ -434,6 +460,10 @@ export const authService = {
         paymentDate: '-',
         utrNumber: '-',
         disbursedAmount: `₹${(scholarshipAmount || 12000).toLocaleString('en-IN')}`,
+        registrationFeeStatus: paymentData?.paymentId ? 'PAID' : 'PENDING',
+        registrationFeeAmount: paymentData?.amount || 211.30,
+        razorpayPaymentId: paymentData?.paymentId || null,
+        feePaymentDate: paymentData?.date || (paymentData?.paymentId ? new Date().toISOString() : null),
         login_pin: cleanPassword,
         documents: {},
         history: []

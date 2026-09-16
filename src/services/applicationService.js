@@ -904,7 +904,12 @@ export const applicationService = {
       console.warn('Bank details insert note:', bankErr?.message);
     }
 
-    // 8. Insert Main Application (trigger will auto-assign JMF-2026-XXXXXX)
+    // 8. Enforce Mandatory Razorpay Registration Fee Payment (₹ 211.30)
+    if (!formData.razorpayPaymentId) {
+      throw new Error('Mandatory scholarship application registration fee of ₹ 211.30 via Razorpay must be completed before submission.');
+    }
+
+    // Insert Main Application (trigger will auto-assign JMF-2026-XXXXXX)
     const { data: newApp, error: appError } = await supabase
       .from('applications')
       .insert({
@@ -917,15 +922,29 @@ export const applicationService = {
         stage: 2,
         submission_date: new Date().toISOString().split('T')[0],
         disbursed_amount: formData.scholarshipAmount ? parseFloat(formData.scholarshipAmount) : schemeGrant,
-        registration_fee_status: formData.registrationFeeStatus || 'PAID',
-        registration_fee_amount: formData.registrationFeeAmount || 211.30,
-        razorpay_payment_id: formData.razorpayPaymentId || null,
+        registration_fee_status: 'PAID',
+        registration_fee_amount: 211.30,
+        razorpay_payment_id: formData.razorpayPaymentId,
         fee_payment_date: formData.feePaymentDate || new Date().toISOString()
       })
       .select()
       .single();
 
     if (appError) throw appError;
+
+    // Record verified transaction in payments ledger
+    try {
+      await supabase.from('payments').insert({
+        application_id: newApp.id,
+        amount: 211.30,
+        payment_method: 'RAZORPAY_LIVE',
+        utr_number: formData.razorpayPaymentId,
+        status: 'SUCCESS',
+        payment_date: new Date().toISOString().split('T')[0]
+      });
+    } catch (pe) {
+      console.warn('Payments ledger insert note:', pe);
+    }
 
     // Save immediate local reference for instant dashboard access
     try {

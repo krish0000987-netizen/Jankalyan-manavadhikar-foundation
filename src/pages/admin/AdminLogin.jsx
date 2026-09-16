@@ -22,8 +22,10 @@ import {
   UserPlus,
   BookOpen,
   Award,
-  CheckCircle2
+  CheckCircle2,
+  CreditCard
 } from 'lucide-react';
+import { initiateScholarshipFeePayment, isRazorpayTestMode } from '../../services/razorpayService';
 
 export const AdminLogin = ({ defaultRole = null }) => {
   const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant, activeStudentApp, setActiveStudentApp, authRole } = useApp();
@@ -172,7 +174,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
     }
   };
 
-  // 2. Handle Create New Applicant Registration Submit
+  // 2. Handle Create New Applicant Registration Submit (Requires Mandatory Razorpay Payment of ₹ 211.30)
   const handleRegisterSubmit = async (e) => {
     e?.preventDefault();
     const cleanMobile = (regForm.mobile || '').replace(/[^0-9]/g, '');
@@ -182,6 +184,10 @@ export const AdminLogin = ({ defaultRole = null }) => {
     }
     if (cleanMobile.length < 10) {
       setErrorMessage(lang === 'hi' ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें।' : 'Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (!regForm.institutionName?.trim()) {
+      setErrorMessage(lang === 'hi' ? 'कृपया स्कूल अथवा कॉलेज का नाम दर्ज करें।' : 'Please enter school / college name.');
       return;
     }
     if (regForm.password && regForm.confirmPassword && regForm.password !== regForm.confirmPassword) {
@@ -195,39 +201,70 @@ export const AdminLogin = ({ defaultRole = null }) => {
 
     try {
       const chosenPass = regForm.password?.trim() || '123456';
-      const result = await createStudentApplicant({
-        fullName: regForm.fullName.trim(),
-        mobile: cleanMobile,
-        email: regForm.email?.trim() || `student_${cleanMobile}@jankalyan.org`,
-        password: chosenPass,
-        district: regForm.district,
-        districtId: regForm.districtId,
-        block: regForm.block,
-        blockId: regForm.blockId,
-        institutionName: regForm.institutionName,
-        institutionId: regForm.institutionId,
-        classCourse: regForm.classCourse,
-        slab: regForm.selectedSlab,
-        scholarshipAmount: regForm.scholarshipAmount
+      const studentEmail = regForm.email?.trim() || `student_${cleanMobile}@jankalyan.org`;
+
+      // Trigger mandatory Razorpay Live Payment of ₹ 211.30
+      await initiateScholarshipFeePayment({
+        amountInRupees: 211.30,
+        student: {
+          fullName: regForm.fullName.trim(),
+          mobile: cleanMobile,
+          email: studentEmail
+        },
+        onSuccess: async (paymentResult) => {
+          try {
+            const result = await createStudentApplicant({
+              fullName: regForm.fullName.trim(),
+              mobile: cleanMobile,
+              email: studentEmail,
+              password: chosenPass,
+              district: regForm.district,
+              districtId: regForm.districtId,
+              block: regForm.block,
+              blockId: regForm.blockId,
+              institutionName: regForm.institutionName,
+              institutionId: regForm.institutionId,
+              classCourse: regForm.classCourse,
+              slab: regForm.selectedSlab,
+              scholarshipAmount: regForm.scholarshipAmount,
+              paymentData: paymentResult
+            });
+
+            try {
+              confetti({ particleCount: 90, spread: 65, origin: { y: 0.6 } });
+            } catch (ce) {}
+
+            setSuccessMessage(
+              lang === 'hi'
+                ? `🎉 ₹ 211.30 शुल्क भुगतान सफल! नया आवेदक खाता बन गया। आवेदन क्रमांक: ${result.applicationId} | पिन: ${chosenPass}`
+                : `🎉 Registration fee of ₹ 211.30 paid successfully! New applicant created: ${result.applicationId} | PIN: ${chosenPass}`
+            );
+
+            setTimeout(() => {
+              navigate('/student-dashboard');
+            }, 1200);
+          } catch (err) {
+            console.error('Registration save error:', err);
+            setErrorMessage(err.message || 'Payment was processed, but could not finalize student record. Please contact administration.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        onFailure: (err) => {
+          setLoading(false);
+          setErrorMessage(
+            lang === 'hi'
+              ? 'भुगतान पूर्ण नहीं हुआ: ' + (err?.message || 'लेन-देन अस्वीकृत या रद्द कर दिया गया। नया आवेदक खाता बनाने हेतु ₹ 211.30 शुल्क अनिवार्य है।')
+              : 'Payment not completed: ' + (err?.message || 'Transaction was declined or cancelled. Registration fee of ₹ 211.30 is mandatory to create an applicant account.')
+          );
+        },
+        onDismiss: () => {
+          setLoading(false);
+        }
       });
-
-      try {
-        confetti({ particleCount: 90, spread: 65, origin: { y: 0.6 } });
-      } catch (ce) {}
-
-      setSuccessMessage(
-        lang === 'hi'
-          ? `🎉 नया आवेदक खाता बन गया! आवेदन क्रमांक: ${result.applicationId} | पिन: ${chosenPass}`
-          : `🎉 New applicant created! Application ID: ${result.applicationId} | PIN: ${chosenPass}`
-      );
-
-      setTimeout(() => {
-        navigate('/student-dashboard');
-      }, 1200);
     } catch (err) {
-      console.error('Registration error:', err);
-      setErrorMessage(err.message || 'Could not create new applicant. Please try again.');
-    } finally {
+      console.error('Payment launch error:', err);
+      setErrorMessage(err.message || 'Could not launch Razorpay payment gateway. Please try again.');
       setLoading(false);
     }
   };
@@ -756,25 +793,81 @@ export const AdminLogin = ({ defaultRole = null }) => {
                   </div>
                 </div>
 
-                {/* Submit Register Button */}
+                {/* Mandatory Student Registration Fee Summary Box */}
+                <div style={{
+                  backgroundColor: '#F0FDF4',
+                  border: '1.5px solid #86EFAC',
+                  borderRadius: '12px',
+                  padding: '1rem 1.25rem',
+                  marginBottom: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      backgroundColor: '#DCFCE7',
+                      color: '#166534',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <CreditCard size={20} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {lang === 'hi' ? 'अनिवार्य छात्रवृत्ति पंजीकरण शुल्क' : 'MANDATORY REGISTRATION FEE'}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '2px' }}>
+                        {lang === 'hi' ? 'सत्र 2026-27 आवेदन सत्यापन व प्रक्रिया' : 'Session 2026-27 verification & processing'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#1E40AF' }}>
+                      ₹ 211.30
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end', marginTop: '2px' }}>
+                      {isRazorpayTestMode() ? (
+                        <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.62rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>TEST MODE</span>
+                      ) : (
+                        <span style={{ backgroundColor: '#DCFCE7', color: '#166534', fontSize: '0.62rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>LIVE SECURED</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Register & Pay Button */}
                 <button
                   type="submit"
                   className="btn btn-primary"
                   style={{
                     width: '100%',
-                    height: '48px',
+                    height: '50px',
                     fontSize: '0.95rem',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     backgroundColor: '#2563EB',
-                    borderColor: '#2563EB'
+                    borderColor: '#2563EB',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.28)'
                   }}
                   disabled={loading}
                 >
-                  <UserPlus size={18} />
+                  <Sparkles size={18} />
                   <span>
                     {loading 
-                      ? (lang === 'hi' ? 'आवेदक खाता बनाया जा रहा है...' : 'Creating Applicant Account...') 
-                      : (lang === 'hi' ? '✨ नया आवेदक खाता बनाएं एवं लॉगिन करें' : '✨ Create Applicant Account & Access Dashboard')}
+                      ? (lang === 'hi' ? 'रेज़रपे भुगतान जारी...' : 'Processing Razorpay...') 
+                      : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें एवं खाता बनाएं' : 'Pay ₹ 211.30 via Razorpay & Create Account')}
                   </span>
                 </button>
 

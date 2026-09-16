@@ -75,7 +75,18 @@ export const Apply = () => {
   // Form State
   const [formData, setFormData] = useState(() => {
     const savedDraft = localStorage.getItem('jmf_app_draft');
-    return savedDraft ? JSON.parse(savedDraft) : {
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        // Do not carry over test payments into live mode
+        if (!isRazorpayTestMode() && parsed.razorpayPaymentId?.startsWith('pay_test_')) {
+          parsed.razorpayPaymentId = null;
+          parsed.registrationFeeStatus = 'PENDING';
+        }
+        return parsed;
+      } catch (e) {}
+    }
+    return {
       // Step 1: Registration
       mobile: '',
       otp: '',
@@ -147,6 +158,12 @@ export const Apply = () => {
       incomeFileName: '',
       casteFile: null,
       casteFileName: '',
+
+      // Step 8: Registration Fee & Razorpay Payment
+      registrationFeeStatus: 'PENDING',
+      registrationFeeAmount: 211.30,
+      razorpayPaymentId: null,
+      feePaymentDate: null,
 
       // Step 8: Declaration
       declared: false
@@ -428,12 +445,13 @@ export const Apply = () => {
           fullName: formData.fullName,
           mobile: formData.mobile,
           email: formData.email,
-          applicationId: activeStudentApp?.id || 'NEW'
+          applicationId: activeStudentApp?.id || 'NEW_SCHOLARSHIP'
         },
         onSuccess: (paymentResult) => {
           setIsPayingFee(false);
           setFormData(prev => ({
             ...prev,
+            declared: true,
             registrationFeeStatus: 'PAID',
             registrationFeeAmount: 211.30,
             razorpayPaymentId: paymentResult.paymentId,
@@ -442,7 +460,11 @@ export const Apply = () => {
         },
         onFailure: (err) => {
           setIsPayingFee(false);
-          alert('Razorpay payment note: ' + (err?.message || 'Transaction was not completed.'));
+          alert(
+            lang === 'hi'
+              ? 'रेज़रपे भुगतान नोट: ' + (err?.message || 'लेन-देन पूर्ण नहीं हुआ')
+              : 'Razorpay payment note: ' + (err?.message || 'Transaction was not completed.')
+          );
         },
         onDismiss: () => {
           setIsPayingFee(false);
@@ -455,25 +477,28 @@ export const Apply = () => {
   };
 
   const handleFinalSubmit = async () => {
-    if (!formData.declared) {
-      setErrors({ declared: lang === 'hi' ? 'कृपया घोषणा स्वीकार करें' : 'Please accept declaration' });
-      return;
-    }
+    // Check if fee is paid with a valid transaction ID
+    const isFeeAlreadyPaid = Boolean(
+      formData.razorpayPaymentId &&
+      (isRazorpayTestMode() ? true : !formData.razorpayPaymentId.startsWith('pay_test_'))
+    );
 
-    // If Razorpay fee is not paid yet, initiate Razorpay payment first
-    if (!formData.razorpayPaymentId) {
+    // If Razorpay fee is not paid yet, initiate Razorpay payment FIRST!
+    if (!isFeeAlreadyPaid) {
       setIsPayingFee(true);
       await initiateScholarshipFeePayment({
         amountInRupees: 211.30,
         student: {
           fullName: formData.fullName,
           mobile: formData.mobile,
-          email: formData.email
+          email: formData.email,
+          applicationId: activeStudentApp?.id || 'NEW_SCHOLARSHIP'
         },
         onSuccess: async (paymentResult) => {
           setIsPayingFee(false);
           const updated = {
             ...formData,
+            declared: true,
             registrationFeeStatus: 'PAID',
             registrationFeeAmount: 211.30,
             razorpayPaymentId: paymentResult.paymentId,
@@ -484,12 +509,21 @@ export const Apply = () => {
         },
         onFailure: (err) => {
           setIsPayingFee(false);
-          alert('Please complete the scholarship registration fee payment of ₹ 211.30 to finalize your application.');
+          alert(
+            lang === 'hi'
+              ? 'छात्रवृत्ति आवेदन जमा करने के लिए ₹ 211.30 का रेज़रपे शुल्क भुगतान अनिवार्य है: ' + (err?.message || 'भुगतान पूर्ण नहीं हुआ')
+              : 'Please complete the mandatory scholarship registration fee payment of ₹ 211.30 via Razorpay to finalize your application: ' + (err?.message || 'Payment not completed')
+          );
         },
         onDismiss: () => {
           setIsPayingFee(false);
         }
       });
+      return;
+    }
+
+    if (!formData.declared) {
+      setErrors({ declared: lang === 'hi' ? 'कृपया घोषणा स्वीकार करें' : 'Please accept declaration' });
       return;
     }
 
@@ -1985,7 +2019,7 @@ export const Apply = () => {
                     </div>
                   </div>
 
-                  {formData.razorpayPaymentId ? (
+                  {Boolean(formData.razorpayPaymentId && (isRazorpayTestMode() ? true : !formData.razorpayPaymentId.startsWith('pay_test_'))) ? (
                     <div style={{
                       backgroundColor: '#F0FDF4',
                       border: '1px solid #BBF7D0',
@@ -2109,9 +2143,9 @@ export const Apply = () => {
                         ? (lang === 'hi' ? 'आवेदन जमा हो रहा है...' : 'Submitting Application...')
                         : isPayingFee
                         ? (lang === 'hi' ? 'रेज़रपे भुगतान जारी...' : 'Processing Razorpay...')
-                        : formData.razorpayPaymentId
+                        : Boolean(formData.razorpayPaymentId && (isRazorpayTestMode() ? true : !formData.razorpayPaymentId.startsWith('pay_test_')))
                         ? (lang === 'hi' ? 'आवेदन अंतिम रूप से जमा करें' : 'Submit Final Application')
-                        : (lang === 'hi' ? '₹ 211.30 भुगतान एवं अंतिम जमा' : 'Pay ₹ 211.30 via Razorpay & Submit')}
+                        : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें एवं जमा करें' : 'Pay ₹ 211.30 via Razorpay & Submit')}
                     </span>
                   </button>
                 )}
