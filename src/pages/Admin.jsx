@@ -166,6 +166,7 @@ export const Admin = () => {
   const [coordinatorsList, setCoordinatorsList] = useState([]);
   const [commissionSubTab, setCommissionSubTab] = useState('ledger'); // 'ledger' | 'coordinators' | 'slabs'
   const [isAddCoordinatorOpen, setIsAddCoordinatorOpen] = useState(false);
+  const [isSubmittingCoordinator, setIsSubmittingCoordinator] = useState(false);
   const [newCoordinatorForm, setNewCoordinatorForm] = useState({
     fullName: '',
     email: '',
@@ -176,6 +177,7 @@ export const Admin = () => {
     institution: ''
   });
   const [isGiveCommissionOpen, setIsGiveCommissionOpen] = useState(false);
+  const [isSubmittingCommission, setIsSubmittingCommission] = useState(false);
   const [manualCommissionForm, setManualCommissionForm] = useState({
     coordinatorId: '',
     role: 'DISTRICT_COORDINATOR',
@@ -729,8 +731,9 @@ export const Admin = () => {
       alert('Please enter coordinator full name and mobile number.');
       return;
     }
+    setIsSubmittingCoordinator(true);
     try {
-      await commissionService.createCoordinator(newCoordinatorForm);
+      const created = await commissionService.createCoordinator(newCoordinatorForm);
       const updated = await commissionService.getCoordinators();
       setCoordinatorsList(updated);
       setIsAddCoordinatorOpen(false);
@@ -743,42 +746,53 @@ export const Admin = () => {
         block: '',
         institution: ''
       });
-      alert(`✓ Coordinator "${newCoordinatorForm.fullName}" registered successfully!`);
+      alert(`✓ Coordinator "${created.fullName}" registered successfully!`);
     } catch (err) {
       alert('Failed to register coordinator: ' + (err.message || 'Error'));
+    } finally {
+      setIsSubmittingCoordinator(false);
     }
   };
 
   // Manually grant commission
   const handleGiveCommission = async (e) => {
     e.preventDefault();
-    if (!manualCommissionForm.coordinatorId) {
+    const coordId = manualCommissionForm.coordinatorId || coordinatorsList[0]?.id;
+    if (!coordId) {
       alert('Please select a coordinator.');
       return;
     }
-    if (!manualCommissionForm.amount || isNaN(manualCommissionForm.amount) || parseFloat(manualCommissionForm.amount) <= 0) {
+    const cleanAmt = parseFloat(manualCommissionForm.amount);
+    if (!cleanAmt || isNaN(cleanAmt) || cleanAmt <= 0) {
       alert('Please enter a valid commission amount.');
       return;
     }
+
+    setIsSubmittingCommission(true);
     try {
-      const coord = coordinatorsList.find(c => c.id === manualCommissionForm.coordinatorId);
+      const coord = coordinatorsList.find(c => c.id === coordId);
+      const chosenRole = coord?.role || manualCommissionForm.role || 'DISTRICT_COORDINATOR';
+
       await commissionService.addManualCommission({
-        beneficiaryUserId: manualCommissionForm.coordinatorId,
-        beneficiaryRole: coord?.role || manualCommissionForm.role || 'DISTRICT_COORDINATOR',
+        beneficiaryUserId: coordId,
+        beneficiaryRole: chosenRole,
         applicationId: manualCommissionForm.applicationId || null,
-        amount: manualCommissionForm.amount,
+        amount: cleanAmt,
         status: manualCommissionForm.status || 'PAID',
         approvedBy: authUser?.id && authUser.id.length === 36 ? authUser.id : null,
         remarks: manualCommissionForm.remarks,
-        utrNumber: manualCommissionForm.utrNumber
+        utrNumber: manualCommissionForm.utrNumber,
+        coordinatorName: coord?.fullName || 'Field Coordinator'
       });
 
       const updatedComms = await commissionService.getCommissions();
       setCommissionsList(updatedComms);
       setIsGiveCommissionOpen(false);
-      alert(`✓ Commission of ₹${manualCommissionForm.amount} recorded for ${coord?.fullName || 'Coordinator'} successfully!`);
+      alert(`✓ Commission of ₹${cleanAmt.toLocaleString('en-IN')} recorded for "${coord?.fullName || 'Coordinator'}" successfully!`);
     } catch (err) {
       alert('Failed to grant commission: ' + (err.message || 'Error'));
+    } finally {
+      setIsSubmittingCommission(false);
     }
   };
 
@@ -2615,7 +2629,19 @@ export const Admin = () => {
 
                   <button 
                     className="btn btn-primary"
-                    onClick={() => setIsGiveCommissionOpen(true)}
+                    onClick={() => {
+                      const defaultCoord = coordinatorsList[0];
+                      setManualCommissionForm({
+                        coordinatorId: defaultCoord?.id || '',
+                        role: defaultCoord?.role || 'DISTRICT_COORDINATOR',
+                        amount: 100,
+                        applicationId: '',
+                        status: 'PAID',
+                        utrNumber: `COMM-${Date.now().toString().slice(-6)}`,
+                        remarks: 'Field verification incentive for Session 2026-27'
+                      });
+                      setIsGiveCommissionOpen(true);
+                    }}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#16A34A', borderColor: '#16A34A', fontWeight: 700 }}
                   >
                     <Award size={16} />
@@ -3084,9 +3110,20 @@ export const Admin = () => {
                         >
                           Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary" style={{ backgroundColor: '#0B2B82', borderColor: '#0B2B82' }}>
-                          <CheckCircle2 size={16} />
-                          <span>Register Coordinator</span>
+                        <button 
+                          type="submit" 
+                          className="btn btn-primary" 
+                          style={{ backgroundColor: '#0B2B82', borderColor: '#0B2B82' }}
+                          disabled={isSubmittingCoordinator}
+                        >
+                          {isSubmittingCoordinator ? (
+                            <span>Registering Coordinator...</span>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={16} />
+                              <span>Register Coordinator</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </form>
@@ -3245,9 +3282,16 @@ export const Admin = () => {
                           type="submit" 
                           className="btn btn-primary"
                           style={{ backgroundColor: '#16A34A', borderColor: '#16A34A', fontWeight: 800 }}
+                          disabled={isSubmittingCommission}
                         >
-                          <Award size={16} />
-                          <span>Grant & Record Commission</span>
+                          {isSubmittingCommission ? (
+                            <span>Recording Commission...</span>
+                          ) : (
+                            <>
+                              <Award size={16} />
+                              <span>Grant & Record Commission</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </form>
