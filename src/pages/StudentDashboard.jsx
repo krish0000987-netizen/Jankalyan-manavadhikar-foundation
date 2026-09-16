@@ -25,12 +25,13 @@ import {
   Upload,
   CheckCircle,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  LogOut
 } from 'lucide-react';
 import { initiateScholarshipFeePayment } from '../services/razorpayService';
 
 export const StudentDashboard = () => {
-  const { lang, t, navigate, activeStudentApp, setActiveStudentApp, updateStudentFeePayment, cms, grievances } = useApp();
+  const { lang, t, navigate, activeStudentApp, setActiveStudentApp, updateStudentFeePayment, cms, grievances, logout } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -227,9 +228,26 @@ export const StudentDashboard = () => {
         {/* Welcome Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <span className="badge badge-navy" style={{ marginBottom: '0.4rem' }}>
-              {lang === 'hi' ? 'विद्यार्थी पोर्टल' : 'STUDENT SCHOLARSHIP PORTAL'}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-navy">
+                {lang === 'hi' ? 'विद्यार्थी पोर्टल' : 'STUDENT SCHOLARSHIP PORTAL'}
+              </span>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                backgroundColor: '#DCFCE7',
+                color: '#15803D',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                padding: '3px 9px',
+                borderRadius: '999px',
+                border: '1px solid #86EFAC'
+              }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }} />
+                {lang === 'hi' ? 'सत्र सक्रिय (लॉग इन)' : 'Active Session (Logged In)'}
+              </span>
+            </div>
             <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0F172A' }}>
               {lang === 'hi' ? `नमस्ते, ${student.studentName}` : `Welcome, ${student.studentName}`}
             </h1>
@@ -238,7 +256,7 @@ export const StudentDashboard = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button className="btn btn-outline btn-sm" onClick={() => refreshStudentApplication(false)} title="Check latest updates from scrutiny officer">
               <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
               <span>{refreshing ? 'Updating...' : (lang === 'hi' ? 'लाइव स्थिति रीफ्रेश करें' : 'Refresh Status')}</span>
@@ -264,6 +282,26 @@ export const StudentDashboard = () => {
             <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
               <Printer size={15} />
               <span>{t.btnDownloadReceipt}</span>
+            </button>
+            <button 
+              className="btn btn-sm" 
+              onClick={logout} 
+              style={{ 
+                backgroundColor: '#FEF2F2', 
+                color: '#DC2626', 
+                borderColor: '#FECACA', 
+                borderWidth: '1px', 
+                borderStyle: 'solid', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                fontWeight: 700,
+                padding: '0.4rem 0.85rem'
+              }}
+              title={lang === 'hi' ? 'विद्यार्थी सत्र से लॉगआउट करें' : 'Logout from Student Session'}
+            >
+              <LogOut size={15} />
+              <span>{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
             </button>
           </div>
         </div>

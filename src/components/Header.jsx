@@ -13,16 +13,32 @@ import {
   CheckCircle, 
   ChevronRight,
   ChevronDown,
-  Volume2
+  Volume2,
+  LogOut
 } from 'lucide-react';
 
 export const Header = () => {
-  const { lang, setSpecificLanguage, t, currentRoute, navigate, cms, authRole, setAuthRole } = useApp();
+  const { lang, setSpecificLanguage, t, currentRoute, navigate, cms, authRole, setAuthRole, authUser, activeStudentApp, logout } = useApp();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const dropdownRef = useRef(null);
+
+  // Student and Admin Auth Session Detection
+  const isStudentLoggedIn = Boolean(
+    authRole === 'STUDENT' || 
+    activeStudentApp || 
+    authUser?.user_metadata?.role === 'STUDENT'
+  );
+  const studentName = activeStudentApp?.studentName || authUser?.user_metadata?.full_name || 'Student';
+  const studentAppId = activeStudentApp?.id || authUser?.user_metadata?.applicationId || '';
+  const isAdminLoggedIn = Boolean(
+    authRole && 
+    authRole !== 'guest' && 
+    authRole !== 'guest-view' && 
+    authRole !== 'STUDENT'
+  );
 
   // Compact header on scroll
   useEffect(() => {
@@ -249,6 +265,33 @@ export const Header = () => {
                         <span>{lang === 'hi' ? 'सुपर एडमिन लॉगिन' : 'Super Admin Login'}</span>
                       </button>
                     </div>
+                    {(isStudentLoggedIn || isAdminLoggedIn) && (
+                      <div style={{ borderTop: '1px solid #F1F5F9', marginTop: '0.4rem', paddingTop: '0.4rem' }}>
+                        <button
+                          onClick={() => {
+                            setRoleDropdownOpen(false);
+                            logout();
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            width: '100%',
+                            padding: '0.55rem 0.75rem',
+                            fontSize: '0.8rem',
+                            color: '#DC2626',
+                            fontWeight: 700,
+                            borderRadius: '6px',
+                            backgroundColor: '#FEF2F2',
+                            border: '1px solid #FECACA',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <LogOut size={14} color="#DC2626" />
+                          <span>{lang === 'hi' ? 'सत्र समाप्त / लॉगआउट' : 'Sign Out / Logout'}</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -310,29 +353,156 @@ export const Header = () => {
               </ul>
             </nav>
 
-            {/* Right: Student Login + Apply Now Action Buttons */}
+            {/* Right: Student Identity, Status, Logout & Apply Now Actions */}
             <div className="header-actions">
               
-              {/* Multi-Role Portal Login Gateway (Desktop >= 1160px) */}
-              <button
-                className="btn btn-secondary btn-sm header-student-btn"
-                onClick={() => {
-                  if (authRole === 'STUDENT') {
-                    navigate('/student-dashboard');
-                  } else if (authRole && authRole !== 'guest' && authRole !== 'guest-view') {
-                    navigate('/admin');
-                  } else {
-                    navigate('/login');
-                  }
-                }}
-              >
-                <User size={14} />
-                <span>
-                  {authRole && authRole !== 'guest' && authRole !== 'guest-view'
-                    ? (lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard') 
-                    : (lang === 'hi' ? 'पोर्टल लॉगिन' : 'Portal Login')}
-                </span>
-              </button>
+              {isStudentLoggedIn ? (
+                <>
+                  {/* Logged-In Student Profile Chip (Click to go to Dashboard) */}
+                  <div 
+                    className="header-student-badge-chip hide-tablet-down"
+                    onClick={() => navigate('/student-dashboard')}
+                    title={lang === 'hi' ? 'विद्यार्थी डैशबोर्ड देखें' : 'Go to Student Dashboard'}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      backgroundColor: '#EFF6FF',
+                      border: '1px solid #BFDBFE',
+                      borderRadius: '999px',
+                      padding: '0.25rem 0.75rem 0.25rem 0.35rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: '#1E40AF',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.78rem',
+                      fontWeight: 800
+                    }}>
+                      {studentName.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.15 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{
+                          width: '7px',
+                          height: '7px',
+                          borderRadius: '50%',
+                          backgroundColor: '#16A34A',
+                          display: 'inline-block',
+                          boxShadow: '0 0 0 2px rgba(22, 163, 74, 0.25)'
+                        }} />
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1E3A8A' }}>
+                          {studentName.length > 13 ? studentName.substring(0, 13) + '...' : studentName}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.66rem', color: '#2563EB', fontWeight: 600 }}>
+                        {studentAppId ? studentAppId : (lang === 'hi' ? 'लॉग इन हैं' : 'Logged In')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Student Logout Button */}
+                  <button
+                    className="btn btn-sm header-logout-btn hide-tablet-down"
+                    onClick={logout}
+                    style={{
+                      backgroundColor: '#FEF2F2',
+                      color: '#DC2626',
+                      border: '1px solid #FECACA',
+                      padding: '0.38rem 0.7rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      gap: '4px',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                    title={lang === 'hi' ? 'विद्यार्थी सत्र से लॉगआउट करें' : 'Logout from Student Account'}
+                  >
+                    <LogOut size={13} />
+                    <span>{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+                  </button>
+                </>
+              ) : isAdminLoggedIn ? (
+                <>
+                  {/* Logged-In Admin Profile Chip */}
+                  <div 
+                    className="header-student-badge-chip hide-tablet-down"
+                    onClick={() => navigate('/admin')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      backgroundColor: '#FEF2F2',
+                      border: '1px solid #FECACA',
+                      borderRadius: '999px',
+                      padding: '0.25rem 0.75rem 0.25rem 0.35rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: '#DC2626',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.78rem',
+                      fontWeight: 800
+                    }}>
+                      A
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.15 }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#991B1B' }}>
+                        Admin Portal
+                      </span>
+                      <span style={{ fontSize: '0.66rem', color: '#DC2626', fontWeight: 600 }}>
+                        {authRole}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Admin Logout Button */}
+                  <button
+                    className="btn btn-sm header-logout-btn hide-tablet-down"
+                    onClick={logout}
+                    style={{
+                      backgroundColor: '#FEF2F2',
+                      color: '#DC2626',
+                      border: '1px solid #FECACA',
+                      padding: '0.38rem 0.7rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      gap: '4px',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                    title="Sign Out of Admin"
+                  >
+                    <LogOut size={13} />
+                    <span>{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+                  </button>
+                </>
+              ) : (
+                /* Guest / Not Logged In Portal Gateway Button */
+                <button
+                  className="btn btn-secondary btn-sm header-student-btn"
+                  onClick={() => navigate('/login')}
+                  title={lang === 'hi' ? 'विद्यार्थी अथवा पोर्टल लॉगिन' : 'Student or Portal Login'}
+                >
+                  <User size={14} />
+                  <span>{lang === 'hi' ? 'विद्यार्थी लॉगिन' : 'Student Login'}</span>
+                </button>
+              )}
 
               {/* Apply Now Primary CTA Button */}
               <button
@@ -360,7 +530,7 @@ export const Header = () => {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="mobile-drawer animate-fade-in">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.85rem', borderBottom: '1px solid #F1F5F9', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.85rem', borderBottom: '1px solid #F1F5F9', marginBottom: '0.75rem' }}>
               <div className="lang-switcher">
                 <button
                   className={`lang-btn ${lang === 'hi' ? 'active' : ''}`}
@@ -376,10 +546,139 @@ export const Header = () => {
                 </button>
               </div>
 
-              <span className="badge badge-blue">
-                {roles.find(r => r.id === authRole)?.[lang === 'hi' ? 'labelHi' : 'labelEn']}
-              </span>
+              {isStudentLoggedIn ? (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backgroundColor: '#DCFCE7',
+                  color: '#166534',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  border: '1px solid #86EFAC'
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16A34A' }} />
+                  {lang === 'hi' ? 'लॉग इन हैं' : 'Logged In'}
+                </span>
+              ) : (
+                <span className="badge badge-blue">
+                  {roles.find(r => r.id === authRole)?.[lang === 'hi' ? 'labelHi' : 'labelEn'] || (lang === 'hi' ? 'सामान्य दृश्य' : 'Public View')}
+                </span>
+              )}
             </div>
+
+            {/* Mobile Logged-in Student Identity Card or Guest Session Status */}
+            {isStudentLoggedIn ? (
+              <div style={{
+                backgroundColor: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                borderRadius: '12px',
+                padding: '0.85rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.65rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      backgroundColor: '#1E40AF',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.9rem',
+                      fontWeight: 800
+                    }}>
+                      {studentName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1E293B' }}>
+                        {studentName}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#1E40AF', fontWeight: 600 }}>
+                        {studentAppId ? `App ID: ${studentAppId}` : (lang === 'hi' ? 'सक्रिय विद्यार्थी सत्र' : 'Active Student Session')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    style={{ justifyContent: 'center', fontSize: '0.78rem' }}
+                    onClick={() => {
+                      navigate('/student-dashboard');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <User size={13} />
+                    <span>{lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}</span>
+                  </button>
+                  <button
+                    className="btn btn-sm"
+                    style={{
+                      backgroundColor: '#FEE2E2',
+                      color: '#DC2626',
+                      border: '1px solid #FCA5A5',
+                      justifyContent: 'center',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut size={13} />
+                    <span>{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px dashed #CBD5E1',
+                borderRadius: '8px',
+                padding: '0.5rem 0.75rem',
+                marginBottom: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '0.75rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#64748B' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#94A3B8' }} />
+                  <span>{lang === 'hi' ? 'स्थिति: आप लॉग इन नहीं हैं' : 'Status: Not logged in'}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    navigate('/login');
+                    setMobileMenuOpen(false);
+                  }}
+                  style={{
+                    backgroundColor: '#EFF6FF',
+                    color: '#1E40AF',
+                    border: '1px solid #BFDBFE',
+                    padding: '2px 7px',
+                    borderRadius: '5px',
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {lang === 'hi' ? 'लॉगिन' : 'Login'}
+                </button>
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.25rem' }}>
               {mobileNavLinks.map((item) => (
@@ -423,28 +722,67 @@ export const Header = () => {
               </button>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                  onClick={() => {
-                    navigate('/student-dashboard');
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <User size={15} />
-                  <span>{t.navStudentLogin}</span>
-                </button>
-                <button
-                  className="btn btn-outline btn-sm"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                  onClick={() => {
-                    navigate('/admin');
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <Shield size={15} />
-                  <span>{t.navAdmin}</span>
-                </button>
+                {isStudentLoggedIn ? (
+                  <>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ width: '100%', justifyContent: 'center' }}
+                      onClick={() => {
+                        navigate('/student-dashboard');
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <User size={15} />
+                      <span>{lang === 'hi' ? 'मेरा डैशबोर्ड' : 'My Dashboard'}</span>
+                    </button>
+                    <button
+                      className="btn btn-sm"
+                      style={{
+                        width: '100%',
+                        justifyContent: 'center',
+                        backgroundColor: '#FEE2E2',
+                        color: '#DC2626',
+                        border: '1px solid #FCA5A5',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut size={14} />
+                      <span>{lang === 'hi' ? 'लॉगआउट' : 'Logout'}</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      style={{ width: '100%', justifyContent: 'center' }}
+                      onClick={() => {
+                        navigate('/student-dashboard');
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <User size={15} />
+                      <span>{t.navStudentLogin}</span>
+                    </button>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      style={{ width: '100%', justifyContent: 'center' }}
+                      onClick={() => {
+                        navigate('/admin');
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <Shield size={15} />
+                      <span>{t.navAdmin}</span>
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Mobile Helpline & Support Direct Links */}

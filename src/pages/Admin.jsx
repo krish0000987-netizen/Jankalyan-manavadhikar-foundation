@@ -463,6 +463,7 @@ export const Admin = () => {
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           onExitPublic={() => navigate('/')}
+          onLogout={logout}
           onSearchChange={setGlobalSearch}
           searchValue={globalSearch}
           activeTab={activeTab}

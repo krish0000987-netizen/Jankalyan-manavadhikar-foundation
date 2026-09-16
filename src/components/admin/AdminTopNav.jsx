@@ -6,7 +6,8 @@ import {
   Shield, 
   User, 
   Globe,
-  CreditCard
+  CreditCard,
+  LogOut
 } from 'lucide-react';
 
 export const AdminTopNav = ({ 
@@ -17,6 +18,7 @@ export const AdminTopNav = ({
   sidebarOpen, 
   setSidebarOpen, 
   onExitPublic,
+  onLogout,
   unreadNotificationsCount = 2,
   onSearchChange,
   searchValue = '',
@@ -213,6 +215,32 @@ export const AdminTopNav = ({
             </span>
           </div>
         </div>
+
+        {/* Top Navbar Sign Out / Logout Button */}
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="btn btn-sm"
+            style={{
+              backgroundColor: '#FEF2F2',
+              color: '#DC2626',
+              border: '1px solid #FECACA',
+              height: '36px',
+              padding: '0 0.85rem',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              borderRadius: '8px'
+            }}
+            title="Sign out of administrative session"
+          >
+            <LogOut size={14} />
+            <span>Sign Out</span>
+          </button>
+        )}
 
       </div>
 

@@ -23,7 +23,13 @@ import { MeritList } from './pages/MeritList';
 import { Home as HomeIcon, Sparkles, Search, User, LifeBuoy } from 'lucide-react';
 
 const MainRouter = () => {
-  const { currentRoute, navigate, lang } = useApp();
+  const { currentRoute, navigate, lang, authRole, activeStudentApp, authUser } = useApp();
+
+  const isStudentLoggedIn = Boolean(
+    authRole === 'STUDENT' || 
+    activeStudentApp || 
+    authUser?.user_metadata?.role === 'STUDENT'
+  );
 
   const renderRoute = () => {
     // Dynamic match for QR Verification: /verify/application/:id
@@ -153,10 +159,28 @@ const MainRouter = () => {
 
           <button 
             onClick={() => navigate('/student-dashboard')}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', color: currentRoute === '/student-dashboard' ? '#DC2626' : '#64748B', fontSize: '0.7rem', fontWeight: 600 }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', color: currentRoute === '/student-dashboard' ? '#DC2626' : '#64748B', fontSize: '0.7rem', fontWeight: 600, position: 'relative' }}
           >
-            <User size={18} />
-            <span>{lang === 'hi' ? 'लॉगिन' : 'Login'}</span>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <User size={18} />
+              {isStudentLoggedIn && (
+                <span style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -4,
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#16A34A',
+                  border: '1.5px solid #FFFFFF'
+                }} />
+              )}
+            </div>
+            <span>
+              {isStudentLoggedIn 
+                ? (lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard') 
+                : (lang === 'hi' ? 'लॉगिन' : 'Login')}
+            </span>
           </button>
 
           <button 
