@@ -16,7 +16,7 @@ export const cmsService = {
         teamRes,
         downloadsRes
       ] = await Promise.all([
-        supabase.from('scholarship_schemes').select('*').eq('is_active', true).limit(1).single(),
+        supabase.from('scholarship_schemes').select('*').eq('id', 'd0000000-0000-0000-0000-000000000001').maybeSingle(),
         supabase.from('system_settings').select('*'),
         supabase.from('hero_slides').select('*').eq('is_active', true).order('display_order', { ascending: true }),
         supabase.from('announcements').select('*').eq('is_active', true).order('display_order', { ascending: true }),
@@ -41,7 +41,7 @@ export const cmsService = {
         registrationFeeNote: '₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)',
         applicationStartDate: settingsMap.applicationStartDate || (activeScheme.application_start_date === '2026-09-15' ? '15/09/2026' : activeScheme.application_start_date) || '15/09/2026',
         applicationLastDate: settingsMap.applicationClosingDate || (activeScheme.application_end_date === '2026-11-30' ? '30/11/2026' : activeScheme.application_end_date) || '30/11/2026',
-        eligibilityCriteria: activeScheme.eligibility_overview || 'Class 5th to Post Graduation & Diploma Courses in recognized institutions.',
+        eligibilityCriteria: activeScheme.eligibility_overview || 'Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.',
         academicYear: activeScheme.academic_year || '2026-27',
         schemeId: activeScheme.id,
         

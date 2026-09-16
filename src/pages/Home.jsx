@@ -192,13 +192,13 @@ export const Home = () => {
               <CreditCard size={20} color="#1E40AF" />
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 600 }}>
-              {t.overviewAmountTitle}
+              {t.overviewAmountTitle || 'Annual Scholarship Grant Range'}
             </div>
             <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1B2A4E', margin: '0.4rem 0' }}>
               <span className="editable-field">{cms.scholarshipAmount || '₹4,000/- to ₹22,000/- Yearly'}</span>
             </div>
-            <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-              {t.overviewAmountDesc}
+            <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600 }}>
+              {t.overviewAmountDesc || '✓ Direct Benefit Transfer (DBT) directly into Student Bank Account'}
             </div>
           </div>
 
@@ -240,13 +240,15 @@ export const Home = () => {
               <GraduationCap size={20} color="#16A34A" />
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 600 }}>
-              {t.overviewEligibilityTitle}
+              {t.overviewEligibilityTitle || 'Eligibility Criteria'}
             </div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1B2A4E', margin: '0.4rem 0' }}>
-              <span className="editable-field">{cms.eligibilityCriteria}</span>
+            <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#1B2A4E', margin: '0.4rem 0', lineHeight: 1.45 }}>
+              <span className="editable-field">
+                {cms.eligibilityCriteria || t.overviewEligibilityDesc || 'Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.'}
+              </span>
             </div>
-            <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-              {t.overviewEligibilityDesc}
+            <div style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 700 }}>
+              ✓ Class 5th to Post Graduation • Min 50% Marks • Income ≤ ₹2,50,000
             </div>
           </div>
 

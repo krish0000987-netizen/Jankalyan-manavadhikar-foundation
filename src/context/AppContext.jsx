@@ -15,7 +15,7 @@ const INITIAL_CMS = {
   registrationFeeNote: "₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)",
   applicationStartDate: "15/09/2026",
   applicationLastDate: "30/11/2026",
-  eligibilityCriteria: "Class 5th to Post Graduation (Min 50% Marks & Annual Income up to ₹2,50,000)",
+  eligibilityCriteria: "Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.",
   officeAddress: "Ward No. 30, Shri Ram College Road, Dixit Colony, Jabalpur, Pin Code: 482002",
   registrationDetails: "JMF/MP/NGO/2026/894",
   officialEmail: "jankalyanmanavadhikar@gmail.com",

@@ -43,7 +43,7 @@ export const translations = {
     overviewLastTitle: "Application Last Date",
     overviewLastDesc: "Submit Completed Form Before Deadline",
     overviewEligibilityTitle: "Eligibility Criteria",
-    overviewEligibilityDesc: "Class 5th to Post Graduation (Min 50% Marks & Income ≤ ₹2,50,000)",
+    overviewEligibilityDesc: "Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.",
 
     // Section 2: Objective
     objBadge: "SCHOLARSHIP OBJECTIVE",
@@ -350,14 +350,14 @@ export const translations = {
     heroCtaTrack: "आवेदन की स्थिति देखें",
     
     // Overview Cards
-    overviewAmountTitle: "वार्षिक छात्रवृत्ति अनुदान सीमा (Grant Range)",
-    overviewAmountDesc: "✓ विद्यार्थी के बैंक खाते में सीधा प्रत्यक्ष लाभ अंतरण (DBT)",
+    overviewAmountTitle: "Annual Scholarship Grant Range (वार्षिक छात्रवृत्ति अनुदान सीमा)",
+    overviewAmountDesc: "✓ Direct Benefit Transfer (DBT) directly into Student Bank Account",
     overviewStartTitle: "आवेदन प्रारंभ तिथि",
     overviewStartDesc: "पात्र विद्यार्थियों हेतु ऑनलाइन पोर्टल खुला है",
     overviewLastTitle: "आवेदन की अंतिम तिथि",
     overviewLastDesc: "अंतिम तिथि से पूर्व पूर्ण आवेदन जमा करें",
-    overviewEligibilityTitle: "पात्रता मापदंड",
-    overviewEligibilityDesc: "कक्षा 5वीं से पोस्ट ग्रेजुएशन (न्यूनतम 50% अंक एवं आय ≤ ₹2,50,000)",
+    overviewEligibilityTitle: "Eligibility Criteria (पात्रता मापदंड)",
+    overviewEligibilityDesc: "Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.",
 
     // Section 2: Objective
     objBadge: "योजना का उद्देश्य",
