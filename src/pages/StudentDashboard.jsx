@@ -181,7 +181,7 @@ export const StudentDashboard = () => {
               <input 
                 type="text"
                 className="form-control"
-                placeholder="JMF-2026-XXXXXX or Mobile Number"
+                placeholder={lang === 'hi' ? 'आवेदन क्रमांक (उदा. JMF-2026-108234) अथवा मोबाइल' : 'Application ID (e.g. JMF-2026-108234) or Mobile'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ height: '48px', fontSize: '1rem', textAlign: 'center' }}

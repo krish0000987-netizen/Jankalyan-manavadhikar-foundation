@@ -1050,7 +1050,7 @@ export const Apply = () => {
                     <input 
                       type="tel"
                       className={`form-control ${errors.mobile ? 'error' : ''}`}
-                      placeholder="e.g. 9826112233"
+                      placeholder={lang === 'hi' ? '10 अंकों का मोबाइल नंबर (उदा. 9826112233)' : '10-digit mobile number (e.g. 9826112233)'}
                       maxLength={10}
                       value={formData.mobile}
                       onChange={(e) => handleInputChange('mobile', e.target.value)}
@@ -1073,7 +1073,7 @@ export const Apply = () => {
                       <input 
                         type="text"
                         className={`form-control ${errors.otp ? 'error' : ''}`}
-                        placeholder="123456"
+                        placeholder={lang === 'hi' ? '6-अंकीय OTP दर्ज करें (उदा. 123456)' : 'Enter 6-digit OTP (e.g. 123456)'}
                         maxLength={6}
                         value={formData.otp}
                         onChange={(e) => handleInputChange('otp', e.target.value)}
@@ -1098,7 +1098,7 @@ export const Apply = () => {
                   <input 
                     type="email"
                     className="form-control"
-                    placeholder="student@example.com"
+                    placeholder={lang === 'hi' ? 'ईमेल आईडी (उदा. student@gmail.com)' : 'Email address (e.g. student@gmail.com)'}
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                   />
@@ -1110,7 +1110,7 @@ export const Apply = () => {
                     <input 
                       type="password"
                       className={`form-control ${errors.password ? 'error' : ''}`}
-                      placeholder="••••••••"
+                      placeholder={lang === 'hi' ? 'न्यूनतम 6 अक्षरों का पासवर्ड बनाएं' : 'Create secure password (min 6 chars)'}
                       value={formData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
                     />
@@ -1122,7 +1122,7 @@ export const Apply = () => {
                     <input 
                       type="password"
                       className={`form-control ${errors.confirmPassword ? 'error' : ''}`}
-                      placeholder="••••••••"
+                      placeholder={lang === 'hi' ? 'पासवर्ड की पुनः पुष्टि करें' : 'Re-enter password to confirm'}
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                     />
@@ -1144,7 +1144,7 @@ export const Apply = () => {
                   <input 
                     type="text"
                     className={`form-control ${errors.fullName ? 'error' : ''}`}
-                    placeholder="Student's official legal name"
+                    placeholder={lang === 'hi' ? 'छात्र / छात्रा का पूरा नाम (अंकसूची अनुसार)' : "Student's full legal name (as per marksheet)"}
                     value={formData.fullName}
                     onChange={(e) => handleInputChange('fullName', e.target.value)}
                   />
@@ -1157,6 +1157,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className={`form-control ${errors.fatherName ? 'error' : ''}`}
+                      placeholder={lang === 'hi' ? 'पिता का पूरा नाम' : "Father's Full Name"}
                       value={formData.fatherName}
                       onChange={(e) => handleInputChange('fatherName', e.target.value)}
                     />
@@ -1168,6 +1169,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
+                      placeholder={lang === 'hi' ? 'माता का पूरा नाम' : "Mother's Full Name"}
                       value={formData.motherName}
                       onChange={(e) => handleInputChange('motherName', e.target.value)}
                     />
@@ -1205,7 +1207,7 @@ export const Apply = () => {
                   <textarea 
                     className="form-control"
                     rows={2}
-                    placeholder="House / Street / Locality"
+                    placeholder={lang === 'hi' ? 'मकान नं., गली / मोहल्ला, ग्राम / वार्ड, लैंडमार्क' : 'House/Flat No., Street/Locality, Village/Ward, Landmark'}
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                   />
@@ -1236,6 +1238,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
+                      placeholder={lang === 'hi' ? 'ब्लॉक / तहसील (उदा. पाटन / सिहोरा)' : 'Enter Block / Tehsil (e.g. Patan / Sihora)'}
                       value={formData.block}
                       onChange={(e) => handleInputChange('block', e.target.value)}
                     />
@@ -1247,6 +1250,7 @@ export const Apply = () => {
                       type="text"
                       maxLength={6}
                       className={`form-control ${errors.pincode ? 'error' : ''}`}
+                      placeholder={lang === 'hi' ? '6-अंकीय पिनकोड (उदा. 482001)' : '6-digit Pincode (e.g. 482001)'}
                       value={formData.pincode}
                       onChange={(e) => handleInputChange('pincode', e.target.value)}
                     />
@@ -1376,7 +1380,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
-                      placeholder="e.g. Maharani Laxmi Bai Girls Higher Secondary School"
+                      placeholder={lang === 'hi' ? 'विद्यालय / महाविद्यालय का आधिकारिक नाम (उदा. महारानी लक्ष्मीबाई शासकीय उ.मा.वि.)' : 'Full official school or college name (e.g. Maharani Laxmi Bai Higher Sec School)'}
                       value={formData.institutionName}
                       onChange={(e) => handleInputChange('institutionName', e.target.value)}
                     />
@@ -1492,7 +1496,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className={`form-control ${errors.classCourse ? 'error' : ''}`}
-                      placeholder="e.g. Class 12th / B.Sc / B.Tech"
+                      placeholder={lang === 'hi' ? 'उदा. 12वीं (बायोलॉजी) / बीए / बीएससी / बी.टेक' : 'e.g. Class 12th / B.Sc / B.Com / B.Tech'}
                       value={formData.classCourse}
                       onChange={(e) => handleInputChange('classCourse', e.target.value)}
                     />
@@ -1504,6 +1508,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
+                      placeholder={lang === 'hi' ? 'सत्र (उदा. 2026-27)' : 'Academic Session (e.g. 2026-27)'}
                       value={formData.academicYear}
                       onChange={(e) => handleInputChange('academicYear', e.target.value)}
                     />
@@ -1516,7 +1521,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
-                      placeholder="e.g. State Board / CBSE / University"
+                      placeholder={lang === 'hi' ? 'उदा. एमपी बोर्ड (MPBSE) / सीबीएसई / विश्वविद्यालय' : 'e.g. MP Board / CBSE / State University'}
                       value={formData.boardUni}
                       onChange={(e) => handleInputChange('boardUni', e.target.value)}
                     />
@@ -1527,6 +1532,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
+                      placeholder={lang === 'hi' ? 'अंकसूची अनुक्रमांक (Roll No.) / नामांकन संख्या' : 'Roll Number / Enrollment No (e.g. 26189204)'}
                       value={formData.rollNo}
                       onChange={(e) => handleInputChange('rollNo', e.target.value)}
                     />
@@ -1539,7 +1545,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
-                      placeholder="e.g. 10th / 11th / 12th"
+                      placeholder={lang === 'hi' ? 'उदा. 10वीं / 11वीं / 12वीं / प्रथम वर्ष' : 'e.g. 10th / 11th / 12th / 1st Year'}
                       value={formData.prevExam}
                       onChange={(e) => handleInputChange('prevExam', e.target.value)}
                     />
@@ -1551,7 +1557,7 @@ export const Apply = () => {
                       type="number"
                       step="0.01"
                       className={`form-control ${errors.percentage ? 'error' : ''}`}
-                      placeholder="e.g. 84.5"
+                      placeholder={lang === 'hi' ? 'उदा. 84.50' : 'e.g. 84.50'}
                       value={formData.percentage}
                       onChange={(e) => handleInputChange('percentage', e.target.value)}
                     />
@@ -1588,7 +1594,7 @@ export const Apply = () => {
                   <input 
                     type="text"
                     className="form-control"
-                    placeholder="e.g. 1,20,000"
+                    placeholder={lang === 'hi' ? 'वार्षिक पारिवारिक आय ₹ में (उदा. 1,20,000)' : 'Annual family income in ₹ (e.g. 1,20,000)'}
                     value={formData.annualIncome}
                     onChange={(e) => handleInputChange('annualIncome', e.target.value)}
                   />
@@ -1614,7 +1620,7 @@ export const Apply = () => {
                   <input 
                     type="text"
                     className={`form-control ${errors.accountHolder ? 'error' : ''}`}
-                    placeholder="Student's name as registered in bank"
+                    placeholder={lang === 'hi' ? 'बैंक पासबुक अनुसार छात्र/छात्रा का पूरा नाम' : "Student's full name as registered in bank passbook"}
                     value={formData.accountHolder}
                     onChange={(e) => handleInputChange('accountHolder', e.target.value)}
                   />
@@ -1627,6 +1633,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className="form-control"
+                      placeholder={lang === 'hi' ? 'बैंक का नाम (उदा. State Bank of India / PNB / Bank of Baroda)' : 'Bank Name (e.g. State Bank of India / PNB / HDFC)'}
                       value={formData.bankName}
                       onChange={(e) => handleInputChange('bankName', e.target.value)}
                     />
@@ -1637,7 +1644,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className={`form-control ${errors.ifsc ? 'error' : ''}`}
-                      placeholder="e.g. SBIN0001248"
+                      placeholder={lang === 'hi' ? '11-अंकीय बैंक IFSC कोड (उदा. SBIN0001248)' : '11-character IFSC code (e.g. SBIN0001248)'}
                       value={formData.ifsc}
                       onChange={(e) => handleInputChange('ifsc', e.target.value.toUpperCase())}
                     />
@@ -1651,7 +1658,7 @@ export const Apply = () => {
                     <input 
                       type="password"
                       className={`form-control ${errors.accountNumber ? 'error' : ''}`}
-                      placeholder="Account Number"
+                      placeholder={lang === 'hi' ? 'बैंक खाता संख्या दर्ज करें' : 'Enter Bank Account Number'}
                       value={formData.accountNumber}
                       onChange={(e) => handleInputChange('accountNumber', e.target.value)}
                     />
@@ -1663,7 +1670,7 @@ export const Apply = () => {
                     <input 
                       type="text"
                       className={`form-control ${errors.confirmAccount ? 'error' : ''}`}
-                      placeholder="Re-enter Account Number"
+                      placeholder={lang === 'hi' ? 'खाता संख्या की पुनः पुष्टि करें' : 'Re-enter Bank Account Number to confirm'}
                       value={formData.confirmAccount}
                       onChange={(e) => handleInputChange('confirmAccount', e.target.value)}
                     />
@@ -1689,7 +1696,7 @@ export const Apply = () => {
                     type="text"
                     maxLength={12}
                     className={`form-control ${errors.aadhaar ? 'error' : ''}`}
-                    placeholder="12-digit Aadhaar Number (e.g. 548291048291)"
+                    placeholder={lang === 'hi' ? '12-अंकीय आधार संख्या (उदा. 5482 9104 8291)' : '12-digit Aadhaar Number (e.g. 5482 9104 8291)'}
                     value={formData.aadhaar}
                     onChange={(e) => handleInputChange('aadhaar', e.target.value)}
                   />
@@ -1707,7 +1714,7 @@ export const Apply = () => {
                   <input 
                     type="text"
                     className="form-control"
-                    placeholder="Samagra SSSM ID (if applicable)"
+                    placeholder={lang === 'hi' ? '9-अंकीय समग्र सदस्य आईडी (उदा. 123456789 - यदि लागू हो)' : '9-digit Samagra Member ID (e.g. 123456789 - if applicable)'}
                     value={formData.samagraId}
                     onChange={(e) => handleInputChange('samagraId', e.target.value)}
                   />

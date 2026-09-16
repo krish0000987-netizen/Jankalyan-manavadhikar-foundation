@@ -2238,105 +2238,144 @@ export const Admin = () => {
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1100,
-          padding: '1rem'
+          padding: '1rem',
+          overflowY: 'auto',
+          boxSizing: 'border-box'
         }}>
-          <div className="card animate-fade-in" style={{ maxWidth: '520px', width: '100%', padding: '2rem', backgroundColor: '#FFFFFF', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
+          <div 
+            className="animate-fade-in" 
+            style={{ 
+              maxWidth: '520px', 
+              width: '100%', 
+              maxHeight: 'min(88vh, 600px)',
+              backgroundColor: '#FFFFFF', 
+              borderRadius: '16px', 
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              margin: 'auto'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              padding: '1.25rem 1.5rem', 
+              borderBottom: '1px solid #E2E8F0',
+              flexShrink: 0
+            }}>
               <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                  Mark Manual Bank Transfer Completed
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                  Record Manual Bank Transfer
                 </h3>
-                <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
-                  Record offline bank transfer details for student tracking
+                <p style={{ color: '#64748B', fontSize: '0.78rem', margin: '0.2rem 0 0 0' }}>
+                  Offline transfer bookkeeping & UTR reference update
                 </p>
               </div>
               <button 
                 onClick={() => setMarkingTransferredApp(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: '4px' }}
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Beneficiary Details Summary Card */}
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '1rem', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Beneficiary Student:</span>
-                <strong style={{ color: '#0F172A' }}>{markingTransferredApp.studentName} ({markingTransferredApp.id})</strong>
+            {/* Modal Scrollable Body */}
+            <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1 }}>
+              {/* Beneficiary Details Summary Card */}
+              <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1.1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Beneficiary Student:</span>
+                  <strong style={{ color: '#0F172A', fontSize: '0.85rem' }}>{markingTransferredApp.studentName} ({markingTransferredApp.id})</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Grant Sanctioned:</span>
+                  <strong style={{ color: '#16A34A', fontSize: '1rem' }}>₹12,000.00</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Beneficiary Bank:</span>
+                  <span style={{ color: '#0F172A', fontWeight: 600, fontSize: '0.82rem' }}>{markingTransferredApp.bankName}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Account No & IFSC:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF', fontSize: '0.82rem' }}>
+                    {markingTransferredApp.accountNumber} ({markingTransferredApp.ifsc})
+                  </span>
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Grant Sanctioned:</span>
-                <strong style={{ color: '#16A34A', fontSize: '1.05rem' }}>₹12,000.00</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Beneficiary Bank:</span>
-                <span style={{ color: '#0F172A', fontWeight: 600 }}>{markingTransferredApp.bankName}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Account No & IFSC:</span>
-                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1E40AF' }}>
-                  {markingTransferredApp.accountNumber} ({markingTransferredApp.ifsc})
-                </span>
+
+              {/* Form Inputs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div className="form-group">
+                  <label className="form-label required" style={{ fontSize: '0.82rem', marginBottom: '0.3rem' }}>Transfer Execution Date</label>
+                  <input 
+                    type="date"
+                    value={transferModalForm.paymentDate}
+                    onChange={(e) => setTransferModalForm(prev => ({ ...prev, paymentDate: e.target.value }))}
+                    className="form-control"
+                    style={{ fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label required" style={{ fontSize: '0.82rem', marginBottom: '0.3rem' }}>Disbursing Bank / Source Account</label>
+                  <input 
+                    type="text"
+                    value={transferModalForm.disbursingBank}
+                    onChange={(e) => setTransferModalForm(prev => ({ ...prev, disbursingBank: e.target.value }))}
+                    placeholder="e.g. State Bank of India - Trust Account"
+                    className="form-control"
+                    style={{ fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '0.3rem' }}>Bank Transaction Reference / UTR (Optional)</label>
+                  <input 
+                    type="text"
+                    value={transferModalForm.utrNumber}
+                    onChange={(e) => setTransferModalForm(prev => ({ ...prev, utrNumber: e.target.value.toUpperCase() }))}
+                    placeholder="e.g. SBIN409281729014 or CMS-992144"
+                    className="form-control"
+                    style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+                  />
+                  <span style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '0.2rem', display: 'block' }}>
+                    If entered, the student will see this UTR on their dashboard and public tracking.
+                  </span>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '0.3rem' }}>Ledger Remarks (Optional)</label>
+                  <input 
+                    type="text"
+                    value={transferModalForm.remarks}
+                    onChange={(e) => setTransferModalForm(prev => ({ ...prev, remarks: e.target.value }))}
+                    placeholder="e.g. Manually transferred via Net Banking"
+                    className="form-control"
+                    style={{ fontSize: '0.85rem' }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Form */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <div className="form-group">
-                <label className="form-label required">Transfer Execution Date</label>
-                <input 
-                  type="date"
-                  value={transferModalForm.paymentDate}
-                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, paymentDate: e.target.value }))}
-                  className="form-control"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label required">Disbursing Bank / Source Account</label>
-                <input 
-                  type="text"
-                  value={transferModalForm.disbursingBank}
-                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, disbursingBank: e.target.value }))}
-                  placeholder="e.g. State Bank of India - Trust Account"
-                  className="form-control"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Bank Transaction Reference / UTR (Optional)</label>
-                <input 
-                  type="text"
-                  value={transferModalForm.utrNumber}
-                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, utrNumber: e.target.value.toUpperCase() }))}
-                  placeholder="e.g. SBIN409281729014 or CMS-992144"
-                  className="form-control"
-                  style={{ fontFamily: 'monospace' }}
-                />
-                <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
-                  If entered, the student will see this UTR on their dashboard.
-                </span>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Ledger Remarks (Optional)</label>
-                <input 
-                  type="text"
-                  value={transferModalForm.remarks}
-                  onChange={(e) => setTransferModalForm(prev => ({ ...prev, remarks: e.target.value }))}
-                  placeholder="e.g. Manually transferred via Net Banking"
-                  className="form-control"
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+            {/* Modal Footer - Always Sticky at the Bottom */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end', 
+              gap: '0.75rem', 
+              padding: '0.85rem 1.5rem', 
+              borderTop: '1px solid #E2E8F0', 
+              backgroundColor: '#F8FAFC',
+              flexShrink: 0
+            }}>
               <button 
                 className="btn btn-outline btn-sm"
                 onClick={() => setMarkingTransferredApp(null)}
@@ -2345,7 +2384,7 @@ export const Admin = () => {
               </button>
               <button 
                 className="btn btn-primary btn-sm"
-                style={{ backgroundColor: '#16A34A', borderColor: '#16A34A' }}
+                style={{ backgroundColor: '#16A34A', borderColor: '#16A34A', fontWeight: 800 }}
                 onClick={handleConfirmManualTransfer}
               >
                 <CheckCircle2 size={14} />
