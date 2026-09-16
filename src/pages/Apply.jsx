@@ -2018,11 +2018,15 @@ export const Apply = () => {
                           borderColor: '#2563EB',
                           fontWeight: 800,
                           fontSize: '0.9rem',
-                          padding: '0.65rem 1.25rem'
+                          padding: '0.65rem 1.25rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
                         }}
                       >
                         <Sparkles size={16} />
                         <span>{isPayingFee ? 'Opening Razorpay...' : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें' : 'Pay ₹ 211.30 via Razorpay')}</span>
+                        <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>TEST MODE</span>
                       </button>
                     </div>
                   )}

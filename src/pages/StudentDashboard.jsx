@@ -580,10 +580,11 @@ export const StudentDashboard = () => {
                         setPayingFee(false);
                       }
                     }}
-                    style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700 }}
+                    style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
                   >
                     <Sparkles size={14} />
                     <span>{payingFee ? 'Processing...' : 'Pay ₹ 211.30 via Razorpay'}</span>
+                    <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>TEST MODE</span>
                   </button>
                 )}
               </div>
