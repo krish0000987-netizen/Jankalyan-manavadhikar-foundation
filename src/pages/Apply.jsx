@@ -436,54 +436,30 @@ export const Apply = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPayingFee, setIsPayingFee] = useState(false);
 
-  const handlePayWithRazorpay = async () => {
-    setIsPayingFee(true);
-    try {
-      await initiateScholarshipFeePayment({
-        amountInRupees: 211.30,
-        student: {
-          fullName: formData.fullName,
-          mobile: formData.mobile,
-          email: formData.email,
-          applicationId: activeStudentApp?.id || 'NEW_SCHOLARSHIP'
-        },
-        onSuccess: (paymentResult) => {
-          setIsPayingFee(false);
-          setFormData(prev => ({
-            ...prev,
-            declared: true,
-            registrationFeeStatus: 'PAID',
-            registrationFeeAmount: 211.30,
-            razorpayPaymentId: paymentResult.paymentId,
-            feePaymentDate: paymentResult.date
-          }));
-        },
-        onFailure: (err) => {
-          setIsPayingFee(false);
-          alert(
-            lang === 'hi'
-              ? 'रेज़रपे भुगतान नोट: ' + (err?.message || 'लेन-देन पूर्ण नहीं हुआ')
-              : 'Razorpay payment note: ' + (err?.message || 'Transaction was not completed.')
-          );
-        },
-        onDismiss: () => {
-          setIsPayingFee(false);
-        }
-      });
-    } catch (err) {
-      setIsPayingFee(false);
-      console.warn('Razorpay error:', err);
-    }
-  };
 
   const handleFinalSubmit = async () => {
+    // 1. MUST check declaration form first before opening Razorpay!
+    if (!formData.declared) {
+      setErrors({ 
+        declared: lang === 'hi' 
+          ? 'कृपया रेज़रपे शुल्क भुगतान एवं आवेदन जमा करने हेतु पहले घोषणा स्वीकार करें।' 
+          : 'Please accept the declaration below before proceeding to Razorpay payment.' 
+      });
+      const decElem = document.getElementById('declarationCheckbox');
+      if (decElem) {
+        decElem.focus();
+        decElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     // Check if fee is paid with a valid transaction ID
     const isFeeAlreadyPaid = Boolean(
       formData.razorpayPaymentId &&
       (isRazorpayTestMode() ? true : !formData.razorpayPaymentId.startsWith('pay_test_'))
     );
 
-    // If Razorpay fee is not paid yet, initiate Razorpay payment FIRST!
+    // 2. Only after declaration is checked, initiate Razorpay payment!
     if (!isFeeAlreadyPaid) {
       setIsPayingFee(true);
       await initiateScholarshipFeePayment({
@@ -519,11 +495,6 @@ export const Apply = () => {
           setIsPayingFee(false);
         }
       });
-      return;
-    }
-
-    if (!formData.declared) {
-      setErrors({ declared: lang === 'hi' ? 'कृपया घोषणा स्वीकार करें' : 'Please accept declaration' });
       return;
     }
 
@@ -2042,37 +2013,23 @@ export const Apply = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.85rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.85rem' }}>
                       <div style={{ fontSize: '0.8rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 600 }}>Supported:</span>
+                        <span style={{ fontWeight: 600 }}>{lang === 'hi' ? 'स्वीकृत भुगतान विकल्प:' : 'Supported Methods:'}</span>
                         <span className="badge badge-blue" style={{ fontSize: '0.7rem' }}>UPI (GPay, PhonePe, Paytm)</span>
                         <span className="badge badge-navy" style={{ fontSize: '0.7rem' }}>Debit / Credit Cards</span>
                         <span className="badge badge-yellow" style={{ fontSize: '0.7rem' }}>Net Banking</span>
                       </div>
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handlePayWithRazorpay}
-                        disabled={isPayingFee}
-                        style={{
-                          backgroundColor: '#2563EB',
-                          borderColor: '#2563EB',
-                          fontWeight: 800,
-                          fontSize: '0.9rem',
-                          padding: '0.65rem 1.25rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}
-                      >
-                        <Sparkles size={16} />
-                        <span>{isPayingFee ? 'Opening Razorpay...' : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें' : 'Pay ₹ 211.30 via Razorpay')}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                         {isRazorpayTestMode() ? (
-                          <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>TEST MODE</span>
+                          <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '2px 8px', borderRadius: '4px' }}>TEST MODE</span>
                         ) : (
-                          <span style={{ backgroundColor: '#DCFCE7', color: '#166534', fontSize: '0.65rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>LIVE SECURED</span>
+                          <span style={{ backgroundColor: '#DCFCE7', color: '#166534', fontSize: '0.65rem', fontWeight: 900, padding: '2px 8px', borderRadius: '4px' }}>🔒 LIVE SECURED</span>
                         )}
-                      </button>
+                        <span style={{ fontSize: '0.75rem', color: '#64748B', fontStyle: 'italic' }}>
+                          {lang === 'hi' ? '(घोषणा स्वीकार करने के बाद भुगतान होगा)' : '(Payable below after accepting declaration)'}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2083,22 +2040,33 @@ export const Apply = () => {
                   alignItems: 'flex-start', 
                   gap: '0.85rem', 
                   padding: '1.25rem', 
-                  backgroundColor: '#FFFBEB', 
+                  backgroundColor: formData.declared ? '#F0FDF4' : (errors.declared ? '#FEF2F2' : '#FFFBEB'), 
                   borderRadius: '12px', 
-                  border: '1px solid #FCD34D' 
+                  border: formData.declared ? '1.5px solid #86EFAC' : (errors.declared ? '1.5px solid #FCA5A5' : '1px solid #FCD34D'),
+                  transition: 'all 0.2s ease'
                 }}>
                   <input 
                     type="checkbox"
                     id="declarationCheckbox"
-                    style={{ marginTop: '4px', width: '18px', height: '18px', cursor: 'pointer' }}
+                    style={{ marginTop: '4px', width: '18px', height: '18px', cursor: 'pointer', accentColor: '#16A34A' }}
                     checked={formData.declared}
-                    onChange={(e) => handleInputChange('declared', e.target.checked)}
+                    onChange={(e) => {
+                      handleInputChange('declared', e.target.checked);
+                      if (e.target.checked && errors.declared) {
+                        setErrors(prev => ({ ...prev, declared: '' }));
+                      }
+                    }}
                   />
-                  <label htmlFor="declarationCheckbox" style={{ fontSize: '0.875rem', color: '#78350F', lineHeight: 1.6, cursor: 'pointer' }}>
+                  <label htmlFor="declarationCheckbox" style={{ fontSize: '0.875rem', color: formData.declared ? '#166534' : '#78350F', lineHeight: 1.6, cursor: 'pointer', fontWeight: formData.declared ? 600 : 400 }}>
                     {t.declarationText}
                   </label>
                 </div>
-                {errors.declared && <div className="form-error" style={{ marginTop: '0.5rem' }}>{errors.declared}</div>}
+                {errors.declared && (
+                  <div className="form-error" style={{ marginTop: '0.5rem', color: '#DC2626', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span>⚠️</span>
+                    <span>{errors.declared}</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2136,6 +2104,17 @@ export const Apply = () => {
                     type="button" 
                     onClick={handleFinalSubmit}
                     disabled={isSubmitting || isPayingFee}
+                    style={{
+                      backgroundColor: !formData.declared ? '#64748B' : '#DC2626',
+                      borderColor: !formData.declared ? '#64748B' : '#DC2626',
+                      fontWeight: 800,
+                      boxShadow: !formData.declared ? 'none' : '0 4px 14px rgba(220, 38, 38, 0.35)',
+                      transition: 'all 0.2s ease',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                    title={!formData.declared ? (lang === 'hi' ? 'आगे बढ़ने के लिए कृपया पहले घोषणा स्वीकार करें' : 'Please accept declaration first to enable payment') : ''}
                   >
                     <Sparkles size={18} />
                     <span>
@@ -2145,6 +2124,8 @@ export const Apply = () => {
                         ? (lang === 'hi' ? 'रेज़रपे भुगतान जारी...' : 'Processing Razorpay...')
                         : Boolean(formData.razorpayPaymentId && (isRazorpayTestMode() ? true : !formData.razorpayPaymentId.startsWith('pay_test_')))
                         ? (lang === 'hi' ? 'आवेदन अंतिम रूप से जमा करें' : 'Submit Final Application')
+                        : !formData.declared
+                        ? (lang === 'hi' ? 'घोषणा स्वीकार कर ₹ 211.30 का भुगतान करें' : 'Accept Declaration to Pay ₹ 211.30 & Submit')
                         : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें एवं जमा करें' : 'Pay ₹ 211.30 via Razorpay & Submit')}
                     </span>
                   </button>
