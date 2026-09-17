@@ -42,8 +42,13 @@ export const Home = () => {
   ];
 
   // Dynamic CMS-driven hero slides
-  const slides = (cms.heroSlides && cms.heroSlides.length > 0)
-    ? cms.heroSlides.map(s => ({
+  const activeCmsSlides = (cms.heroSlides && cms.heroSlides.length > 0)
+    ? cms.heroSlides.filter(s => s.is_active !== false)
+    : [];
+
+  const slides = activeCmsSlides.length > 0
+    ? activeCmsSlides.map(s => ({
+        ...s,
         image: s.image_url || s.image || '/assets/hero_slide_1.jpg',
         alt: lang === 'hi' ? (s.heading_hi || s.alt_text_hi || 'Scholarship Scheme') : (s.heading_en || s.alt_text_en || 'Scholarship Scheme'),
         duration: s.slide_duration_ms || 3000
@@ -54,6 +59,17 @@ export const Home = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [activeNoticeModal, setActiveNoticeModal] = useState(null);
   const [faqExpanded, setFaqExpanded] = useState(null);
+
+  const activeSlide = slides[currentSlide] || slides[0];
+  const heroEyebrowText = (lang === 'hi' 
+    ? (activeSlide?.eyebrow_hi || activeSlide?.eyebrow_en) 
+    : (activeSlide?.eyebrow_en || activeSlide?.eyebrow_hi)) || t.heroEyebrow;
+  const heroTitleText = (lang === 'hi' 
+    ? (activeSlide?.heading_hi || activeSlide?.heading_en) 
+    : (activeSlide?.heading_en || activeSlide?.heading_hi)) || t.heroTitle;
+  const heroDescText = (lang === 'hi' 
+    ? (activeSlide?.description_hi || activeSlide?.description_en) 
+    : (activeSlide?.description_en || activeSlide?.description_hi)) || t.heroDesc;
 
   // Dynamic slideshow timer adhering to configured duration
   useEffect(() => {
@@ -99,15 +115,15 @@ export const Home = () => {
             <div className="hero-content">
               <div className="hero-eyebrow">
                 <Sparkles size={14} color="#FEF08A" />
-                <span>{t.heroEyebrow}</span>
+                <span>{heroEyebrowText}</span>
               </div>
 
               <h1 className="hero-title">
-                {t.heroTitle}
+                {heroTitleText}
               </h1>
 
               <p className="hero-description">
-                {t.heroDesc}
+                {heroDescText}
               </p>
 
               <div className="hero-actions">
@@ -530,7 +546,7 @@ export const Home = () => {
           </div>
 
           <div className="grid-3">
-            {cms.notices.map((n) => (
+            {(cms.notices || []).filter(n => n.isPublished !== false).map((n) => (
               <div key={n.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                   <span className="badge badge-blue">

@@ -149,7 +149,9 @@ export const Header = () => {
                 <span className="ticker-label-text">{t.announcementLabel}</span>
               </span>
               <span className="ticker-text">
-                {lang === 'hi' ? activeAnnouncement?.hi : activeAnnouncement?.en}
+                {lang === 'hi' 
+                  ? (activeAnnouncement?.hi || activeAnnouncement?.text_hi || activeAnnouncement?.en || activeAnnouncement?.text_en) 
+                  : (activeAnnouncement?.en || activeAnnouncement?.text_en || activeAnnouncement?.hi || activeAnnouncement?.text_hi)}
               </span>
             </div>
 

@@ -38,7 +38,8 @@ import {
   HelpCircle,
   ShieldAlert,
   Printer,
-  Pin
+  Pin,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '../api/supabase';
 import { paymentService } from '../services/paymentService';
@@ -191,6 +192,7 @@ export const Admin = () => {
   // CMS Form State
   const [cmsForm, setCmsForm] = useState({ ...cms });
   const [cmsSaveAlert, setCmsSaveAlert] = useState(false);
+  const [isSavingCMS, setIsSavingCMS] = useState(false);
   const [heroSlides, setHeroSlides] = useState(cms.heroSlides || []);
   const [noticesList, setNoticesList] = useState(cms.notices || []);
   const [editingNotice, setEditingNotice] = useState(null);
@@ -226,6 +228,9 @@ export const Admin = () => {
   // Keep cmsForm synced with cms context
   useEffect(() => {
     setCmsForm(prev => ({ ...prev, ...cms }));
+    if (cms.heroSlides && cms.heroSlides.length > 0) {
+      setHeroSlides(cms.heroSlides);
+    }
   }, [cms]);
 
   // Base role-scoped applications
@@ -385,9 +390,19 @@ export const Admin = () => {
   // Handle CMS Save
   const handleSaveCMS = async (e) => {
     e?.preventDefault();
-    await updateCMS(cmsForm);
-    setCmsSaveAlert(true);
-    setTimeout(() => setCmsSaveAlert(false), 3500);
+    setIsSavingCMS(true);
+    try {
+      await updateCMS({
+        ...cmsForm,
+        heroSlides
+      });
+      setCmsSaveAlert(true);
+      setTimeout(() => setCmsSaveAlert(false), 3500);
+    } catch (err) {
+      alert('Failed to save CMS changes: ' + (err.message || err));
+    } finally {
+      setIsSavingCMS(false);
+    }
   };
 
   // Notice Board CRUD Operations
@@ -2055,9 +2070,9 @@ export const Admin = () => {
                   </p>
                 </div>
 
-                <button className="btn btn-primary" onClick={handleSaveCMS}>
-                  <Save size={16} />
-                  <span>Save CMS Content to Database</span>
+                <button className="btn btn-primary" onClick={handleSaveCMS} disabled={isSavingCMS}>
+                  {isSavingCMS ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  <span>{isSavingCMS ? 'Saving CMS Content...' : 'Save CMS Content to Database'}</span>
                 </button>
               </div>
 
@@ -2255,6 +2270,60 @@ export const Admin = () => {
                             }}
                           />
                         </div>
+                        <div>
+                          <label className="form-label">English Eyebrow / Tagline</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            placeholder="e.g. Empowering Tomorrow, Today"
+                            value={slide.eyebrow_en || ''} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].eyebrow_en = e.target.value;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Hindi Eyebrow / Tagline (हिंदी)</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            placeholder="जैसे: उज्ज्वल भविष्य, आज से"
+                            value={slide.eyebrow_hi || ''} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].eyebrow_hi = e.target.value;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="form-label">Slide Subtitle / Description (English)</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            value={slide.description_en || ''} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].description_en = e.target.value;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <label className="form-label">Slide Subtitle / Description (हिंदी)</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            value={slide.description_hi || ''} 
+                            onChange={(e) => {
+                              const updated = [...heroSlides];
+                              updated[idx].description_hi = e.target.value;
+                              setHeroSlides(updated);
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2274,7 +2343,8 @@ export const Admin = () => {
                         value={cmsForm.announcements?.[0]?.en || ''}
                         onChange={(e) => {
                           const arr = [...(cmsForm.announcements || [])];
-                          if (arr[0]) arr[0].en = e.target.value;
+                          if (!arr[0]) arr[0] = { id: 'f0000000-0000-0000-0000-000000000001', en: '', hi: '' };
+                          arr[0] = { ...arr[0], en: e.target.value };
                           setCmsForm({ ...cmsForm, announcements: arr });
                         }}
                       />
@@ -2287,7 +2357,8 @@ export const Admin = () => {
                         value={cmsForm.announcements?.[0]?.hi || ''}
                         onChange={(e) => {
                           const arr = [...(cmsForm.announcements || [])];
-                          if (arr[0]) arr[0].hi = e.target.value;
+                          if (!arr[0]) arr[0] = { id: 'f0000000-0000-0000-0000-000000000001', en: '', hi: '' };
+                          arr[0] = { ...arr[0], hi: e.target.value };
                           setCmsForm({ ...cmsForm, announcements: arr });
                         }}
                       />
@@ -2295,9 +2366,9 @@ export const Admin = () => {
                   </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary btn-lg" style={{ marginBottom: '2.5rem' }}>
-                  <Save size={18} />
-                  <span>Save CMS Content to Database</span>
+                <button type="submit" className="btn btn-primary btn-lg" style={{ marginBottom: '2.5rem' }} disabled={isSavingCMS}>
+                  {isSavingCMS ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  <span>{isSavingCMS ? 'Saving CMS Content...' : 'Save CMS Content to Database'}</span>
                 </button>
 
               </form>

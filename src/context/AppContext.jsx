@@ -424,6 +424,7 @@ export const AppProvider = ({ children }) => {
         setCms(prev => ({
           ...prev,
           ...liveCms,
+          heroSlides: liveCms.heroSlides?.length ? liveCms.heroSlides : prev.heroSlides,
           announcements: liveCms.announcements?.length ? liveCms.announcements.map(a => ({ id: a.id, en: a.text_en, hi: a.text_hi })) : prev.announcements,
           downloads: liveCms.downloads?.length ? liveCms.downloads.map(d => ({ id: d.id, titleEn: d.title_en, titleHi: d.title_hi, categoryEn: d.category_en, categoryHi: d.category_hi, format: d.format, size: d.size_display })) : prev.downloads,
           faqs: liveCms.faqs?.length ? liveCms.faqs.map(f => ({ id: f.id, qEn: f.question_en, qHi: f.question_hi, aEn: f.answer_en, aHi: f.answer_hi })) : prev.faqs,
@@ -585,39 +586,68 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const updateCmsField = (field, value) => {
+    setCms(prev => ({ ...prev, [field]: value }));
+  };
+
   // CMS update wrapper
   const updateCMS = async (newFields) => {
+    // 1. Optimistic update
     setCms(prev => ({
       ...prev,
       ...newFields
     }));
-    // Also persist scheme settings if grant amount or dates changed
-    if (cms.schemeId && (newFields.scholarshipAmount || newFields.applicationStartDate || newFields.applicationLastDate || newFields.eligibilityCriteria)) {
-      try {
-        await cmsService.updateSchemeSettings(cms.schemeId, {
-          grant_amount: parseFloat((newFields.scholarshipAmount || '').replace(/[^0-9.]/g, '')) || 22000,
-          grant_amount_display: newFields.scholarshipAmount || cms.scholarshipAmount,
-          application_start_date: newFields.applicationStartDate || cms.applicationStartDate,
-          application_end_date: newFields.applicationLastDate || cms.applicationLastDate,
-          eligibility_overview: newFields.eligibilityCriteria || cms.eligibilityCriteria
-        });
-      } catch (err) {
-        console.warn('Could not save scheme to database:', err);
-      }
-    }
-    // Persist officeAddress & contacts if updated
-    if (newFields.officeAddress || newFields.officialMobile || newFields.officialEmail) {
-      try {
-        await cmsService.updatePortalConfig({
+
+    try {
+      const schemeId = newFields.schemeId || cms.schemeId || 'd0000000-0000-0000-0000-000000000001';
+      const grantAmountRaw = parseFloat((newFields.scholarshipAmount || cms.scholarshipAmount || '').replace(/[^0-9.]/g, '')) || 22000;
+
+      // 2. Persist scheme settings (dates, amounts, overview)
+      await cmsService.updateSchemeSettings(schemeId, {
+        grant_amount: grantAmountRaw,
+        grant_amount_display: newFields.scholarshipAmount || cms.scholarshipAmount,
+        application_start_date: newFields.applicationStartDate || cms.applicationStartDate,
+        application_end_date: newFields.applicationLastDate || cms.applicationLastDate,
+        eligibility_overview: newFields.eligibilityCriteria || cms.eligibilityCriteria
+      });
+
+      // 3. Persist system_settings key-value pairs (syncing dates, contacts, amounts)
+      await cmsService.updateSystemSettings({
+        applicationStartDate: newFields.applicationStartDate || cms.applicationStartDate,
+        applicationClosingDate: newFields.applicationLastDate || cms.applicationLastDate,
+        grantAmountDisplay: newFields.scholarshipAmount || cms.scholarshipAmount,
+        grantAmount: grantAmountRaw,
+        eligibilityCriteria: newFields.eligibilityCriteria || cms.eligibilityCriteria,
+        officialMobile: newFields.officialMobile || cms.officialMobile,
+        officialTelephone: newFields.officialTelephone || cms.officialTelephone,
+        officialEmail: newFields.officialEmail || cms.officialEmail,
+        officeAddress: newFields.officeAddress || cms.officeAddress,
+        registrationDetails: newFields.registrationDetails || cms.registrationDetails,
+        portal_config: {
           office_address: newFields.officeAddress || cms.officeAddress,
           official_email: newFields.officialEmail || cms.officialEmail,
           helpline_mobile: newFields.officialMobile || cms.officialMobile,
           helpline_telephone: newFields.officialTelephone || cms.officialTelephone,
           registration_number: newFields.registrationDetails || cms.registrationDetails
-        });
-      } catch (err) {
-        console.warn('Could not save portal config to database:', err);
+        }
+      });
+
+      // 4. Persist Hero Slides if provided
+      if (newFields.heroSlides && Array.isArray(newFields.heroSlides)) {
+        await cmsService.updateHeroSlides(newFields.heroSlides);
       }
+
+      // 5. Persist Announcements if provided
+      if (newFields.announcements && Array.isArray(newFields.announcements)) {
+        await cmsService.updateAnnouncements(newFields.announcements);
+      }
+
+      // 6. Reload live consolidated CMS to ensure context is 100% updated
+      await loadCmsData();
+      return true;
+    } catch (err) {
+      console.error('Error in updateCMS:', err);
+      throw err;
     }
   };
 
@@ -827,6 +857,7 @@ export const AppProvider = ({ children }) => {
       navigate,
       cms,
       updateCMS,
+      updateCmsField,
       refreshCMS: loadCmsData,
       cmsLoaded,
       applications,

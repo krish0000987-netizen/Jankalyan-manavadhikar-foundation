@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const SettingsManager = () => {
-  const { cms, updateCmsField } = useApp();
+  const { cms, updateCmsField, refreshCMS } = useApp();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -91,6 +91,10 @@ export const SettingsManager = () => {
         updateCmsField('officialEmail', settings.officialEmail);
         updateCmsField('officeAddress', settings.officeAddress);
         updateCmsField('grantAmount', `₹${Number(settings.grantAmount).toLocaleString('en-IN')}`);
+      }
+
+      if (refreshCMS) {
+        await refreshCMS();
       }
 
       setFeedback({ type: 'success', message: 'All system settings saved and synchronized across portal!' });

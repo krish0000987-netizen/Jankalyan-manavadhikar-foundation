@@ -45,6 +45,12 @@ export const Footer = () => {
                 {t.govtAffiliationDisclaimer}
               </span>
             </div>
+
+            {cms.registrationDetails && (
+              <div style={{ marginTop: '0.6rem', fontSize: '0.78rem', color: '#94A3B8' }}>
+                Reg. No: <span style={{ color: '#E2E8F0', fontWeight: 700 }}>{cms.registrationDetails}</span>
+              </div>
+            )}
           </div>
 
           {/* Col 2: Student Services */}
