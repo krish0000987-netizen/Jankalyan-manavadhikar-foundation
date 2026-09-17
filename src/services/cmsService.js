@@ -22,6 +22,111 @@ export function toDisplayDate(str) {
   return trimmed;
 }
 
+export const OFFICIAL_DEFAULT_DOWNLOADS = [
+  {
+    id: 'DOC-MCA-COI',
+    title_en: 'Ministry of Corporate Affairs - Certificate of Incorporation (Section 8 Non-Profit)',
+    title_hi: 'भारत सरकार कॉर्पोरेट कार्य मंत्रालय - कंपनी निगमन प्रमाण पत्र (धारा 8 एनजीओ)',
+    category_en: 'Legal & Statutory Registrations',
+    category_hi: 'वैधानिक पंजीकरण एवं प्रमाण पत्र',
+    doc_number: 'CIN: U85500MP2024NPL069532',
+    authority: 'Ministry of Corporate Affairs, Govt. of India',
+    description_en: 'Certificate of Incorporation issued under Section 8(1) of the Companies Act, 2013 by the Central Registration Centre, Manesar. Registered office at Dixit Colony, Jabalpur, Madhya Pradesh.',
+    description_hi: 'कंपनी अधिनियम 2013 की धारा 8(1) के अंतर्गत केंद्रीय पंजीकरण केंद्र (CRC मानेसर) द्वारा जारी वैधानिक निगमन प्रमाण पत्र। पंजीकृत कार्यालय: दीक्षित कॉलोनी, जबलपुर (म.प्र.)।',
+    file_url: '/downloads/mca_certificate_of_incorporation.pdf',
+    preview_image_url: '/downloads/mca_incorporation_certified_copy.jpg',
+    format: 'PDF',
+    size_display: '72.6 KB',
+    display_order: 1,
+    is_active: true
+  },
+  {
+    id: 'DOC-IT-80G',
+    title_en: 'Income Tax Section 80G Provisional Approval Order (Form 10AC - 50% Tax Exemption)',
+    title_hi: 'आयकर विभाग धारा 80G अनुमोदन आदेश (प्रपत्र 10AC - दानदाताओं हेतु 50% कर छूट)',
+    category_en: 'Tax Exemption & Approvals',
+    category_hi: 'कर छूट एवं शासकीय स्वीकृतियां',
+    doc_number: 'URN: AAGCJ3046CF20241',
+    authority: 'Income Tax Department, Govt. of India',
+    description_en: 'Provisional approval order under section 80G(5)(iv) of the Income Tax Act, 1961 granting 50% income tax exemption to donors. Assessment Years: 2024-25 to 2026-2027.',
+    description_hi: 'आयकर अधिनियम 1961 की धारा 80G(5) के तहत दानदाताओं हेतु 50% कर कटौती की वैधानिक स्वीकृति। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
+    file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+    preview_image_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+    format: 'PDF',
+    size_display: '440.5 KB',
+    display_order: 2,
+    is_active: true
+  },
+  {
+    id: 'DOC-IT-12A',
+    title_en: 'Income Tax Section 12A Provisional Registration Order (Form 10AC - Charitable Entity)',
+    title_hi: 'आयकर विभाग धारा 12A पंजीकरण आदेश (प्रपत्र 10AC - धर्मार्थ संस्था)',
+    category_en: 'Tax Exemption & Approvals',
+    category_hi: 'कर छूट एवं शासकीय स्वीकृतियां',
+    doc_number: 'URN: AAGCJ3046CE20231',
+    authority: 'Income Tax Department, Govt. of India',
+    description_en: 'Provisional registration order under Section 12A(1)(ac)(vi) of the Income Tax Act, 1961 granting tax-exempt status to Jankalyan Manavadhikar Foundation for charitable education work.',
+    description_hi: 'आयकर अधिनियम 1961 की धारा 12A(1)(ac)(vi) के तहत धर्मार्थ शैक्षणिक गतिविधियों हेतु कर-मुक्त संस्था के रूप में पंजीकरण आदेश। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
+    file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+    preview_image_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+    format: 'PDF',
+    size_display: '440.5 KB',
+    display_order: 3,
+    is_active: true
+  },
+  {
+    id: 'DOC-IT-PAN',
+    title_en: 'Permanent Account Number (PAN) & TAN Official Card (Govt. of India)',
+    title_hi: 'आयकर विभाग स्थायी खाता संख्या (PAN) एवं TAN कार्ड (भारत सरकार)',
+    category_en: 'Institutional Identity & KYC',
+    category_hi: 'संस्थागत पहचान एवं केवाईसी',
+    doc_number: 'PAN: AAGCJ3046C | TAN: JBPJ03720D',
+    authority: 'Income Tax Department (NSDL / Protean eGov)',
+    description_en: 'Digitally certified Permanent Account Number (PAN) and Tax Deduction and Collection Account Number (TAN) issued by the Income Tax Department.',
+    description_hi: 'आयकर विभाग भारत सरकार द्वारा जारी डिजिटल हस्ताक्षरित ई-पैन कार्ड (PAN: AAGCJ3046C) एवं टैन विवरण (TAN: JBPJ03720D)।',
+    file_url: '/downloads/pan_card_jankalyan_foundation.jpg',
+    preview_image_url: '/downloads/pan_card_jankalyan_foundation.jpg',
+    format: 'JPG',
+    size_display: '106.7 KB',
+    display_order: 4,
+    is_active: true
+  },
+  {
+    id: 'DOC-LEI-GLOBAL',
+    title_en: 'Global Legal Entity Identifier (LEI) Certificate (RBI Guidelines Compliant)',
+    title_hi: 'वैश्विक लीगल एंटिटी आइडेंटिफायर (LEI) प्रमाण पत्र (आरबीआई अनुपालन)',
+    category_en: 'Banking & Financial Compliance',
+    category_hi: 'बैंकिंग एवं वित्तीय अनुपालन',
+    doc_number: 'LEI: 391200G440EGSOONQG84',
+    authority: 'Global LEI Foundation (GLEIF) / LEI Register India',
+    description_en: 'International 20-character Legal Entity Identifier code ensuring banking compliance, institutional transparency and verification under RBI guidelines. Valid through 2027-04-28.',
+    description_hi: 'भारतीय रिज़र्व बैंक (RBI) दिशा-निर्देशों के अनुरूप संस्थागत पारदर्शिता, वैश्विक वित्तीय पहचान एवं बैंकिंग सत्यापन हेतु 20-अंकीय LEI कोड। अगली नवीनीकरण तिथि: 28-04-2027।',
+    file_url: '/downloads/lei_certificate_jankalyan.jpg',
+    preview_image_url: '/downloads/lei_certificate_jankalyan.jpg',
+    format: 'JPG',
+    size_display: '91.5 KB',
+    display_order: 5,
+    is_active: true
+  },
+  {
+    id: 'DOC-MCA-CERTIFIED',
+    title_en: 'Digitally Verified MCA Incorporation Certificate (*.mca.gov.in Sealed)',
+    title_hi: 'डिजिटल सत्यापित कॉर्पोरेट निगमन प्रमाण पत्र (*.mca.gov.in अधिकृत)',
+    category_en: 'Legal & Statutory Registrations',
+    category_hi: 'वैधानिक पंजीकरण एवं प्रमाण पत्र',
+    doc_number: 'CIN: U85500MP2024NPL069532',
+    authority: 'Registrar of Companies, Central Registration Centre',
+    description_en: 'Certified authentic copy bearing the verified digital signature of Sheetal Kumari, Assistant Registrar of Companies, CRC Manesar and official Government of India emblem.',
+    description_hi: 'सहायक कंपनी रजिस्ट्रार द्वारा डिजिटल रूप से हस्ताक्षरित एवं कॉर्पोरेट कार्य मंत्रालय के आधिकारिक पोर्टल (*.mca.gov.in) से सत्यापित प्रति।',
+    file_url: '/downloads/mca_incorporation_certified_copy.jpg',
+    preview_image_url: '/downloads/mca_incorporation_certified_copy.jpg',
+    format: 'JPG',
+    size_display: '147.8 KB',
+    display_order: 6,
+    is_active: true
+  }
+];
+
 export const cmsService = {
   /**
    * Fetch complete consolidated CMS dataset for public pages and fallback
@@ -47,7 +152,7 @@ export const cmsService = {
         supabase.from('notices').select('*').eq('is_published', true).order('is_pinned', { ascending: false }).order('publish_date', { ascending: false }),
         supabase.from('faqs').select('*').eq('is_active', true).order('display_order', { ascending: true }),
         supabase.from('team_members').select('*').eq('is_active', true).order('display_order', { ascending: true }),
-        supabase.from('downloads').select('*').eq('is_active', true).order('id', { ascending: true })
+        supabase.from('downloads').select('*').eq('is_active', true).order('display_order', { ascending: true })
       ]);
 
       const settingsMap = {};
@@ -104,14 +209,16 @@ export const cmsService = {
         notices: noticesRes.data || [],
         faqs: faqsRes.data || [],
         teamMembers: teamRes.data || [],
-        downloads: downloadsRes.data || [],
+        downloads: (downloadsRes.data && downloadsRes.data.length > 0) ? downloadsRes.data : OFFICIAL_DEFAULT_DOWNLOADS,
         schemes: allSchemesList,
         ...(dynamicSlabs ? { scholarshipSlabs: dynamicSlabs } : {}),
         statsDisplayConfig: settingsMap.stats_display_config || {}
       };
     } catch (err) {
       console.warn('Error loading live CMS from Supabase, using defaults:', err);
-      return null;
+      return {
+        downloads: OFFICIAL_DEFAULT_DOWNLOADS
+      };
     }
   },
 
@@ -512,5 +619,49 @@ export const cmsService = {
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
+  },
+
+  // ---------------- DOWNLOADS & OFFICIAL FORMS CRUD ----------------
+  async getDownloads() {
+    const { data, error } = await supabase
+      .from('downloads')
+      .select('*')
+      .order('display_order', { ascending: true });
+    if (error) {
+      console.warn('Error fetching downloads from Supabase, returning fallback:', error);
+      return OFFICIAL_DEFAULT_DOWNLOADS;
+    }
+    return (data && data.length > 0) ? data : OFFICIAL_DEFAULT_DOWNLOADS;
+  },
+
+  async createDownload(item) {
+    const { data, error } = await supabase
+      .from('downloads')
+      .insert({
+        ...item,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateDownload(id, item) {
+    const { data, error } = await supabase
+      .from('downloads')
+      .update({ ...item, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteDownload(id) {
+    const { error } = await supabase.from('downloads').delete().eq('id', id);
+    if (error) throw error;
+    return true;
   }
 };

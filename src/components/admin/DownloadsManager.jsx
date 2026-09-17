@@ -229,11 +229,21 @@ export const DownloadsManager = () => {
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ fontWeight: 800, color: '#0F172A' }}>{dl.title_en}</div>
                       {dl.title_hi && <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{dl.title_hi}</div>}
+                      {dl.doc_number && (
+                        <div style={{ marginTop: '0.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', backgroundColor: '#F1F5F9', padding: '0.1rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, color: '#1E293B' }}>
+                          <span>{dl.doc_number}</span>
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span className="badge badge-navy" style={{ fontSize: '0.7rem' }}>
                         {dl.category_en || 'General'}
                       </span>
+                      {dl.authority && (
+                        <div style={{ fontSize: '0.7rem', color: '#16A34A', fontWeight: 600, marginTop: '0.2rem' }}>
+                          ✓ {dl.authority}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '0.85rem 1rem', color: '#475569' }}>
                       {dl.format || 'PDF'} ({dl.size_display || '1.2 MB'})
