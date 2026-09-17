@@ -73,6 +73,15 @@ const MainRouter = () => {
       case '/forms':
       case '/apply-scholarship':
       case '/registration':
+      case '/scholarship/form':
+      case '/scholarship/apply':
+      case '/scholarshipform':
+      case '/scholarship-forms':
+      case '/apply-form':
+      case '/online-form':
+      case '/student-form':
+      case '/chhatravritti-form':
+      case '/aavedan-form':
         return <Apply />;
       case '/documents':
         return <Documents />;

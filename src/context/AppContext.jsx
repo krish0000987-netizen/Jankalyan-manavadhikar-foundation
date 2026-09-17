@@ -468,7 +468,7 @@ const INITIAL_CMS = {
 
 export const normalizeRoute = (path) => {
   if (!path) return '/';
-  let clean = path.split('?')[0].split('#')[0];
+  let clean = path.split('?')[0].split('#')[0].trim().toLowerCase();
   if (clean.length > 1 && clean.endsWith('/')) {
     clean = clean.slice(0, -1);
   }

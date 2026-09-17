@@ -87,6 +87,11 @@ export const Header = () => {
       badge: '2026'
     },
     { 
+      label: lang === 'hi' ? 'छात्रवृत्ति फॉर्म' : 'Scholarship Form', 
+      route: '/apply',
+      badge: 'Open'
+    },
+    { 
       label: lang === 'hi' ? 'मेरिट सूची' : 'Merit List', 
       route: '/merit-list',
       badge: 'New'
@@ -107,12 +112,13 @@ export const Header = () => {
   // Full detailed links for mobile slide-out drawer
   const mobileNavLinks = [
     { label: t.navHome, route: '/' },
-    { label: t.navAbout, route: '/about' },
+    { label: lang === 'hi' ? '📝 छात्रवृत्ति आवेदन फॉर्म 2026' : '📝 Scholarship Application Form 2026', route: '/apply' },
     { label: lang === 'hi' ? '🌟 छात्रवृत्ति योजना 2026 (अंतिम राउंड)' : '🌟 Scholarship Yojna 2026 (Last Round)', route: '/scholarship' },
+    { label: lang === 'hi' ? '📥 डाउनलोड व फॉर्म प्रपत्र' : '📥 Downloads & Application Forms', route: '/downloads' },
     { label: lang === 'hi' ? '🏆 मेरिट चयन सूची 2026-27' : '🏆 Official Merit List 2026-27', route: '/merit-list' },
     { label: t.navTrack, route: '/track' },
     { label: t.navDocuments, route: '/documents' },
-    { label: t.navDownloads, route: '/downloads' },
+    { label: t.navAbout, route: '/about' },
     { label: t.navGrievance, route: '/grievance' },
     { label: t.navFaq, route: '/faq' },
     { label: t.navContact, route: '/contact' }
@@ -343,7 +349,13 @@ export const Header = () => {
                   <li key={item.route}>
                     <button
                       onClick={() => navigate(item.route)}
-                      className={`nav-link ${currentRoute === item.route || (item.route === '/scholarship' && currentRoute === '/scholarship-yojna-2026') ? 'active' : ''}`}
+                      className={`nav-link ${
+                        currentRoute === item.route || 
+                        (item.route === '/scholarship' && (currentRoute === '/scholarship-yojna-2026' || currentRoute === '/scholarship-2026')) ||
+                        (item.route === '/apply' && ['/scholarship-form', '/scholarship-application', '/form', '/forms', '/application-form', '/apply-now'].includes(currentRoute))
+                          ? 'active' 
+                          : ''
+                      }`}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                     >
                       <span>{item.label}</span>
