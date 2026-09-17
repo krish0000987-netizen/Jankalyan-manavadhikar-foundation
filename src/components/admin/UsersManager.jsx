@@ -178,11 +178,16 @@ export const UsersManager = () => {
         >
           <option value="ALL">All Roles</option>
           <option value="SUPER_ADMIN">Super Administrator</option>
-          <option value="DISTRICT_COORDINATOR">District Coordinator</option>
-          <option value="BLOCK_COORDINATOR">Block Coordinator</option>
-          <option value="INSTITUTION">School / College Nodal</option>
-          <option value="ONLINE_CENTER">Online CSC Center</option>
-          <option value="STUDENT">Student</option>
+          <option value="DISTRICT_COORDINATOR">1. जिला समन्वयक (District Coordinator)</option>
+          <option value="BLOCK_COORDINATOR">2. ब्लॉक समन्वयक (Block Coordinator)</option>
+          <option value="TEHSIL_COORDINATOR">3. तहसील समन्वयक (Tehsil Coordinator)</option>
+          <option value="GRAM_PANCHAYAT_COORDINATOR">4. ग्राम पंचायत समन्वयक (Gram Panchayat)</option>
+          <option value="ONLINE_CENTER">5. ऑनलाइन शॉप / CSC / साइबर कैफे (Online Center)</option>
+          <option value="SCHOOL_COORDINATOR">6. स्कूल (School Coordinator)</option>
+          <option value="COLLEGE_COORDINATOR">7. कॉलेज (College Coordinator)</option>
+          <option value="COACHING_CENTER">8. कोचिंग सेंटर (Coaching Center)</option>
+          <option value="INSTITUTION">शैक्षणिक संस्थान (School / College Nodal)</option>
+          <option value="STUDENT">Student Applicant</option>
         </select>
       </div>
 
@@ -325,11 +330,16 @@ export const UsersManager = () => {
                   value={form.role_id}
                   onChange={(e) => setForm({ ...form, role_id: e.target.value })}
                 >
-                  <option value="DISTRICT_COORDINATOR">District Coordinator</option>
-                  <option value="BLOCK_COORDINATOR">Block Coordinator</option>
-                  <option value="INSTITUTION">School / College Nodal Officer</option>
-                  <option value="ONLINE_CENTER">Online CSC Center Operator</option>
-                  <option value="SUPER_ADMIN">Super Administrator</option>
+                  <option value="DISTRICT_COORDINATOR">1. जिला समन्वयक (District Coordinator) — लक्ष्य: 1000 | ₹50</option>
+                  <option value="BLOCK_COORDINATOR">2. ब्लॉक समन्वयक (Block Coordinator) — लक्ष्य: 500 | ₹40</option>
+                  <option value="TEHSIL_COORDINATOR">3. तहसील समन्वयक (Tehsil Coordinator) — लक्ष्य: 300 | ₹35</option>
+                  <option value="GRAM_PANCHAYAT_COORDINATOR">4. ग्राम पंचायत समन्वयक (Gram Panchayat) — लक्ष्य: 100 | ₹25</option>
+                  <option value="ONLINE_CENTER">5. ऑनलाइन शॉप / CSC / साइबर कैफे — लक्ष्य: 50 | ₹30</option>
+                  <option value="SCHOOL_COORDINATOR">6. स्कूल (School Coordinator) — लक्ष्य: 100 | ₹25</option>
+                  <option value="COLLEGE_COORDINATOR">7. कॉलेज (College Coordinator) — लक्ष्य: 150 | ₹30</option>
+                  <option value="COACHING_CENTER">8. कोचिंग सेंटर (Coaching Center) — लक्ष्य: 100 | ₹20</option>
+                  <option value="INSTITUTION">शैक्षणिक संस्थान नोडल अधिकारी (School / College Nodal Officer)</option>
+                  <option value="SUPER_ADMIN">Super Administrator (Full Access)</option>
                 </select>
               </div>
 

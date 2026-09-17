@@ -878,6 +878,189 @@ export const Scholarship = () => {
         </div>
       </section>
 
+      {/* 3.5. COORDINATOR & SEVA SAHAYOGI INCENTIVE SECTION (FROM OFFICIAL POSTER) */}
+      <section className="section-py" style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
+        <div className="container">
+          
+          {/* Header Banner */}
+          <div style={{
+            background: 'linear-gradient(135deg, #0B2B82 0%, #1E3A8A 60%, #0F172A 100%)',
+            borderRadius: '20px',
+            padding: '2.5rem 2rem',
+            color: '#FFFFFF',
+            marginBottom: '2.5rem',
+            boxShadow: '0 20px 40px -15px rgba(11, 43, 130, 0.3)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+              <div style={{ maxWidth: '750px' }}>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: 'rgba(234, 179, 8, 0.2)',
+                  border: '1px solid #EAB308',
+                  borderRadius: '999px',
+                  padding: '0.35rem 1rem',
+                  color: '#FEF08A',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  marginBottom: '1rem'
+                }}>
+                  <span>★</span>
+                  <span>{isHindi ? 'कोऑर्डिनेटर / सेवा सहयोगी के लिए विशेष अवसर' : 'SPECIAL OPPORTUNITY FOR COORDINATORS / FIELD ASSOCIATES'}</span>
+                  <span>★</span>
+                </div>
+
+                <h2 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.25, marginBottom: '0.75rem' }}>
+                  {isHindi 
+                    ? 'प्रति सहयोगी निर्धारित फॉर्म लक्ष्य एवं प्रोत्साहन राशि' 
+                    : 'Target Form Quota & Incentive Rates per Associate'}
+                </h2>
+
+                <p style={{ color: '#BFDBFE', fontSize: '1.05rem', lineHeight: 1.6, margin: 0 }}>
+                  {isHindi
+                    ? 'जरूरतमंद एवं पात्र विद्यार्थियों तक योजना पहुंचाने में सहयोग करें और समाज में शिक्षा का उजाला फैलाएं।'
+                    : 'Partner with us to bring educational opportunities to needy students and ignite the light of literacy in society.'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 800, color: '#86EFAC' }}>
+                  ✓ {isHindi ? 'सभी फॉर्म सत्यापित और पात्र विद्यार्थियों के ही स्वीकार होंगे' : 'All forms subject to eligibility verification'}
+                </div>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 800, color: '#FDE047' }}>
+                  ✓ {isHindi ? 'विद्यार्थी की छात्रवृत्ति से कोई कमीशन नहीं काटा जाएगा' : 'Zero deduction from student scholarship grant'}
+                </div>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  🤝 {isHindi ? 'सेवा ही सच्चा सहयोग है (गैर-सरकारी संस्था NGO)' : 'Selfless Service is True Support (NGO)'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table from Poster */}
+          <div className="card" style={{ padding: '2rem', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', marginBottom: '2.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                  {isHindi ? 'सहयोगी पदवार फॉर्म लक्ष्य एवं प्रोत्साहन तालिका' : 'Designation-wise Form Target & Incentive Matrix'}
+                </h3>
+                <p style={{ color: '#64748B', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                  {isHindi ? 'सत्र 2026 हेतु जन कल्याण मानवाधिकार फाउंडेशन द्वारा अधिकृत दरें' : 'Authorized incentive rates by Jan Kalyan Manavadhikar Foundation for Session 2026'}
+                </p>
+              </div>
+              <span className="badge badge-green" style={{ fontSize: '0.8rem', padding: '0.35rem 0.85rem' }}>
+                ● {isHindi ? 'पंजीकरण खुला है' : 'Applications Open'}
+              </span>
+            </div>
+
+            <div className="data-table-container">
+              <table className="data-table" style={{ width: '100%', fontSize: '0.92rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#F8FAFC', textAlign: 'left' }}>
+                    <th style={{ width: '70px', padding: '0.85rem 1rem' }}>{isHindi ? 'क्रमांक' : 'S.No.'}</th>
+                    <th style={{ padding: '0.85rem 1rem' }}>{isHindi ? 'सहयोगी / पद' : 'Associate / Role'}</th>
+                    <th style={{ padding: '0.85rem 1rem' }}>{isHindi ? 'न्यूनतम फॉर्म लक्ष्य (प्रति सहयोगी)' : 'Minimum Form Target'}</th>
+                    <th style={{ padding: '0.85rem 1rem' }}>{isHindi ? 'प्रति सफल आवेदन प्रोत्साहन राशि (₹ में)' : 'Incentive per Successful Application'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { sno: 1, nameHi: 'जिला समन्वयक (District Coordinator)', target: '1000 फॉर्म', rate: '₹ 50/-', color: '#1E40AF', icon: '🏛️' },
+                    { sno: 2, nameHi: 'ब्लॉक समन्वयक (Block Coordinator)', target: '500 फॉर्म', rate: '₹ 40/-', color: '#0369A1', icon: '🏢' },
+                    { sno: 3, nameHi: 'तहसील समन्वयक (Tehsil Coordinator)', target: '300 फॉर्म', rate: '₹ 35/-', color: '#0D9488', icon: '🏛️' },
+                    { sno: 4, nameHi: 'ग्राम पंचायत समन्वयक (Gram Panchayat Coordinator)', target: '100 फॉर्म', rate: '₹ 25/-', color: '#15803D', icon: '🏘️' },
+                    { sno: 5, nameHi: 'ऑनलाइन शॉप / CSC / साइबर कैफे (Cyber Cafe / CSC)', target: '50 फॉर्म', rate: '₹ 30/-', color: '#D97706', icon: '💻' },
+                    { sno: 6, nameHi: 'स्कूल (School Coordinator)', target: '100 फॉर्म', rate: '₹ 25/-', color: '#4338CA', icon: '🏫' },
+                    { sno: 7, nameHi: 'कॉलेज (College Coordinator)', target: '150 फॉर्म', rate: '₹ 30/-', color: '#7C3AED', icon: '🎓' },
+                    { sno: 8, nameHi: 'कोचिंग सेंटर (Coaching Center)', target: '100 फॉर्म', rate: '₹ 20/-', color: '#BE123C', icon: '👨‍🏫' }
+                  ].map(row => (
+                    <tr key={row.sno}>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          backgroundColor: row.color,
+                          color: '#FFFFFF',
+                          fontWeight: 900,
+                          fontSize: '0.85rem'
+                        }}>
+                          {row.sno}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: '#0F172A' }}>
+                        <span style={{ marginRight: '6px' }}>{row.icon}</span>
+                        <span>{row.nameHi}</span>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span className="badge" style={{ backgroundColor: '#F1F5F9', color: '#1E293B', fontWeight: 800, fontSize: '0.88rem' }}>
+                          🎯 {row.target}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#16A34A' }}>
+                          {row.rate}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Three Notice & Appeal Columns */}
+          <div className="grid-3" style={{ gap: '1.5rem' }}>
+            <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #DC2626', backgroundColor: '#FEF2F2' }}>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#991B1B', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Bell size={18} />
+                <span>महत्वपूर्ण सूचना (Important Information)</span>
+              </h4>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: '#7F1D1D', lineHeight: 1.8 }}>
+                <li><strong>फॉर्म लक्ष्य पूरा करना अनिवार्य नहीं है।</strong></li>
+                <li>प्रोत्साहन राशि केवल पात्र एवं सत्यापित सफल आवेदनों पर देय होगी।</li>
+                <li>यह योजना गैर-सरकारी संस्था (NGO) द्वारा संचालित है।</li>
+                <li><strong>यह राशि विद्यार्थी की छात्रवृत्ति से नहीं काटी जाएगी।</strong></li>
+                <li>फॉर्म भरते समय सही जानकारी देना अनिवार्य है।</li>
+              </ul>
+            </div>
+
+            <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #D97706', backgroundColor: '#FFFBEB' }}>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#B45309', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <AlertTriangle size={18} />
+                <span>विशेष अपील (Special Appeal)</span>
+              </h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#78350F', lineHeight: 1.7 }}>
+                कृपया केवल जरूरतमंद एवं पात्र विद्यार्थियों को ही आवेदन करने के लिए प्रेरित करें। गलत जानकारी, अपात्र आवेदन या केवल कमीशन के उद्देश्य से किए गए आवेदन स्वीकार नहीं किए जाएंगे।
+              </p>
+              <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: 800, color: '#92400E' }}>
+                ★ आपका सहयोग ही किसी जरूरतमंद विद्यार्थी का भविष्य बदल सकता है।
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #16A34A', backgroundColor: '#F0FDF4' }}>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#166534', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <CheckCircle2 size={18} />
+                <span>हमारा उद्देश्य (Our Objective)</span>
+              </h4>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: '#14532D', lineHeight: 1.8 }}>
+                <li>✓ <strong>शिक्षा का अधिकार</strong> — हर बच्चे का मूलभूत हक</li>
+                <li>✓ <strong>समाज में समानता</strong> — कोई भी वंचित न रहे</li>
+                <li>✓ <strong>हर वर्ग के लिए शिक्षा</strong> — समान गुणवत्ता अवसर</li>
+                <li>✓ <strong>सशक्त भारत निर्माण</strong> — शिक्षित युवा, समृद्ध राष्ट्र</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* 4. OFFICIAL CONTACT & OFFICE ADDRESS (Directly from the poster image) */}
       <section style={{
         background: '#0F172A',

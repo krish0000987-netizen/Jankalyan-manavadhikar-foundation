@@ -30,10 +30,15 @@ CREATE TABLE IF NOT EXISTS public.roles (
 
 INSERT INTO public.roles (id, name, description) VALUES
 ('SUPER_ADMIN', 'Super Administrator', 'Unrestricted administrative authority across all modules and jurisdictions'),
-('DISTRICT_COORDINATOR', 'District Coordinator', 'Jurisdiction restricted to assigned district records and scrutiny'),
-('BLOCK_COORDINATOR', 'Block Coordinator', 'Jurisdiction restricted to assigned block records and scrutiny'),
-('INSTITUTION', 'School / College Nodal Officer', 'Restricted to enrolled applicants and verification for own institution'),
-('ONLINE_CENTER', 'Online Application Center (CSC)', 'Restricted to applications facilitated through own center'),
+('DISTRICT_COORDINATOR', 'जिला समन्वयक (District Coordinator)', 'Jurisdiction restricted to assigned district records and scrutiny'),
+('BLOCK_COORDINATOR', 'ब्लॉक समन्वयक (Block Coordinator)', 'Jurisdiction restricted to assigned block records and scrutiny'),
+('TEHSIL_COORDINATOR', 'तहसील समन्वयक (Tehsil Coordinator)', 'Jurisdiction restricted to assigned tehsil records and scrutiny'),
+('GRAM_PANCHAYAT_COORDINATOR', 'ग्राम पंचायत समन्वयक (Gram Panchayat Coordinator)', 'Village/Panchayat level facilitation and scrutiny'),
+('ONLINE_CENTER', 'ऑनलाइन शॉप / CSC / साइबर कैफे (Online Shop / CSC)', 'Restricted to applications facilitated through own center'),
+('SCHOOL_COORDINATOR', 'स्कूल (School Coordinator)', 'School Nodal Officer for student scholarship scrutiny'),
+('COLLEGE_COORDINATOR', 'कॉलेज (College Coordinator)', 'College Nodal Officer for student scholarship scrutiny'),
+('COACHING_CENTER', 'कोचिंग सेंटर (Coaching Center)', 'Coaching Center Associate for applicant facilitation'),
+('INSTITUTION', 'शैक्षणिक संस्थान नोडल अधिकारी (School / College Nodal Officer)', 'Restricted to enrolled applicants and verification for own institution'),
 ('STUDENT', 'Student Applicant', 'Personal applicant dashboard, document submission and tracking')
 ON CONFLICT (id) DO NOTHING;
 

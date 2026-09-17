@@ -84,9 +84,13 @@ CREATE TABLE IF NOT EXISTS public.payment_reconciliation (
 -- 6. Commission Configuration Rates
 CREATE TABLE IF NOT EXISTS public.commission_rates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    role_id TEXT NOT NULL REFERENCES public.roles(id), -- 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'
+    role_id TEXT NOT NULL REFERENCES public.roles(id),
     model_type TEXT NOT NULL DEFAULT 'FIXED_PER_APPROVED', -- 'PERCENTAGE', 'FIXED_PER_APPLICATION', 'FIXED_PER_APPROVED'
     rate_amount NUMERIC(10,2) NOT NULL DEFAULT 50.00,
+    min_form_target INT DEFAULT 0,
+    role_name_hi TEXT,
+    role_name_en TEXT,
+    display_order INT DEFAULT 1,
     rate_display TEXT DEFAULT '₹50 per verified application',
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -94,12 +98,23 @@ CREATE TABLE IF NOT EXISTS public.commission_rates (
     UNIQUE(role_id)
 );
 
-INSERT INTO public.commission_rates (role_id, model_type, rate_amount, rate_display) VALUES
-('DISTRICT_COORDINATOR', 'FIXED_PER_APPROVED', 100.00, '₹100 per approved application'),
-('BLOCK_COORDINATOR', 'FIXED_PER_APPROVED', 75.00, '₹75 per approved application'),
-('INSTITUTION', 'FIXED_PER_APPROVED', 50.00, '₹50 per verified bonafide applicant'),
-('ONLINE_CENTER', 'FIXED_PER_APPLICATION', 40.00, '₹40 per registered application')
-ON CONFLICT (role_id) DO NOTHING;
+INSERT INTO public.commission_rates (role_id, model_type, rate_amount, min_form_target, role_name_hi, role_name_en, rate_display, display_order) VALUES
+('DISTRICT_COORDINATOR', 'FIXED_PER_APPROVED', 50.00, 1000, 'जिला समन्वयक', 'District Coordinator', '₹50 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 1000 फॉर्म)', 1),
+('BLOCK_COORDINATOR', 'FIXED_PER_APPROVED', 40.00, 500, 'ब्लॉक समन्वयक', 'Block Coordinator', '₹40 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 500 फॉर्म)', 2),
+('TEHSIL_COORDINATOR', 'FIXED_PER_APPROVED', 35.00, 300, 'तहसील समन्वयक', 'Tehsil Coordinator', '₹35 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 300 फॉर्म)', 3),
+('GRAM_PANCHAYAT_COORDINATOR', 'FIXED_PER_APPROVED', 25.00, 100, 'ग्राम पंचायत समन्वयक', 'Gram Panchayat Coordinator', '₹25 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', 4),
+('ONLINE_CENTER', 'FIXED_PER_APPLICATION', 30.00, 50, 'ऑनलाइन शॉप / CSC / साइबर कैफे', 'Online Shop / CSC / Cyber Cafe', '₹30 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 50 फॉर्म)', 5),
+('SCHOOL_COORDINATOR', 'FIXED_PER_APPROVED', 25.00, 100, 'स्कूल', 'School Coordinator', '₹25 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', 6),
+('COLLEGE_COORDINATOR', 'FIXED_PER_APPROVED', 30.00, 150, 'कॉलेज', 'College Coordinator', '₹30 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 150 फॉर्म)', 7),
+('COACHING_CENTER', 'FIXED_PER_APPROVED', 20.00, 100, 'कोचिंग सेंटर', 'Coaching Center', '₹20 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', 8),
+('INSTITUTION', 'FIXED_PER_APPROVED', 25.00, 100, 'स्कूल / शैक्षणिक संस्थान', 'Educational Institution', '₹25 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', 9)
+ON CONFLICT (role_id) DO UPDATE SET
+  rate_amount = EXCLUDED.rate_amount,
+  min_form_target = EXCLUDED.min_form_target,
+  role_name_hi = EXCLUDED.role_name_hi,
+  role_name_en = EXCLUDED.role_name_en,
+  rate_display = EXCLUDED.rate_display,
+  display_order = EXCLUDED.display_order;
 
 -- 7. Commissions Generated
 CREATE TABLE IF NOT EXISTS public.commissions (

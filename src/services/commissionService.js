@@ -12,32 +12,42 @@ export const commissionService = {
       const { data, error } = await supabase
         .from('commission_rates')
         .select('*')
-        .order('rate_amount', { ascending: false });
+        .order('display_order', { ascending: true, nullsFirst: false });
       if (!error && data && data.length > 0) return data;
     } catch (e) {
       console.warn('Live getCommissionRates note:', e);
     }
-    // Fallback default rates
+    // Fallback default rates matching the official poster
     return [
-      { role_id: 'DISTRICT_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 100, rate_display: '₹100 per approved application' },
-      { role_id: 'BLOCK_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 75, rate_display: '₹75 per approved application' },
-      { role_id: 'INSTITUTION', model_type: 'FIXED_PER_APPROVED', rate_amount: 50, rate_display: '₹50 per verified bonafide applicant' },
-      { role_id: 'ONLINE_CENTER', model_type: 'FIXED_PER_APPLICATION', rate_amount: 40, rate_display: '₹40 per registered application' }
+      { role_id: 'DISTRICT_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 50, min_form_target: 1000, role_name_hi: 'जिला समन्वयक', role_name_en: 'District Coordinator', rate_display: '₹50 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 1000 फॉर्म)', display_order: 1 },
+      { role_id: 'BLOCK_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 40, min_form_target: 500, role_name_hi: 'ब्लॉक समन्वयक', role_name_en: 'Block Coordinator', rate_display: '₹40 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 500 फॉर्म)', display_order: 2 },
+      { role_id: 'TEHSIL_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 35, min_form_target: 300, role_name_hi: 'तहसील समन्वयक', role_name_en: 'Tehsil Coordinator', rate_display: '₹35 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 300 फॉर्म)', display_order: 3 },
+      { role_id: 'GRAM_PANCHAYAT_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 25, min_form_target: 100, role_name_hi: 'ग्राम पंचायत समन्वयक', role_name_en: 'Gram Panchayat Coordinator', rate_display: '₹25 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', display_order: 4 },
+      { role_id: 'ONLINE_CENTER', model_type: 'FIXED_PER_APPLICATION', rate_amount: 30, min_form_target: 50, role_name_hi: 'ऑनलाइन शॉप / CSC / साइबर कैफे', role_name_en: 'Online Shop / CSC / Cyber Cafe', rate_display: '₹30 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 50 फॉर्म)', display_order: 5 },
+      { role_id: 'SCHOOL_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 25, min_form_target: 100, role_name_hi: 'स्कूल', role_name_en: 'School Coordinator', rate_display: '₹25 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', display_order: 6 },
+      { role_id: 'COLLEGE_COORDINATOR', model_type: 'FIXED_PER_APPROVED', rate_amount: 30, min_form_target: 150, role_name_hi: 'कॉलेज', role_name_en: 'College Coordinator', rate_display: '₹30 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 150 फॉर्म)', display_order: 7 },
+      { role_id: 'COACHING_CENTER', model_type: 'FIXED_PER_APPROVED', rate_amount: 20, min_form_target: 100, role_name_hi: 'कोचिंग सेंटर', role_name_en: 'Coaching Center', rate_display: '₹20 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', display_order: 8 },
+      { role_id: 'INSTITUTION', model_type: 'FIXED_PER_APPROVED', rate_amount: 25, min_form_target: 100, role_name_hi: 'स्कूल / शैक्षणिक संस्थान', role_name_en: 'Educational Institution', rate_display: '₹25 प्रति सफल आवेदन (न्यूनतम लक्ष्य: 100 फॉर्म)', display_order: 9 }
     ];
   },
 
   /**
    * Update commission rate for a role
    */
-  async updateCommissionRate(roleId, amount, modelType = 'FIXED_PER_APPROVED') {
+  async updateCommissionRate(roleId, amount, modelType = 'FIXED_PER_APPROVED', minTarget = null) {
+    const payload = {
+      rate_amount: parseFloat(amount),
+      model_type: modelType,
+      rate_display: `₹${amount} प्रति सफल आवेदन`,
+      updated_at: new Date().toISOString()
+    };
+    if (minTarget !== null && !isNaN(minTarget)) {
+      payload.min_form_target = parseInt(minTarget, 10);
+      payload.rate_display = `₹${amount} प्रति सफल आवेदन (न्यूनतम लक्ष्य: ${minTarget} फॉर्म)`;
+    }
     const { data, error } = await supabase
       .from('commission_rates')
-      .update({
-        rate_amount: amount,
-        model_type: modelType,
-        rate_display: `₹${amount} per approved application`,
-        updated_at: new Date().toISOString()
-      })
+      .update(payload)
       .eq('role_id', roleId)
       .select()
       .single();
@@ -196,7 +206,17 @@ export const commissionService = {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        const coordinatorRoles = ['DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION', 'ONLINE_CENTER'];
+        const coordinatorRoles = [
+          'DISTRICT_COORDINATOR', 
+          'BLOCK_COORDINATOR', 
+          'TEHSIL_COORDINATOR', 
+          'GRAM_PANCHAYAT_COORDINATOR', 
+          'ONLINE_CENTER', 
+          'SCHOOL_COORDINATOR', 
+          'COLLEGE_COORDINATOR', 
+          'COACHING_CENTER', 
+          'INSTITUTION'
+        ];
         dbMatched = data.filter(p => 
           (p.user_roles || []).some(r => coordinatorRoles.includes(r.role_id))
         ).map(p => {
@@ -216,7 +236,7 @@ export const commissionService = {
       console.warn('Live getCoordinators note:', err);
     }
 
-    // Default coordinator registry
+    // Default coordinator registry representing all official categories
     const defaultCoords = [
       {
         id: 'eb6a57ae-e62e-4fc0-9324-0e7f2166bf31',
@@ -225,6 +245,8 @@ export const commissionService = {
         mobile: '9826110001',
         role: 'DISTRICT_COORDINATOR',
         district: 'Jabalpur',
+        minTarget: 1000,
+        rateAmount: 50,
         isActive: true
       },
       {
@@ -235,25 +257,81 @@ export const commissionService = {
         role: 'BLOCK_COORDINATOR',
         district: 'Jabalpur',
         block: 'Patan',
+        minTarget: 500,
+        rateAmount: 40,
         isActive: true
       },
       {
-        id: '09678e68-1cca-4470-8762-e682ae7018e0',
-        fullName: 'Nodal Officer - Govt Model HSS',
-        email: 'school.model@jankalyan.org',
-        mobile: '9826110003',
-        role: 'INSTITUTION',
-        institution: 'Govt. Model Higher Secondary School',
+        id: '38a1b2c3-d4e5-4f6a-8b9c-123456789abc',
+        fullName: 'Sihora Tehsil Coordinator',
+        email: 'tehsil.sihora@jankalyan.org',
+        mobile: '9826110005',
+        role: 'TEHSIL_COORDINATOR',
+        district: 'Jabalpur',
+        tehsil: 'Sihora',
+        minTarget: 300,
+        rateAmount: 35,
+        isActive: true
+      },
+      {
+        id: '49b2c3d4-e5f6-4a7b-9c0d-234567890bcd',
+        fullName: 'Bargi Gram Panchayat Coordinator',
+        email: 'panchayat.bargi@jankalyan.org',
+        mobile: '9826110006',
+        role: 'GRAM_PANCHAYAT_COORDINATOR',
+        district: 'Jabalpur',
+        gramPanchayat: 'Bargi',
+        minTarget: 100,
+        rateAmount: 25,
         isActive: true
       },
       {
         id: 'a45eac1d-a406-48c5-93e9-4c2c96f9e824',
-        fullName: 'Patan CSC Center Operator',
+        fullName: 'Patan CSC Cyber Center',
         email: 'center.patan@jankalyan.org',
         mobile: '9826110004',
         role: 'ONLINE_CENTER',
         district: 'Jabalpur',
         block: 'Patan',
+        centerName: 'Shri Ram CSC & Cyber Cafe',
+        minTarget: 50,
+        rateAmount: 30,
+        isActive: true
+      },
+      {
+        id: '09678e68-1cca-4470-8762-e682ae7018e0',
+        fullName: 'Govt Model HSS Coordinator',
+        email: 'school.model@jankalyan.org',
+        mobile: '9826110003',
+        role: 'SCHOOL_COORDINATOR',
+        district: 'Jabalpur',
+        institution: 'Govt. Model Higher Secondary School',
+        minTarget: 100,
+        rateAmount: 25,
+        isActive: true
+      },
+      {
+        id: '5ac3d4e5-f6a7-4b8c-0d1e-345678901cde',
+        fullName: 'Mahakoshal Arts & Commerce College',
+        email: 'college.mahakoshal@jankalyan.org',
+        mobile: '9826110007',
+        role: 'COLLEGE_COORDINATOR',
+        district: 'Jabalpur',
+        institution: 'Govt. Mahakoshal Arts & Commerce College',
+        minTarget: 150,
+        rateAmount: 30,
+        isActive: true
+      },
+      {
+        id: '6bd4e5f6-a7b8-4c9d-1e2f-456789012def',
+        fullName: 'Career Point Coaching Coordinator',
+        email: 'coaching.careerpoint@jankalyan.org',
+        mobile: '9826110008',
+        role: 'COACHING_CENTER',
+        district: 'Jabalpur',
+        institution: 'Career Point Coaching Center',
+        minTarget: 100,
+        rateAmount: 20,
         isActive: true
       }
     ];
@@ -291,7 +369,20 @@ export const commissionService = {
   /**
    * Register a new Coordinator in the system
    */
-  async createCoordinator({ fullName, email, mobile, role = 'DISTRICT_COORDINATOR', district = '', block = '', institution = '' }) {
+  async createCoordinator({ 
+    fullName, 
+    email, 
+    mobile, 
+    role = 'DISTRICT_COORDINATOR', 
+    district = '', 
+    block = '', 
+    tehsil = '',
+    gramPanchayat = '',
+    institution = '',
+    centerName = '',
+    minTarget = null,
+    rateAmount = null
+  }) {
     if (!fullName || !mobile) {
       throw new Error('Full Name and Mobile Number are required.');
     }
@@ -367,7 +458,12 @@ export const commissionService = {
       role,
       district: district || '',
       block: block || '',
-      institution: institution || '',
+      tehsil: tehsil || '',
+      gramPanchayat: gramPanchayat || '',
+      institution: institution || centerName || '',
+      centerName: centerName || '',
+      minTarget: minTarget || null,
+      rateAmount: rateAmount || null,
       isActive: true,
       createdAt: new Date().toISOString()
     };

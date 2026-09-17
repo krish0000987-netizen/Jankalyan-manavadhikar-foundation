@@ -67,6 +67,18 @@ import { UsersManager } from '../components/admin/UsersManager';
 import { SettingsManager } from '../components/admin/SettingsManager';
 import { GrievanceManager } from '../components/admin/GrievanceManager';
 
+export const OFFICIAL_COORDINATOR_ROLES = [
+  { id: 'DISTRICT_COORDINATOR', sno: 1, nameHi: 'जिला समन्वयक', nameEn: 'District Coordinator', target: 1000, rate: 50, color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', icon: '🏛️' },
+  { id: 'BLOCK_COORDINATOR', sno: 2, nameHi: 'ब्लॉक समन्वयक', nameEn: 'Block Coordinator', target: 500, rate: 40, color: '#0369A1', bg: '#F0F9FF', border: '#BAE6FD', icon: '🏢' },
+  { id: 'TEHSIL_COORDINATOR', sno: 3, nameHi: 'तहसील समन्वयक', nameEn: 'Tehsil Coordinator', target: 300, rate: 35, color: '#0D9488', bg: '#F0FDFA', border: '#99F6E4', icon: '🏛️' },
+  { id: 'GRAM_PANCHAYAT_COORDINATOR', sno: 4, nameHi: 'ग्राम पंचायत समन्वयक', nameEn: 'Gram Panchayat Coordinator', target: 100, rate: 25, color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0', icon: '🏘️' },
+  { id: 'ONLINE_CENTER', sno: 5, nameHi: 'ऑनलाइन शॉप / CSC / साइबर कैफे', nameEn: 'Online Shop / CSC / Cyber Cafe', target: 50, rate: 30, color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: '💻' },
+  { id: 'SCHOOL_COORDINATOR', sno: 6, nameHi: 'स्कूल', nameEn: 'School Coordinator', target: 100, rate: 25, color: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', icon: '🏫' },
+  { id: 'COLLEGE_COORDINATOR', sno: 7, nameHi: 'कॉलेज', nameEn: 'College Coordinator', target: 150, rate: 30, color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', icon: '🎓' },
+  { id: 'COACHING_CENTER', sno: 8, nameHi: 'कोचिंग सेंटर', nameEn: 'Coaching Center', target: 100, rate: 20, color: '#BE123C', bg: '#FFF1F2', border: '#FECDD3', icon: '👨‍🏫' },
+  { id: 'INSTITUTION', sno: 9, nameHi: 'शैक्षणिक संस्थान (School / College Nodal)', nameEn: 'Educational Institution', target: 100, rate: 25, color: '#334155', bg: '#F1F5F9', border: '#CBD5E1', icon: '🏫' }
+];
+
 export const Admin = () => {
   const { 
     lang, 
@@ -166,6 +178,7 @@ export const Admin = () => {
   const [commissionsList, setCommissionsList] = useState([]);
   const [coordinatorsList, setCoordinatorsList] = useState([]);
   const [commissionSubTab, setCommissionSubTab] = useState('ledger'); // 'ledger' | 'coordinators' | 'slabs'
+  const [coordinatorRoleFilter, setCoordinatorRoleFilter] = useState('ALL');
   const [isAddCoordinatorOpen, setIsAddCoordinatorOpen] = useState(false);
   const [isSubmittingCoordinator, setIsSubmittingCoordinator] = useState(false);
   const [newCoordinatorForm, setNewCoordinatorForm] = useState({
@@ -175,18 +188,24 @@ export const Admin = () => {
     role: 'DISTRICT_COORDINATOR',
     district: 'Jabalpur',
     block: '',
-    institution: ''
+    tehsil: '',
+    gramPanchayat: '',
+    institution: '',
+    centerName: '',
+    minTarget: 1000,
+    rateAmount: 50
   });
   const [isGiveCommissionOpen, setIsGiveCommissionOpen] = useState(false);
   const [isSubmittingCommission, setIsSubmittingCommission] = useState(false);
   const [manualCommissionForm, setManualCommissionForm] = useState({
     coordinatorId: '',
     role: 'DISTRICT_COORDINATOR',
-    amount: 100,
+    applicationCount: 1,
+    amount: 50,
     applicationId: '',
     status: 'PAID',
     utrNumber: '',
-    remarks: 'Manual verification & mobilization incentive'
+    remarks: 'Field verification incentive for Session 2026-27'
   });
 
   // CMS Form State
@@ -761,7 +780,12 @@ export const Admin = () => {
         role: 'DISTRICT_COORDINATOR',
         district: 'Jabalpur',
         block: '',
-        institution: ''
+        tehsil: '',
+        gramPanchayat: '',
+        institution: '',
+        centerName: '',
+        minTarget: 1000,
+        rateAmount: 50
       });
       alert(`✓ Coordinator "${created.fullName}" registered successfully!`);
     } catch (err) {
@@ -2923,126 +2947,500 @@ export const Admin = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                     <div>
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                        Field Coordinators & Verification Cells Directory
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>पंजीकृत सहयोगी एवं समन्वयक डायरेक्टरी (Registered Coordinators)</span>
+                        <span className="badge badge-navy" style={{ fontSize: '0.75rem' }}>
+                          {coordinatorsList.length} Active
+                        </span>
                       </h3>
                       <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
-                        District officers, Block officers, School/College Nodal Officers, and CSC Facilitators
+                        जिला, ब्लॉक, तहसील, ग्राम पंचायत समन्वयक, CSC केंद्र, स्कूल, कॉलेज एवं कोचिंग सहयोगी
                       </p>
                     </div>
 
                     <button 
                       className="btn btn-primary btn-sm"
                       onClick={() => setIsAddCoordinatorOpen(true)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#0B2B82', borderColor: '#0B2B82' }}
                     >
                       <Plus size={14} />
-                      <span>Register Coordinator</span>
+                      <span>+ नया समन्वयक जोड़ें (Add Coordinator)</span>
                     </button>
                   </div>
 
-                  <div className="grid-3" style={{ gap: '1.25rem' }}>
-                    {coordinatorsList.map(coord => {
-                      const totalEarned = commissionsList
-                        .filter(c => c.beneficiary_user_id === coord.id)
-                        .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
-
+                  {/* Role Filter Pills */}
+                  <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${coordinatorRoleFilter === 'ALL' ? 'btn-primary' : 'btn-outline'}`}
+                      style={{ borderRadius: '20px', fontSize: '0.75rem', padding: '0.3rem 0.85rem' }}
+                      onClick={() => setCoordinatorRoleFilter('ALL')}
+                    >
+                      सभी पद (All) ({coordinatorsList.length})
+                    </button>
+                    {OFFICIAL_COORDINATOR_ROLES.slice(0, 8).map(r => {
+                      const count = coordinatorsList.filter(c => c.role === r.id).length;
                       return (
-                        <div key={coord.id} className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                              <span className="badge badge-navy" style={{ fontSize: '0.72rem' }}>
-                                {(coord.role || '').replace('_', ' ')}
-                              </span>
-                              <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>
-                                Active
-                              </span>
-                            </div>
-
-                            <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem' }}>
-                              {coord.fullName}
-                            </h4>
-
-                            <div style={{ fontSize: '0.8rem', color: '#64748B', lineHeight: 1.6, marginBottom: '1rem' }}>
-                              <div>📱 {coord.mobile}</div>
-                              {coord.email && <div>✉️ {coord.email}</div>}
-                              {coord.district && <div>📍 District: <strong>{coord.district}</strong></div>}
-                              {coord.block && <div>🏢 Block: <strong>{coord.block}</strong></div>}
-                              {coord.institution && <div>🏫 Institution: <strong>{coord.institution}</strong></div>}
-                            </div>
-                          </div>
-
-                          <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                              <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Total Earned:</span>
-                              <strong style={{ color: '#16A34A', fontSize: '1.05rem', fontWeight: 800 }}>
-                                ₹{totalEarned.toLocaleString('en-IN')}
-                              </strong>
-                            </div>
-
-                            <button 
-                              className="btn btn-outline btn-sm"
-                              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: '#16A34A', borderColor: '#86EFAC', backgroundColor: '#F0FDF4', fontWeight: 700 }}
-                              onClick={() => {
-                                setManualCommissionForm(prev => ({
-                                  ...prev,
-                                  coordinatorId: coord.id,
-                                  role: coord.role || 'DISTRICT_COORDINATOR'
-                                }));
-                                setIsGiveCommissionOpen(true);
-                              }}
-                            >
-                              <Award size={14} />
-                              <span>Give Commission</span>
-                            </button>
-                          </div>
-                        </div>
+                        <button
+                          key={r.id}
+                          type="button"
+                          className={`btn btn-sm ${coordinatorRoleFilter === r.id ? 'btn-primary' : 'btn-outline'}`}
+                          style={{ borderRadius: '20px', fontSize: '0.75rem', padding: '0.3rem 0.85rem', whiteSpace: 'nowrap' }}
+                          onClick={() => setCoordinatorRoleFilter(r.id)}
+                        >
+                          <span>{r.icon} {r.nameHi}</span>
+                          {count > 0 && <span style={{ marginLeft: '4px', opacity: 0.85 }}>({count})</span>}
+                        </button>
                       );
                     })}
+                  </div>
+
+                  {/* Coordinators Grid */}
+                  <div className="grid-3" style={{ gap: '1.25rem' }}>
+                    {coordinatorsList
+                      .filter(c => coordinatorRoleFilter === 'ALL' || c.role === coordinatorRoleFilter)
+                      .map(coord => {
+                        const totalEarned = commissionsList
+                          .filter(c => c.beneficiary_user_id === coord.id)
+                          .reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+
+                        const roleConfig = OFFICIAL_COORDINATOR_ROLES.find(r => r.id === coord.role) || {
+                          sno: '-',
+                          nameHi: coord.role?.replace('_', ' '),
+                          nameEn: coord.role,
+                          target: coord.minTarget || 100,
+                          rate: coord.rateAmount || 30,
+                          color: '#1E40AF',
+                          bg: '#EFF6FF',
+                          border: '#BFDBFE',
+                          icon: '👤'
+                        };
+
+                        return (
+                          <div key={coord.id} className="card" style={{ padding: '1.4rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: `1px solid ${roleConfig.border}` }}>
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', gap: '0.5rem' }}>
+                                <span style={{ 
+                                  fontSize: '0.72rem', 
+                                  fontWeight: 800, 
+                                  backgroundColor: roleConfig.bg, 
+                                  color: roleConfig.color, 
+                                  padding: '3px 8px', 
+                                  borderRadius: '6px',
+                                  border: `1px solid ${roleConfig.border}`,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  <span>{roleConfig.icon}</span>
+                                  <span>#{roleConfig.sno} {roleConfig.nameHi}</span>
+                                </span>
+                                <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>
+                                  सक्रिय (Active)
+                                </span>
+                              </div>
+
+                              <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.2rem' }}>
+                                {coord.fullName}
+                              </h4>
+                              <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.75rem', fontWeight: 600 }}>
+                                {roleConfig.nameEn}
+                              </div>
+
+                              {/* Target & Rate Badges */}
+                              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
+                                <div style={{ fontSize: '0.72rem', backgroundColor: '#F1F5F9', color: '#334155', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                                  🎯 लक्ष्य: {roleConfig.target} फॉर्म
+                                </div>
+                                <div style={{ fontSize: '0.72rem', backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                                  💰 दर: ₹{roleConfig.rate}/आवेदन
+                                </div>
+                              </div>
+
+                              <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.6, marginBottom: '0.5rem' }}>
+                                <div>📱 <strong>{coord.mobile}</strong></div>
+                                {coord.email && <div style={{ fontSize: '0.75rem', color: '#64748B' }}>✉️ {coord.email}</div>}
+                                {coord.district && <div>📍 जिला (District): <strong>{coord.district}</strong></div>}
+                                {coord.tehsil && <div>🏛️ तहसील (Tehsil): <strong>{coord.tehsil}</strong></div>}
+                                {coord.block && <div>🏢 ब्लॉक (Block): <strong>{coord.block}</strong></div>}
+                                {coord.gramPanchayat && <div>🏘️ ग्राम पंचायत: <strong>{coord.gramPanchayat}</strong></div>}
+                                {(coord.institution || coord.centerName) && (
+                                  <div>🏫 संस्थान/केंद्र: <strong>{coord.institution || coord.centerName}</strong></div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '0.85rem', marginTop: '0.5rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>कुल अर्जित प्रोत्साहन:</span>
+                                <strong style={{ color: '#16A34A', fontSize: '1.05rem', fontWeight: 800 }}>
+                                  ₹{totalEarned.toLocaleString('en-IN')}
+                                </strong>
+                              </div>
+
+                              <button 
+                                className="btn btn-outline btn-sm"
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: '#16A34A', borderColor: '#86EFAC', backgroundColor: '#F0FDF4', fontWeight: 700 }}
+                                onClick={() => {
+                                  setManualCommissionForm({
+                                    coordinatorId: coord.id,
+                                    role: coord.role || 'DISTRICT_COORDINATOR',
+                                    applicationCount: 1,
+                                    amount: roleConfig.rate || 50,
+                                    applicationId: '',
+                                    status: 'PAID',
+                                    utrNumber: `COMM-${Date.now().toString().slice(-6)}`,
+                                    remarks: `Verification incentive for ${coord.fullName} (${roleConfig.nameHi})`
+                                  });
+                                  setIsGiveCommissionOpen(true);
+                                }}
+                              >
+                                <Award size={14} />
+                                <span>+ Give Commission (कमीशन प्रदान करें)</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}
 
-              {/* TAB 3: ROLE RATES SLABS */}
+              {/* TAB 3: ROLE RATES SLABS & OFFICIAL POSTER STRUCTURE */}
               {commissionSubTab === 'slabs' && (
-                <div className="card" style={{ padding: '1.75rem' }}>
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                      Configured Role Commission Slabs
-                    </h3>
-                    <p style={{ color: '#64748B', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-                      Standard rates per approved student verification. Admin can override or manually pay any amount at any time.
-                    </p>
+                <div className="space-y-6">
+                  {/* Official Poster Header Banner */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #0B2B82 0%, #1E3A8A 50%, #0F172A 100%)',
+                    borderRadius: '16px',
+                    padding: '1.75rem 2rem',
+                    color: '#FFFFFF',
+                    boxShadow: '0 10px 25px -5px rgba(11, 43, 130, 0.25)',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(234, 179, 8, 0.2)', border: '1px solid #EAB308', borderRadius: '999px', padding: '0.2rem 0.85rem', color: '#FEF08A', fontSize: '0.78rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                          <span>★</span>
+                          <span>SCHOLARSHIP YOJNA 2026 • आधिकारिक दिशा-निर्देश</span>
+                        </div>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FFFFFF', margin: '0.25rem 0' }}>
+                          प्रति सहयोगी निर्धारित फॉर्म लक्ष्य एवं प्रोत्साहन राशि
+                        </h2>
+                        <p style={{ color: '#93C5FD', fontSize: '0.85rem', margin: 0 }}>
+                          जन कल्याण मानवाधिकार फाउंडेशन • कोऑर्डिनेटर / सेवा सहयोगी के लिए विशेष अवसर
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end' }}>
+                        <span style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>
+                          🇮🇳 पढ़ेगा इंडिया बढ़ेगा इंडिया
+                        </span>
+                        <span style={{ color: '#86EFAC', fontSize: '0.75rem', fontWeight: 700 }}>
+                          ✓ सभी फॉर्म सत्यापित एवं पात्र विद्यार्थियों के ही स्वीकार होंगे
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Poster Highlights Badges */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.15)' }}>
+                      <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#FDE047' }}>
+                        🎯 फॉर्म लक्ष्य पूरा करना अनिवार्य नहीं है
+                      </div>
+                      <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#86EFAC' }}>
+                        💰 प्रोत्साहन राशि केवल पात्र एवं सत्यापित आवेदनों पर देय
+                      </div>
+                      <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#BAE6FD' }}>
+                        🚫 विद्यार्थी की छात्रवृत्ति राशि से कोई कमीशन नहीं काटा जाएगा
+                      </div>
+                      <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#DDD6FE' }}>
+                        🤝 सेवा ही सच्चा सहयोग है (गैर-सरकारी संस्था NGO)
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Official Slabs Table Mirroring Poster */}
+                  <div className="card" style={{ padding: '1.5rem', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                          आधिकारिक पदवार प्रोत्साहन स्लैब तालिका (Official Incentive Matrix)
+                        </h3>
+                        <p style={{ color: '#64748B', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+                          पोस्टर के अनुसार 8 मुख्य सहयोगी श्रेणियां, उनके निर्धारित फॉर्म लक्ष्य एवं प्रति सफल आवेदन प्रोत्साहन राशि
+                        </p>
+                      </div>
+
+                      <button 
+                        className="btn btn-outline btn-sm"
+                        onClick={async () => {
+                          const updated = await commissionService.getCommissionRates();
+                          setCommissionRates(updated);
+                        }}
+                      >
+                        <RefreshCw size={13} />
+                        <span>Refresh Rates</span>
+                      </button>
+                    </div>
+
+                    <div className="data-table-container">
+                      <table className="data-table">
+                        <thead>
+                          <tr style={{ backgroundColor: '#F8FAFC', textAlign: 'left' }}>
+                            <th style={{ width: '60px' }}>क्रमांक</th>
+                            <th>सहयोगी / पद (Designation)</th>
+                            <th>न्यूनतम फॉर्म लक्ष्य (प्रति सहयोगी)</th>
+                            <th>प्रति सफल आवेदन प्रोत्साहन राशि (₹ में)</th>
+                            <th>मॉडल प्रकार (Payout Model)</th>
+                            <th>स्थिति (Status)</th>
+                            <th style={{ textAlign: 'right' }}>कार्य (Action)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {OFFICIAL_COORDINATOR_ROLES.slice(0, 8).map(roleItem => {
+                            const dbRate = commissionRates.find(r => r.role_id === roleItem.id);
+                            const amount = dbRate ? parseFloat(dbRate.rate_amount) : roleItem.rate;
+                            const target = dbRate?.min_form_target || roleItem.target;
+
+                            return (
+                              <tr key={roleItem.id}>
+                                <td>
+                                  <span style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    width: '26px', 
+                                    height: '26px', 
+                                    borderRadius: '50%', 
+                                    backgroundColor: roleItem.color, 
+                                    color: '#FFFFFF', 
+                                    fontWeight: 900, 
+                                    fontSize: '0.8rem' 
+                                  }}>
+                                    {roleItem.sno}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>{roleItem.icon}</span>
+                                    <div>
+                                      <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.95rem' }}>
+                                        {roleItem.nameHi}
+                                      </div>
+                                      <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+                                        {roleItem.nameEn}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="badge" style={{ backgroundColor: '#F1F5F9', color: '#1E293B', fontWeight: 800, fontSize: '0.85rem' }}>
+                                    🎯 {target} फॉर्म
+                                  </span>
+                                </td>
+                                <td>
+                                  <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '2px' }}>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#16A34A' }}>
+                                      ₹ {amount}/-
+                                    </span>
+                                    <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                                      /सफल आवेदन
+                                    </span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="badge badge-navy" style={{ fontSize: '0.72rem' }}>
+                                    {dbRate?.model_type || 'FIXED_PER_APPROVED'}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>
+                                    सक्रिय (Active)
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <button 
+                                    className="btn btn-outline btn-sm"
+                                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                                    onClick={async () => {
+                                      const newRate = prompt(`Enter new commission rate (₹) for ${roleItem.nameHi} (${roleItem.nameEn}):`, amount);
+                                      if (newRate && !isNaN(newRate)) {
+                                        const newTarget = prompt(`Enter minimum form target for ${roleItem.nameHi}:`, target);
+                                        await commissionService.updateCommissionRate(
+                                          roleItem.id, 
+                                          parseFloat(newRate), 
+                                          dbRate?.model_type || 'FIXED_PER_APPROVED',
+                                          newTarget && !isNaN(newTarget) ? parseInt(newTarget, 10) : target
+                                        );
+                                        const updated = await commissionService.getCommissionRates();
+                                        setCommissionRates(updated);
+                                        alert(`✓ Updated ${roleItem.nameHi} rate to ₹${newRate} (Target: ${newTarget || target} forms)`);
+                                      }
+                                    }}
+                                  >
+                                    <Edit3 size={12} />
+                                    <span>दर बदलें (Edit)</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Visual Cards Grid for all 8 categories */}
                   <div className="grid-4" style={{ gap: '1.25rem' }}>
-                    {commissionRates.map(rate => (
-                      <div key={rate.id} style={{ backgroundColor: '#F8FAFC', padding: '1.5rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-                          {rate.role_id.replace('_', ' ')}
-                        </div>
-                        <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#16A34A', margin: '0.5rem 0' }}>
-                          ₹{parseFloat(rate.rate_amount).toFixed(2)}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '1rem' }}>
-                          Model: {rate.model_type}
-                        </div>
-                        <button 
-                          className="btn btn-outline btn-sm"
-                          style={{ width: '100%', fontSize: '0.78rem' }}
-                          onClick={async () => {
-                            const newRate = prompt(`Enter new commission rate (₹) for ${rate.role_id}:`, rate.rate_amount);
-                            if (newRate && !isNaN(newRate)) {
-                              await commissionService.updateCommissionRate(rate.role_id, parseFloat(newRate));
-                              const updated = await commissionService.getCommissionRates();
-                              setCommissionRates(updated);
-                            }
+                    {OFFICIAL_COORDINATOR_ROLES.slice(0, 8).map(r => {
+                      const dbRate = commissionRates.find(rate => rate.role_id === r.id);
+                      const currentAmount = dbRate ? parseFloat(dbRate.rate_amount) : r.rate;
+                      const currentTarget = dbRate?.min_form_target || r.target;
+
+                      return (
+                        <div 
+                          key={r.id} 
+                          style={{ 
+                            backgroundColor: '#FFFFFF', 
+                            padding: '1.4rem', 
+                            borderRadius: '12px', 
+                            border: `1.5px solid ${r.border}`,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between'
                           }}
                         >
-                          <Edit3 size={13} />
-                          <span>Edit Rate</span>
-                        </button>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                              <span style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                width: '28px', 
+                                height: '28px', 
+                                borderRadius: '50%', 
+                                backgroundColor: r.color, 
+                                color: '#FFFFFF', 
+                                fontWeight: 900, 
+                                fontSize: '0.85rem' 
+                              }}>
+                                {r.sno}
+                              </span>
+                              <span style={{ 
+                                fontSize: '0.7rem', 
+                                fontWeight: 700, 
+                                color: r.color, 
+                                backgroundColor: r.bg, 
+                                padding: '2px 8px', 
+                                borderRadius: '4px' 
+                              }}>
+                                {r.icon} श्रेणी #{r.sno}
+                              </span>
+                            </div>
+
+                            <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: '0 0 0.2rem 0' }}>
+                              {r.nameHi}
+                            </h4>
+                            <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, marginBottom: '0.85rem' }}>
+                              {r.nameEn}
+                            </div>
+
+                            <div style={{ backgroundColor: '#F8FAFC', padding: '0.65rem', borderRadius: '8px', marginBottom: '0.85rem', border: '1px solid #E2E8F0' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                                न्यूनतम फॉर्म लक्ष्य
+                              </div>
+                              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1E293B', marginTop: '2px' }}>
+                                🎯 {currentTarget} फॉर्म
+                              </div>
+                            </div>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+                                प्रति सफल आवेदन प्रोत्साहन राशि
+                              </div>
+                              <div style={{ fontSize: '2rem', fontWeight: 900, color: '#16A34A', margin: '2px 0' }}>
+                                ₹{currentAmount.toFixed(0)}/-
+                              </div>
+                              <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                                पात्र एवं सत्यापित आवेदन पर देय
+                              </div>
+                            </div>
+                          </div>
+
+                          <button 
+                            className="btn btn-outline btn-sm"
+                            style={{ width: '100%', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
+                            onClick={async () => {
+                              const newRate = prompt(`Enter new commission rate (₹) for ${r.nameHi}:`, currentAmount);
+                              if (newRate && !isNaN(newRate)) {
+                                const newTarget = prompt(`Enter minimum form target for ${r.nameHi}:`, currentTarget);
+                                await commissionService.updateCommissionRate(
+                                  r.id, 
+                                  parseFloat(newRate), 
+                                  dbRate?.model_type || 'FIXED_PER_APPROVED',
+                                  newTarget && !isNaN(newTarget) ? parseInt(newTarget, 10) : currentTarget
+                                );
+                                const updated = await commissionService.getCommissionRates();
+                                setCommissionRates(updated);
+                              }
+                            }}
+                          >
+                            <Edit3 size={13} />
+                            <span>Edit Rate / Target</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Official Notice, Special Appeal & Objectives Cards (From Poster) */}
+                  <div className="grid-3" style={{ gap: '1.25rem' }}>
+                    {/* Important Information */}
+                    <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #E11D48', backgroundColor: '#FFF1F2' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#BE123C' }}>
+                        <Bell size={20} />
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>महत्वपूर्ण सूचना</h4>
                       </div>
-                    ))}
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: '#881337', lineHeight: 1.8 }}>
+                        <li><strong>फॉर्म लक्ष्य पूरा करना अनिवार्य नहीं है।</strong></li>
+                        <li>प्रोत्साहन राशि केवल पात्र एवं सत्यापित सफल आवेदनों पर देय होगी।</li>
+                        <li>यह योजना गैर-सरकारी संस्था (NGO) द्वारा संचालित है।</li>
+                        <li><strong>यह राशि विद्यार्थी की छात्रवृत्ति से नहीं काटी जाएगी।</strong></li>
+                        <li>फॉर्म भरते समय सही जानकारी देना अनिवार्य है।</li>
+                      </ul>
+                    </div>
+
+                    {/* Special Appeal */}
+                    <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #D97706', backgroundColor: '#FFFBEB' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#B45309' }}>
+                        <AlertTriangle size={20} />
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>विशेष अपील</h4>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: '#78350F', lineHeight: 1.7 }}>
+                        कृपया केवल जरूरतमंद एवं पात्र विद्यार्थियों को ही आवेदन करने के लिए प्रेरित करें। गलत जानकारी, अपात्र आवेदन या केवल कमीशन के उद्देश्य से किए गए आवेदन स्वीकार नहीं किए जाएंगे।
+                      </p>
+                      <div style={{ marginTop: '0.75rem', fontSize: '0.82rem', fontWeight: 800, color: '#92400E' }}>
+                        ★ आपका सहयोग ही किसी जरूरतमंद विद्यार्थी का भविष्य बदल सकता है।
+                      </div>
+                    </div>
+
+                    {/* Our Objectives */}
+                    <div className="card" style={{ padding: '1.5rem', borderLeft: '4px solid #0284C7', backgroundColor: '#F0F9FF' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#0369A1' }}>
+                        <CheckCircle2 size={20} />
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>हमारा उद्देश्य</h4>
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: '#0C4A6E', lineHeight: 1.8 }}>
+                        <li>✓ <strong>शिक्षा का अधिकार</strong> — हर बच्चे तक पहुंच</li>
+                        <li>✓ <strong>समाज में समानता</strong> — कोई भी वंचित न रहे</li>
+                        <li>✓ <strong>हर वर्ग के लिए शिक्षा</strong> — गुणवत्तापूर्ण अवसर</li>
+                        <li>✓ <strong>सशक्त भारत निर्माण</strong> — शिक्षित युवा, आत्मनिर्भर देश</li>
+                      </ul>
+                      <div style={{ marginTop: '0.6rem', fontSize: '0.75rem', color: '#0369A1', fontWeight: 700 }}>
+                        ★ सेवा ही सच्चा सहयोग है
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3061,7 +3459,7 @@ export const Admin = () => {
                   padding: '1rem'
                 }}>
                   <div className="animate-fade-in" style={{
-                    maxWidth: '560px',
+                    maxWidth: '600px',
                     width: '100%',
                     backgroundColor: '#FFFFFF',
                     borderRadius: '16px',
@@ -3073,10 +3471,10 @@ export const Admin = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                       <div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                          Register New Coordinator
+                          नया समन्वयक पंजीकृत करें (Register Coordinator)
                         </h3>
                         <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
-                          Add a field officer or online center to manage scrutiny and receive commissions
+                          Add a field officer, cyber cafe / CSC operator, school/college nodal or coaching center
                         </p>
                       </div>
                       <button 
@@ -3088,35 +3486,76 @@ export const Admin = () => {
                     </div>
 
                     <form onSubmit={handleCreateCoordinator} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {/* Coordinator Role Selector */}
                       <div className="form-group">
-                        <label className="form-label required">Full Name</label>
-                        <input 
-                          type="text"
-                          required
+                        <label className="form-label required">सहयोगी / पद (Coordinator Role)</label>
+                        <select 
                           className="form-control"
-                          placeholder="e.g. Ramesh Chandra Sharma"
-                          value={newCoordinatorForm.fullName}
-                          onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, fullName: e.target.value })}
-                        />
+                          value={newCoordinatorForm.role}
+                          onChange={(e) => {
+                            const chosenRole = e.target.value;
+                            const roleMeta = OFFICIAL_COORDINATOR_ROLES.find(r => r.id === chosenRole);
+                            setNewCoordinatorForm({ 
+                              ...newCoordinatorForm, 
+                              role: chosenRole,
+                              minTarget: roleMeta?.target || 100,
+                              rateAmount: roleMeta?.rate || 30
+                            });
+                          }}
+                        >
+                          <option value="DISTRICT_COORDINATOR">1. जिला समन्वयक (District Coordinator) — लक्ष्य: 1000 फॉर्म | ₹50/आवेदन</option>
+                          <option value="BLOCK_COORDINATOR">2. ब्लॉक समन्वयक (Block Coordinator) — लक्ष्य: 500 फॉर्म | ₹40/आवेदन</option>
+                          <option value="TEHSIL_COORDINATOR">3. तहसील समन्वयक (Tehsil Coordinator) — लक्ष्य: 300 फॉर्म | ₹35/आवेदन</option>
+                          <option value="GRAM_PANCHAYAT_COORDINATOR">4. ग्राम पंचायत समन्वयक (Gram Panchayat Coordinator) — लक्ष्य: 100 फॉर्म | ₹25/आवेदन</option>
+                          <option value="ONLINE_CENTER">5. ऑनलाइन शॉप / CSC / साइबर कैफे (Online Center) — लक्ष्य: 50 फॉर्म | ₹30/आवेदन</option>
+                          <option value="SCHOOL_COORDINATOR">6. स्कूल (School Coordinator) — लक्ष्य: 100 फॉर्म | ₹25/आवेदन</option>
+                          <option value="COLLEGE_COORDINATOR">7. कॉलेज (College Coordinator) — लक्ष्य: 150 फॉर्म | ₹30/आवेदन</option>
+                          <option value="COACHING_CENTER">8. कोचिंग सेंटर (Coaching Center) — लक्ष्य: 100 फॉर्म | ₹20/आवेदन</option>
+                          <option value="INSTITUTION">शैक्षणिक संस्थान नोडल अधिकारी (School / College Nodal Officer)</option>
+                        </select>
                       </div>
 
+                      {/* Role Incentive Information Pill */}
+                      {(() => {
+                        const meta = OFFICIAL_COORDINATOR_ROLES.find(r => r.id === newCoordinatorForm.role);
+                        if (!meta) return null;
+                        return (
+                          <div style={{
+                            padding: '0.65rem 1rem',
+                            backgroundColor: meta.bg,
+                            border: `1px solid ${meta.border}`,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '0.8rem',
+                            color: meta.color,
+                            fontWeight: 700
+                          }}>
+                            <span>{meta.icon} {meta.nameHi} ({meta.nameEn})</span>
+                            <span style={{ color: '#16A34A', fontWeight: 900 }}>
+                              🎯 लक्ष्य: {meta.target} फॉर्म • 💰 ₹{meta.rate}/आवेदन
+                            </span>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Name & Mobile */}
                       <div className="grid-2" style={{ gap: '1rem' }}>
                         <div className="form-group">
-                          <label className="form-label required">Coordinator Role</label>
-                          <select 
+                          <label className="form-label required">पूरा नाम (Full Name)</label>
+                          <input 
+                            type="text"
+                            required
                             className="form-control"
-                            value={newCoordinatorForm.role}
-                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, role: e.target.value })}
-                          >
-                            <option value="DISTRICT_COORDINATOR">District Coordinator</option>
-                            <option value="BLOCK_COORDINATOR">Block Coordinator</option>
-                            <option value="INSTITUTION">Institutional Nodal Officer</option>
-                            <option value="ONLINE_CENTER">CSC / Online Center Facilitator</option>
-                          </select>
+                            placeholder="e.g. Ramesh Chandra Sharma"
+                            value={newCoordinatorForm.fullName}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, fullName: e.target.value })}
+                          />
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label required">Mobile Number</label>
+                          <label className="form-label required">मोबाइल नंबर (Mobile Number)</label>
                           <input 
                             type="tel"
                             required
@@ -3129,8 +3568,9 @@ export const Admin = () => {
                         </div>
                       </div>
 
+                      {/* Email Address */}
                       <div className="form-group">
-                        <label className="form-label">Email Address (Optional)</label>
+                        <label className="form-label">ईमेल पता (Email Address - Optional)</label>
                         <input 
                           type="email"
                           className="form-control"
@@ -3140,11 +3580,13 @@ export const Admin = () => {
                         />
                       </div>
 
+                      {/* Geographic Jurisdiction */}
                       <div className="grid-2" style={{ gap: '1rem' }}>
                         <div className="form-group">
-                          <label className="form-label">Assigned District</label>
+                          <label className="form-label required">आवंटित जिला (Assigned District)</label>
                           <input 
                             type="text"
+                            required
                             className="form-control"
                             placeholder="e.g. Jabalpur / Indore / Bhopal"
                             value={newCoordinatorForm.district}
@@ -3153,27 +3595,69 @@ export const Admin = () => {
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label">Assigned Block</label>
+                          <label className="form-label">
+                            {newCoordinatorForm.role === 'TEHSIL_COORDINATOR' ? 'आवंटित तहसील (Assigned Tehsil)' : 'आवंटित ब्लॉक (Assigned Block)'}
+                          </label>
                           <input 
                             type="text"
                             className="form-control"
-                            placeholder="e.g. Patan / Panagar / Depalpur"
-                            value={newCoordinatorForm.block}
-                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, block: e.target.value })}
+                            placeholder={newCoordinatorForm.role === 'TEHSIL_COORDINATOR' ? 'e.g. Sihora / Patan' : 'e.g. Patan / Panagar / Depalpur'}
+                            value={newCoordinatorForm.role === 'TEHSIL_COORDINATOR' ? newCoordinatorForm.tehsil : newCoordinatorForm.block}
+                            onChange={(e) => {
+                              if (newCoordinatorForm.role === 'TEHSIL_COORDINATOR') {
+                                setNewCoordinatorForm({ ...newCoordinatorForm, tehsil: e.target.value });
+                              } else {
+                                setNewCoordinatorForm({ ...newCoordinatorForm, block: e.target.value });
+                              }
+                            }}
                           />
                         </div>
                       </div>
 
-                      <div className="form-group">
-                        <label className="form-label">Institution / CSC Center Name (Optional)</label>
-                        <input 
-                          type="text"
-                          className="form-control"
-                          placeholder="e.g. Govt Model HSS or Shri Ram CSC Kendra"
-                          value={newCoordinatorForm.institution}
-                          onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, institution: e.target.value })}
-                        />
-                      </div>
+                      {/* Contextual Gram Panchayat / Center Name / Institution Name */}
+                      {newCoordinatorForm.role === 'GRAM_PANCHAYAT_COORDINATOR' && (
+                        <div className="form-group">
+                          <label className="form-label required">ग्राम पंचायत का नाम (Gram Panchayat Name)</label>
+                          <input 
+                            type="text"
+                            required
+                            className="form-control"
+                            placeholder="e.g. Bargi / Shahpura / Belkheda"
+                            value={newCoordinatorForm.gramPanchayat}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, gramPanchayat: e.target.value })}
+                          />
+                        </div>
+                      )}
+
+                      {newCoordinatorForm.role === 'ONLINE_CENTER' && (
+                        <div className="form-group">
+                          <label className="form-label required">ऑनलाइन शॉप / CSC / कैफे का नाम (Shop / CSC Center Name)</label>
+                          <input 
+                            type="text"
+                            required
+                            className="form-control"
+                            placeholder="e.g. Shri Ram CSC Center & Cyber Cafe"
+                            value={newCoordinatorForm.centerName}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, centerName: e.target.value, institution: e.target.value })}
+                          />
+                        </div>
+                      )}
+
+                      {['SCHOOL_COORDINATOR', 'COLLEGE_COORDINATOR', 'COACHING_CENTER', 'INSTITUTION'].includes(newCoordinatorForm.role) && (
+                        <div className="form-group">
+                          <label className="form-label required">
+                            {newCoordinatorForm.role === 'COACHING_CENTER' ? 'कोचिंग सेंटर का नाम (Coaching Center Name)' : (newCoordinatorForm.role === 'COLLEGE_COORDINATOR' ? 'कॉलेज का नाम (College Name)' : 'स्कूल / संस्था का नाम (School Name)')}
+                          </label>
+                          <input 
+                            type="text"
+                            required
+                            className="form-control"
+                            placeholder={newCoordinatorForm.role === 'COACHING_CENTER' ? 'e.g. Career Point Classes' : 'e.g. Govt Model HSS or Mahakoshal College'}
+                            value={newCoordinatorForm.institution}
+                            onChange={(e) => setNewCoordinatorForm({ ...newCoordinatorForm, institution: e.target.value })}
+                          />
+                        </div>
+                      )}
 
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                         <button 
@@ -3190,11 +3674,11 @@ export const Admin = () => {
                           disabled={isSubmittingCoordinator}
                         >
                           {isSubmittingCoordinator ? (
-                            <span>Registering Coordinator...</span>
+                            <span>समन्वयक पंजीकृत हो रहा है...</span>
                           ) : (
                             <>
                               <CheckCircle2 size={16} />
-                              <span>Register Coordinator</span>
+                              <span>Register Coordinator (पंजीकृत करें)</span>
                             </>
                           )}
                         </button>
@@ -3218,7 +3702,7 @@ export const Admin = () => {
                   padding: '1rem'
                 }}>
                   <div className="animate-fade-in" style={{
-                    maxWidth: '560px',
+                    maxWidth: '580px',
                     width: '100%',
                     backgroundColor: '#FFFFFF',
                     borderRadius: '16px',
@@ -3230,10 +3714,10 @@ export const Admin = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                       <div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                          Grant / Add Manual Commission
+                          प्रोत्साहन राशि प्रदान करें (Grant / Add Commission)
                         </h3>
                         <p style={{ color: '#64748B', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
-                          Award verification incentives or operational honorarium to a field coordinator
+                          सत्यापित आवेदनों के आधार पर सहयोगी को कमीशन / प्रोत्साहन राशि दर्ज करें
                         </p>
                       </div>
                       <button 
@@ -3247,68 +3731,127 @@ export const Admin = () => {
                     <form onSubmit={handleGiveCommission} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       {/* Coordinator Selector */}
                       <div className="form-group">
-                        <label className="form-label required">Select Coordinator / Beneficiary</label>
+                        <label className="form-label required">सहयोगी / समन्वयक चुनें (Select Coordinator)</label>
                         <select 
                           required
                           className="form-control"
                           value={manualCommissionForm.coordinatorId}
                           onChange={(e) => {
                             const chosen = coordinatorsList.find(c => c.id === e.target.value);
+                            const roleMeta = OFFICIAL_COORDINATOR_ROLES.find(r => r.id === chosen?.role);
+                            const count = manualCommissionForm.applicationCount || 1;
+                            const rate = roleMeta?.rate || 30;
                             setManualCommissionForm({
                               ...manualCommissionForm,
                               coordinatorId: e.target.value,
-                              role: chosen?.role || 'DISTRICT_COORDINATOR'
+                              role: chosen?.role || 'DISTRICT_COORDINATOR',
+                              amount: count * rate
                             });
                           }}
                         >
-                          <option value="">-- Choose Coordinator --</option>
-                          {coordinatorsList.map(coord => (
-                            <option key={coord.id} value={coord.id}>
-                              {coord.fullName} ({coord.role.replace('_', ' ')}) - {coord.mobile}
-                            </option>
-                          ))}
+                          <option value="">-- समन्वयक चुनें (Choose Coordinator) --</option>
+                          {coordinatorsList.map(coord => {
+                            const rMeta = OFFICIAL_COORDINATOR_ROLES.find(r => r.id === coord.role);
+                            return (
+                              <option key={coord.id} value={coord.id}>
+                                {coord.fullName} ({rMeta?.nameHi || coord.role}) - {coord.mobile}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
 
-                      {/* Amount & Status */}
+                      {/* Selected Coordinator Details Pill & Quick Form Count Calculator */}
+                      {(() => {
+                        const selectedCoord = coordinatorsList.find(c => c.id === manualCommissionForm.coordinatorId);
+                        const rMeta = OFFICIAL_COORDINATOR_ROLES.find(r => r.id === (selectedCoord?.role || manualCommissionForm.role));
+                        const baseRate = rMeta?.rate || 50;
+
+                        return (
+                          <div style={{ backgroundColor: '#F8FAFC', padding: '1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0F172A' }}>
+                                {rMeta?.icon} {rMeta?.nameHi} ({rMeta?.nameEn})
+                              </span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16A34A', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '4px' }}>
+                                निर्धारित दर: ₹{baseRate}/आवेदन
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', alignItems: 'center' }}>
+                              <div>
+                                <label style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                                  सत्यापित सफल आवेदन संख्या (Application Count):
+                                </label>
+                                <input 
+                                  type="number"
+                                  min="1"
+                                  className="form-control"
+                                  style={{ height: '36px', fontSize: '0.9rem', fontWeight: 700 }}
+                                  value={manualCommissionForm.applicationCount || 1}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10) || 1;
+                                    setManualCommissionForm({
+                                      ...manualCommissionForm,
+                                      applicationCount: val,
+                                      amount: val * baseRate
+                                    });
+                                  }}
+                                />
+                              </div>
+
+                              <div>
+                                <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, marginBottom: '4px' }}>
+                                  स्वतः गणना (Calculated Incentive):
+                                </div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#16A34A' }}>
+                                  {manualCommissionForm.applicationCount || 1} × ₹{baseRate} = ₹{(manualCommissionForm.applicationCount || 1) * baseRate}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Final Amount & Status */}
                       <div className="grid-2" style={{ gap: '1rem' }}>
                         <div className="form-group">
-                          <label className="form-label required">Commission Amount (₹)</label>
+                          <label className="form-label required">देय प्रोत्साहन राशि (Commission Amount ₹)</label>
                           <input 
                             type="number"
                             required
                             min="1"
                             step="1"
                             className="form-control"
-                            style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16A34A' }}
+                            style={{ fontSize: '1.25rem', fontWeight: 900, color: '#16A34A' }}
                             value={manualCommissionForm.amount}
                             onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, amount: e.target.value })}
                           />
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label required">Payout Status</label>
+                          <label className="form-label required">भुगतान स्थिति (Payout Status)</label>
                           <select 
                             className="form-control"
                             value={manualCommissionForm.status}
                             onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, status: e.target.value })}
                           >
-                            <option value="PAID">PAID (Transferred Offline / UPI)</option>
-                            <option value="APPROVED">APPROVED (Ready for Settlement)</option>
-                            <option value="PENDING">PENDING (Awaiting Review)</option>
+                            <option value="PAID">PAID (भुगतान पूर्ण / Transferred Offline / UPI)</option>
+                            <option value="APPROVED">APPROVED (अनुमोदित / Ready for Settlement)</option>
+                            <option value="PENDING">PENDING (लंबित समीक्षा / Awaiting Review)</option>
                           </select>
                         </div>
                       </div>
 
                       {/* Linked Application / Student Reference */}
                       <div className="form-group">
-                        <label className="form-label">Linked Application Reference (Optional)</label>
+                        <label className="form-label">संबद्ध छात्रवृत्ति आवेदन संदर्भ (Linked Application - Optional)</label>
                         <select 
                           className="form-control"
                           value={manualCommissionForm.applicationId}
                           onChange={(e) => setManualCommissionForm({ ...manualCommissionForm, applicationId: e.target.value })}
                         >
-                          <option value="">-- General Field Verification / Non-specific --</option>
+                          <option value="">-- सामान्य क्षेत्रीय सत्यापन / गैर-विशिष्ट (General Batch Incentive) --</option>
                           {applications.slice(0, 30).map(app => (
                             <option key={app.id} value={app.id}>
                               {app.id} - {app.studentName} ({app.institution || app.district})
@@ -3316,13 +3859,13 @@ export const Admin = () => {
                           ))}
                         </select>
                         <span style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.2rem', display: 'block' }}>
-                          If blank, commission is recorded under general mobilization honorarium.
+                          यदि खाली है, तो यह सामान्य फील्ड सत्यापन एवं मोबिलाइजेशन प्रोत्साहन के रूप में दर्ज होगा।
                         </span>
                       </div>
 
                       {/* UTR Reference & Remarks */}
                       <div className="form-group">
-                        <label className="form-label">Payment UTR / Transaction Reference (Optional)</label>
+                        <label className="form-label">बैंक UTR / ट्रांजैक्शन संदर्भ (UTR / Reference - Optional)</label>
                         <input 
                           type="text"
                           className="form-control"
@@ -3333,7 +3876,7 @@ export const Admin = () => {
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">Purpose / Remarks</label>
+                        <label className="form-label">उद्देश्य / टिप्पणी (Purpose / Remarks)</label>
                         <input 
                           type="text"
                           className="form-control"
@@ -3349,7 +3892,7 @@ export const Admin = () => {
                           className="btn btn-outline"
                           onClick={() => setIsGiveCommissionOpen(false)}
                         >
-                          Cancel
+                          रद्द करें (Cancel)
                         </button>
                         <button 
                           type="submit" 
@@ -3358,11 +3901,11 @@ export const Admin = () => {
                           disabled={isSubmittingCommission}
                         >
                           {isSubmittingCommission ? (
-                            <span>Recording Commission...</span>
+                            <span>प्रोत्साहन राशि दर्ज हो रही है...</span>
                           ) : (
                             <>
                               <Award size={16} />
-                              <span>Grant & Record Commission</span>
+                              <span>प्रोत्साहन राशि प्रदान करें (Grant Commission)</span>
                             </>
                           )}
                         </button>
