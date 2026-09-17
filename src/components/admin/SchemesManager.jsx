@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../api/supabase';
 import { useApp } from '../../context/AppContext';
-import { toIsoDate } from '../../services/cmsService';
+import { toIsoDate, cmsService } from '../../services/cmsService';
 import { 
   GraduationCap, 
   Calendar, 
@@ -103,12 +103,12 @@ export const SchemesManager = () => {
 
         // If editing the umbrella scheme, sync system_settings as well
         if (editingScheme.id === 'd0000000-0000-0000-0000-000000000001') {
-          await supabase.from('system_settings').upsert([
-            { key: 'grantAmount', value: grantNum, is_public: true, updated_at: new Date().toISOString() },
-            { key: 'grantAmountDisplay', value: `₹${grantNum.toLocaleString('en-IN')}/- Yearly`, is_public: true, updated_at: new Date().toISOString() },
-            { key: 'applicationStartDate', value: form.application_start_date, is_public: true, updated_at: new Date().toISOString() },
-            { key: 'applicationClosingDate', value: form.application_end_date, is_public: true, updated_at: new Date().toISOString() }
-          ], { onConflict: 'key' });
+          await cmsService.updateSystemSettings({
+            grantAmount: grantNum,
+            grantAmountDisplay: `₹${grantNum.toLocaleString('en-IN')}/- Yearly`,
+            applicationStartDate: form.application_start_date,
+            applicationClosingDate: form.application_end_date
+          });
         }
 
         // 2. Update or insert scheme_eligibility_rules

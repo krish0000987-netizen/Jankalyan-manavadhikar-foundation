@@ -270,18 +270,33 @@ export const cmsService = {
    * Batch update System Settings key-value pairs
    */
   async updateSystemSettings(settingsObj) {
-    const entries = [];
-    for (const [key, value] of Object.entries(settingsObj)) {
-      if (value !== undefined) {
-        entries.push({
-          key,
-          value,
-          is_public: true,
-          updated_at: new Date().toISOString()
-        });
+    const map = new Map();
+
+    if (Array.isArray(settingsObj)) {
+      for (const item of settingsObj) {
+        if (item && item.key) {
+          map.set(item.key, {
+            key: item.key,
+            value: item.value,
+            is_public: item.is_public ?? true,
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+    } else if (settingsObj && typeof settingsObj === 'object') {
+      for (const [key, value] of Object.entries(settingsObj)) {
+        if (value !== undefined) {
+          map.set(key, {
+            key,
+            value,
+            is_public: true,
+            updated_at: new Date().toISOString()
+          });
+        }
       }
     }
 
+    const entries = Array.from(map.values());
     if (entries.length === 0) return true;
 
     const { data, error } = await supabase

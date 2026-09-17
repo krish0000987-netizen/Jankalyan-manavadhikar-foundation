@@ -74,20 +74,36 @@ export const SettingsManager = () => {
       const grantNum = Number(settings.grantAmount) || 22000;
       const displayStr = `₹${grantNum.toLocaleString('en-IN')}/- Yearly`;
 
-      // Upsert into system_settings
-      const entries = Object.entries(settings).map(([key, value]) => ({
-        key,
-        value,
+      // Deduplicate key-value pairs using a Map to strictly prevent PostgreSQL duplicate conflict target errors
+      const settingsMap = new Map();
+
+      Object.entries(settings).forEach(([key, value]) => {
+        if (value !== undefined) {
+          settingsMap.set(key, {
+            key,
+            value,
+            is_public: true,
+            updated_at: new Date().toISOString()
+          });
+        }
+      });
+
+      // Explicitly set grantAmount (parsed as number) and grantAmountDisplay
+      settingsMap.set('grantAmount', {
+        key: 'grantAmount',
+        value: grantNum,
         is_public: true,
         updated_at: new Date().toISOString()
-      }));
+      });
 
-      entries.push({
+      settingsMap.set('grantAmountDisplay', {
         key: 'grantAmountDisplay',
         value: displayStr,
         is_public: true,
         updated_at: new Date().toISOString()
       });
+
+      const entries = Array.from(settingsMap.values());
 
       const { error } = await supabase
         .from('system_settings')
