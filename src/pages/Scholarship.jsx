@@ -25,7 +25,8 @@ import {
   ExternalLink,
   ChevronRight,
   BadgePercent,
-  Languages
+  Languages,
+  Bell
 } from 'lucide-react';
 
 export const Scholarship = () => {
