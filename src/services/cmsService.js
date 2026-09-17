@@ -2,7 +2,7 @@ import { supabase } from '../api/supabase.js';
 
 export function toIsoDate(str) {
   if (!str) return null;
-  const trimmed = String(str).trim();
+  const trimmed = String(str).trim().split('T')[0];
   const parts = trimmed.split(/[/.-]/);
   if (parts.length === 3) {
     if (parts[0].length === 4) return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
@@ -13,7 +13,7 @@ export function toIsoDate(str) {
 
 export function toDisplayDate(str) {
   if (!str) return '';
-  const trimmed = String(str).trim();
+  const trimmed = String(str).trim().split('T')[0];
   const parts = trimmed.split(/[/.-]/);
   if (parts.length === 3) {
     if (parts[0].length === 4) return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
@@ -30,6 +30,7 @@ export const cmsService = {
     try {
       const [
         schemesRes,
+        allSchemesRes,
         settingsRes,
         slidesRes,
         announcementsRes,
@@ -39,6 +40,7 @@ export const cmsService = {
         downloadsRes
       ] = await Promise.all([
         supabase.from('scholarship_schemes').select('*').eq('id', 'd0000000-0000-0000-0000-000000000001').maybeSingle(),
+        supabase.from('scholarship_schemes').select('*').neq('id', 'd0000000-0000-0000-0000-000000000001').order('grant_amount', { ascending: true }),
         supabase.from('system_settings').select('*'),
         supabase.from('hero_slides').select('*').order('display_order', { ascending: true }),
         supabase.from('announcements').select('*').eq('is_active', true).order('display_order', { ascending: true }),
@@ -59,15 +61,32 @@ export const cmsService = {
       const rawStartDate = settingsMap.applicationStartDate || activeScheme.application_start_date || '2026-09-15';
       const rawEndDate = settingsMap.applicationClosingDate || activeScheme.application_end_date || '2026-11-30';
 
+      const allSchemesList = allSchemesRes.data || [];
+      const dynamicSlabs = allSchemesList.length > 0 ? allSchemesList.map((sch, i) => ({
+        id: `slab-${i + 1}`,
+        schemeId: sch.id,
+        classes: sch.name.split(' (')[0],
+        titleHi: sch.name.includes('(') ? sch.name.split('(')[1].replace(')', '') : sch.name,
+        titleEn: sch.name.split(' (')[0],
+        amount: Number(sch.grant_amount),
+        amountDisplay: sch.grant_amount_display || `₹${Number(sch.grant_amount).toLocaleString('en-IN')}/-`,
+        period: 'वार्षिक / Yearly',
+        eligibleDesc: sch.eligibility_overview || sch.description
+      })) : null;
+
+      const displayAmount = settingsMap.grantAmountDisplay || 
+        activeScheme.grant_amount_display || 
+        (settingsMap.grantAmount ? `₹${Number(settingsMap.grantAmount).toLocaleString('en-IN')}/- Yearly` : '₹4,000/- to ₹22,000/- Yearly');
+
       return {
-        scholarshipAmount: settingsMap.grantAmountDisplay || activeScheme.grant_amount_display || '₹4,000/- to ₹22,000/- Yearly',
-        grantAmountRaw: activeScheme.grant_amount || 22000,
-        registrationFee: portalConfig.registration_fee || '₹ 211.30/-',
+        scholarshipAmount: displayAmount,
+        grantAmountRaw: activeScheme.grant_amount || (settingsMap.grantAmount ? Number(settingsMap.grantAmount) : 22000),
+        registrationFee: portalConfig.registration_fee || (settingsMap.registrationFeeAmount ? `₹ ${Number(settingsMap.registrationFeeAmount).toFixed(2)}/-` : '₹ 211.30/-'),
         registrationFeeNote: '₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)',
         applicationStartDate: toDisplayDate(rawStartDate) || '15/09/2026',
         applicationLastDate: toDisplayDate(rawEndDate) || '30/11/2026',
         eligibilityCriteria: settingsMap.eligibilityCriteria || activeScheme.eligibility_overview || 'Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.',
-        academicYear: activeScheme.academic_year || '2026-27',
+        academicYear: settingsMap.academicSession || activeScheme.academic_year || '2026-27',
         schemeId: activeScheme.id || 'd0000000-0000-0000-0000-000000000001',
         
         // Contacts & Org
@@ -86,6 +105,8 @@ export const cmsService = {
         faqs: faqsRes.data || [],
         teamMembers: teamRes.data || [],
         downloads: downloadsRes.data || [],
+        schemes: allSchemesList,
+        ...(dynamicSlabs ? { scholarshipSlabs: dynamicSlabs } : {}),
         statsDisplayConfig: settingsMap.stats_display_config || {}
       };
     } catch (err) {

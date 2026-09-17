@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../api/supabase';
 import { useApp } from '../../context/AppContext';
+import { toIsoDate } from '../../services/cmsService';
 import { 
   Settings, 
   Save, 
@@ -70,6 +71,9 @@ export const SettingsManager = () => {
     e.preventDefault();
     setSaving(true);
     try {
+      const grantNum = Number(settings.grantAmount) || 22000;
+      const displayStr = `₹${grantNum.toLocaleString('en-IN')}/- Yearly`;
+
       // Upsert into system_settings
       const entries = Object.entries(settings).map(([key, value]) => ({
         key,
@@ -78,11 +82,30 @@ export const SettingsManager = () => {
         updated_at: new Date().toISOString()
       }));
 
+      entries.push({
+        key: 'grantAmountDisplay',
+        value: displayStr,
+        is_public: true,
+        updated_at: new Date().toISOString()
+      });
+
       const { error } = await supabase
         .from('system_settings')
         .upsert(entries, { onConflict: 'key' });
 
       if (error) throw error;
+
+      // Sync umbrella scheme in scholarship_schemes as well
+      await supabase
+        .from('scholarship_schemes')
+        .update({
+          grant_amount: grantNum,
+          grant_amount_display: displayStr,
+          application_start_date: toIsoDate(settings.applicationStartDate),
+          application_end_date: toIsoDate(settings.applicationClosingDate),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 'd0000000-0000-0000-0000-000000000001');
 
       // Update CMS context fields if available
       if (updateCmsField) {
@@ -90,12 +113,19 @@ export const SettingsManager = () => {
         updateCmsField('officialTelephone', settings.officialTelephone);
         updateCmsField('officialEmail', settings.officialEmail);
         updateCmsField('officeAddress', settings.officeAddress);
-        updateCmsField('grantAmount', `₹${Number(settings.grantAmount).toLocaleString('en-IN')}`);
+        updateCmsField('grantAmount', displayStr);
+        updateCmsField('scholarshipAmount', displayStr);
+        updateCmsField('applicationStartDate', settings.applicationStartDate);
+        updateCmsField('applicationLastDate', settings.applicationClosingDate);
       }
 
       if (refreshCMS) {
         await refreshCMS();
       }
+
+      try {
+        localStorage.setItem('jmf_cms_updated', Date.now().toString());
+      } catch (err) {}
 
       setFeedback({ type: 'success', message: 'All system settings saved and synchronized across portal!' });
     } catch (err) {

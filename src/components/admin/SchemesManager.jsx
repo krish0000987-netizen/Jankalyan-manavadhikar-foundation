@@ -176,6 +176,9 @@ export const SchemesManager = () => {
       if (refreshCMS) {
         await refreshCMS();
       }
+      try {
+        localStorage.setItem('jmf_cms_updated', Date.now().toString());
+      } catch (e) {}
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Failed to save scheme.' });
     } finally {
@@ -198,6 +201,9 @@ export const SchemesManager = () => {
       if (refreshCMS) {
         await refreshCMS();
       }
+      try {
+        localStorage.setItem('jmf_cms_updated', Date.now().toString());
+      } catch (e) {}
       setFeedback({ 
         type: 'success', 
         message: `Scheme "${scheme.name}" is now ${nextStatus ? 'ACTIVE (Open for Applications)' : 'CLOSED'}` 

@@ -33,7 +33,7 @@ export const Scholarship = () => {
 
   const isHindi = lang === 'hi';
 
-  const slabs = [
+  const baseSlabs = [
     {
       id: 'slab-1',
       classTitle: isHindi ? '5वीं से 7वीं' : '5th to 7th Class',
@@ -131,6 +131,11 @@ export const Scholarship = () => {
       qualifyingCourse: 'Post Graduation'
     }
   ];
+
+  const slabs = baseSlabs.map(s => {
+    const dynamic = (cms?.scholarshipSlabs || []).find(d => d.id === s.id);
+    return dynamic ? { ...s, amount: dynamic.amountDisplay || s.amount } : s;
+  });
 
   const eligibilityPoints = isHindi ? [
     { title: 'कक्षा 5वीं से पोस्ट ग्रेजुएशन', desc: 'कक्षा 5वीं से 12वीं, डिप्लोमा, स्नातक अथवा परास्नातक में नियमित अध्ययनरत छात्र।' },

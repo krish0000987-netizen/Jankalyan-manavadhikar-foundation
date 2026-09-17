@@ -643,6 +643,28 @@ export const AppProvider = ({ children }) => {
     loadGrievances();
   }, []);
 
+  // Multi-tab and window-focus live CMS synchronization
+  useEffect(() => {
+    const handleSync = () => {
+      loadCmsData();
+      loadLiveCounters();
+    };
+
+    const handleStorage = (e) => {
+      if (e.key === 'jmf_cms_updated') {
+        loadCmsData();
+        loadLiveCounters();
+      }
+    };
+
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [loadCmsData, loadLiveCounters]);
+
   // Navigation Helper
   const navigate = (route) => {
     setCurrentRoute(route);
@@ -674,7 +696,13 @@ export const AppProvider = ({ children }) => {
 
     try {
       const schemeId = newFields.schemeId || cms.schemeId || 'd0000000-0000-0000-0000-000000000001';
-      const grantAmountRaw = parseFloat((newFields.scholarshipAmount || cms.scholarshipAmount || '').replace(/[^0-9.]/g, '')) || 22000;
+      
+      let grantAmountRaw = 22000;
+      const amtStr = String(newFields.scholarshipAmount || cms.scholarshipAmount || '');
+      const matchedNums = (amtStr.match(/\d[\d,]*/g) || []).map(n => parseFloat(n.replace(/,/g, '')));
+      if (matchedNums.length > 0) {
+        grantAmountRaw = matchedNums[matchedNums.length - 1];
+      }
 
       // 2. Persist scheme settings (dates, amounts, overview)
       await cmsService.updateSchemeSettings(schemeId, {
@@ -718,6 +746,12 @@ export const AppProvider = ({ children }) => {
 
       // 6. Reload live consolidated CMS to ensure context is 100% updated
       await loadCmsData();
+
+      // 7. Notify other tabs via storage event
+      try {
+        localStorage.setItem('jmf_cms_updated', Date.now().toString());
+      } catch (e) {}
+
       return true;
     } catch (err) {
       console.error('Error in updateCMS:', err);

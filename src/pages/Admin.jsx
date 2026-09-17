@@ -397,8 +397,10 @@ export const Admin = () => {
         heroSlides
       });
       setCmsSaveAlert(true);
-      setTimeout(() => setCmsSaveAlert(false), 3500);
+      setTimeout(() => setCmsSaveAlert(false), 5000);
+      alert('✓ CMS updates successfully published to database!\nAll changes are now live on the public website.');
     } catch (err) {
+      console.error('Failed to save CMS changes:', err);
       alert('Failed to save CMS changes: ' + (err.message || err));
     } finally {
       setIsSavingCMS(false);
