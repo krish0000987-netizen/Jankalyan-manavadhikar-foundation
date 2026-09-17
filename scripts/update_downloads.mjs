@@ -49,6 +49,24 @@ async function main() {
     (id, title_en, title_hi, category_en, category_hi, doc_number, authority, description_en, description_hi, file_url, preview_image_url, format, size_display, display_order, is_active, updated_at)
     VALUES
     (
+      'DOC-SCHOLARSHIP-FORM',
+      'National Scholarship Yojna 2026-27 : Official Prescribed Application Form',
+      'राष्ट्रीय छात्रवृत्ति योजना 2026-27 : आधिकारिक विहित आवेदन प्रपत्र (डिजिटल व ऑफलाइन)',
+      'Scholarship Application Forms',
+      'छात्रवृत्ति आवेदन प्रपत्र',
+      'FORM NO: JMF-SCH-2026',
+      'Jankalyan Manavadhikar Foundation (Regd. Under Section 8 MCA)',
+      'Official scholarship application form for Class 5th to PG & Diploma students. Fill directly through online digital portal or download high-resolution printable PDF for offline submission.',
+      'कक्षा 5वीं से स्नातकोत्तर (PG) एवं डिप्लोमा विद्यार्थियों हेतु अधिकृत छात्रवृत्ति आवेदन प्रपत्र। सीधे ऑनलाइन भरें अथवा मुद्रण (प्रिंट) एवं ऑफलाइन जमा करने हेतु मूल PDF डाउनलोड करें।',
+      '/downloads/scholarship_application_form_2026_27.pdf',
+      '/downloads/scholarship_application_form_page_1.png',
+      'PDF',
+      '6.8 KB (Vector PDF) / Printable A4',
+      0,
+      true,
+      NOW()
+    ),
+    (
       'DOC-MCA-COI',
       'Ministry of Corporate Affairs - Certificate of Incorporation (Section 8 Non-Profit)',
       'भारत सरकार कॉर्पोरेट कार्य मंत्रालय - कंपनी निगमन प्रमाण पत्र (धारा 8 एनजीओ)',

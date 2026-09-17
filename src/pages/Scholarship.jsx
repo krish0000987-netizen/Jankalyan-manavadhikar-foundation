@@ -415,6 +415,16 @@ export const Scholarship = () => {
                   <Search size={18} />
                   <span>{isHindi ? 'आवेदन स्थिति ट्रैक करें' : 'Track Application Status'}</span>
                 </button>
+
+                <button 
+                  className="btn btn-outline-white btn-lg" 
+                  onClick={() => navigate('/downloads')}
+                  style={{ fontWeight: 700, backgroundColor: 'rgba(255, 255, 255, 0.15)', borderColor: 'rgba(255, 255, 255, 0.4)' }}
+                  title={isHindi ? 'ऑफलाइन व प्रिंटेबल फॉर्म डाउनलोड करें' : 'Download Printable PDF Form'}
+                >
+                  <Download size={18} />
+                  <span>{isHindi ? 'प्रपत्र डाउनलोड (PDF)' : 'Download Form (PDF)'}</span>
+                </button>
               </div>
             </div>
 

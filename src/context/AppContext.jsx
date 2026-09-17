@@ -217,6 +217,26 @@ const INITIAL_CMS = {
   ],
   downloads: [
     {
+      id: 'DOC-SCHOLARSHIP-FORM',
+      title_en: 'National Scholarship Yojna 2026-27 : Official Prescribed Application Form',
+      title_hi: 'राष्ट्रीय छात्रवृत्ति योजना 2026-27 : आधिकारिक विहित आवेदन प्रपत्र (डिजिटल व ऑफलाइन)',
+      category_en: 'Scholarship Application Forms',
+      category_hi: 'छात्रवृत्ति आवेदन प्रपत्र',
+      doc_number: 'FORM NO: JMF-SCH-2026',
+      authority: 'Jankalyan Manavadhikar Foundation (Regd. Under Section 8 MCA)',
+      description_en: 'Official scholarship application form for Class 5th to PG & Diploma students. Fill directly through online digital portal or download high-resolution printable PDF for offline submission.',
+      description_hi: 'कक्षा 5वीं से स्नातकोत्तर (PG) एवं डिप्लोमा विद्यार्थियों हेतु अधिकृत छात्रवृत्ति आवेदन प्रपत्र। सीधे ऑनलाइन भरें अथवा मुद्रण (प्रिंट) एवं ऑफलाइन जमा करने हेतु मूल PDF डाउनलोड करें।',
+      file_url: '/downloads/scholarship_application_form_2026_27.pdf',
+      preview_image_url: '/downloads/scholarship_application_form_page_1.png',
+      preview_image_page2_url: '/downloads/scholarship_application_form_page_2.png',
+      format: 'PDF',
+      size_display: '6.8 KB (Vector PDF) / Printable A4',
+      display_order: 0,
+      is_active: true,
+      is_form: true,
+      online_apply_route: '/apply'
+    },
+    {
       id: 'DOC-MCA-COI',
       title_en: 'Ministry of Corporate Affairs - Certificate of Incorporation (Section 8 Non-Profit)',
       title_hi: 'भारत सरकार कॉर्पोरेट कार्य मंत्रालय - कंपनी निगमन प्रमाण पत्र (धारा 8 एनजीओ)',
@@ -446,15 +466,24 @@ const INITIAL_CMS = {
   ]
 };
 
+export const normalizeRoute = (path) => {
+  if (!path) return '/';
+  let clean = path.split('?')[0].split('#')[0];
+  if (clean.length > 1 && clean.endsWith('/')) {
+    clean = clean.slice(0, -1);
+  }
+  return clean || '/';
+};
+
 export const AppProvider = ({ children }) => {
   // Language State with persistence
   const [lang, setLang] = useState(() => {
     return localStorage.getItem('jmf_lang') || 'hi';
   });
 
-  // Client-Side Routing synchronized with HTML5 History API
+  // Client-Side Routing synchronized with HTML5 History API (Normalized)
   const [currentRoute, setCurrentRoute] = useState(() => {
-    return window.location.pathname || '/';
+    return normalizeRoute(window.location.pathname || '/');
   });
 
   // Live CMS State from Supabase
@@ -540,7 +569,7 @@ export const AppProvider = ({ children }) => {
   // Sync route with browser history
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentRoute(window.location.pathname || '/');
+      setCurrentRoute(normalizeRoute(window.location.pathname || '/'));
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -733,8 +762,9 @@ export const AppProvider = ({ children }) => {
 
   // Navigation Helper
   const navigate = (route) => {
-    setCurrentRoute(route);
-    window.history.pushState({}, '', route);
+    const cleanRoute = normalizeRoute(route);
+    setCurrentRoute(cleanRoute);
+    window.history.pushState({}, '', cleanRoute);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

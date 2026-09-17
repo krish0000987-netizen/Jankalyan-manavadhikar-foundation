@@ -31,8 +31,29 @@ export const Downloads = () => {
   const [downloadingId, setDownloadingId] = useState(null);
   const [viewMode, setViewMode] = useState('image'); // 'image' | 'pdf'
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [formPreviewPage, setFormPreviewPage] = useState(1); // 1 | 2 for scholarship form
 
   const rawDownloadsList = (cms.downloads && cms.downloads.length > 0) ? cms.downloads : [
+    {
+      id: 'DOC-SCHOLARSHIP-FORM',
+      title_en: 'National Scholarship Yojna 2026-27 : Official Prescribed Application Form',
+      title_hi: 'राष्ट्रीय छात्रवृत्ति योजना 2026-27 : आधिकारिक विहित आवेदन प्रपत्र (डिजिटल व ऑफलाइन)',
+      category_en: 'Scholarship Application Forms',
+      category_hi: 'छात्रवृत्ति आवेदन प्रपत्र',
+      doc_number: 'FORM NO: JMF-SCH-2026',
+      authority: 'Jankalyan Manavadhikar Foundation (Regd. Under Section 8 MCA)',
+      description_en: 'Official prescribed scholarship application form for Class 5th to PG & Diploma students. Fill directly through online digital portal or download high-resolution printable PDF for offline submission.',
+      description_hi: 'कक्षा 5वीं से स्नातकोत्तर (PG) एवं डिप्लोमा विद्यार्थियों हेतु अधिकृत छात्रवृत्ति आवेदन प्रपत्र। सीधे ऑनलाइन भरें अथवा मुद्रण (प्रिंट) एवं ऑफलाइन जमा करने हेतु मूल PDF डाउनलोड करें।',
+      file_url: '/downloads/scholarship_application_form_2026_27.pdf',
+      preview_image_url: '/downloads/scholarship_application_form_page_1.png',
+      preview_image_page2_url: '/downloads/scholarship_application_form_page_2.png',
+      format: 'PDF',
+      size_display: '6.8 KB (Vector PDF) / Printable A4',
+      display_order: 0,
+      is_active: true,
+      is_form: true,
+      online_apply_route: '/apply'
+    },
     {
       id: 'DOC-MCA-COI',
       title_en: 'Ministry of Corporate Affairs - Certificate of Incorporation (Section 8 Non-Profit)',
@@ -171,12 +192,15 @@ export const Downloads = () => {
   const openPreview = (item) => {
     setPreviewDoc(item);
     setViewMode('image');
+    setFormPreviewPage(1);
     setZoomLevel(1);
   };
 
   // Filter logic
   const filteredDownloads = rawDownloadsList.filter(item => {
-    if (activeTab === 'MCA') {
+    if (activeTab === 'FORMS') {
+      if (!item.id.includes('SCHOLARSHIP') && !item.id.includes('FORM')) return false;
+    } else if (activeTab === 'MCA') {
       if (!item.id.includes('MCA')) return false;
     } else if (activeTab === 'TAX') {
       if (!item.id.includes('IT-80G') && !item.id.includes('IT-12A')) return false;
@@ -486,7 +510,8 @@ export const Downloads = () => {
         <div className="card" style={{ padding: '1rem 1.25rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {[
-              { id: 'ALL', labelHi: 'सभी दस्तावेज (All)', labelEn: 'All Documents' },
+              { id: 'ALL', labelHi: 'सभी प्रपत्र व दस्तावेज (All)', labelEn: 'All Documents & Forms' },
+              { id: 'FORMS', labelHi: '🎓 छात्रवृत्ति आवेदन प्रपत्र (Scholarship Form)', labelEn: 'Scholarship Application Form' },
               { id: 'MCA', labelHi: 'कॉर्पोरेट पंजीकरण (MCA)', labelEn: 'MCA Incorporation' },
               { id: 'TAX', labelHi: 'आयकर छूट (12A / 80G)', labelEn: 'Tax Exemptions (80G/12A)' },
               { id: 'IDENTITY', labelHi: 'पहचान व LEI (PAN / Banking)', labelEn: 'KYC & LEI Code' }
@@ -536,6 +561,7 @@ export const Downloads = () => {
         {/* Documents Cards Grid with VISIBLE Document Thumbnails */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '3rem' }}>
           {filteredDownloads.map((item, idx) => {
+            const isScholarshipForm = item.id === 'DOC-SCHOLARSHIP-FORM' || item.is_form;
             const title = lang === 'hi' ? (item.title_hi || item.titleHi || item.title_en) : (item.title_en || item.titleEn);
             const category = lang === 'hi' ? (item.category_hi || item.categoryHi || item.category_en) : (item.category_en || item.categoryEn);
             const desc = lang === 'hi' ? (item.description_hi || item.description_en) : (item.description_en || item.description_hi);
@@ -552,30 +578,33 @@ export const Downloads = () => {
                 className="card hover-lift" 
                 style={{ 
                   padding: '1.5rem', 
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: isScholarshipForm ? '#F8FAFF' : '#FFFFFF',
                   borderRadius: '16px',
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+                  border: isScholarshipForm ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                  boxShadow: isScholarshipForm 
+                    ? '0 10px 30px rgba(37, 99, 235, 0.12), 0 2px 8px rgba(37, 99, 235, 0.08)' 
+                    : '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'stretch',
                   gap: '1.5rem',
-                  flexWrap: 'wrap'
+                  flexWrap: 'wrap',
+                  position: 'relative'
                 }}
               >
                 {/* 1. VISIBLE DOCUMENT THUMBNAIL */}
                 <div 
                   onClick={() => openPreview(item)}
                   style={{
-                    width: '130px',
-                    height: '170px',
+                    width: '135px',
+                    height: '175px',
                     borderRadius: '12px',
                     overflow: 'hidden',
                     backgroundColor: '#F1F5F9',
-                    border: '1px solid #CBD5E1',
+                    border: isScholarshipForm ? '2px solid #3B82F6' : '1px solid #CBD5E1',
                     position: 'relative',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                     flexShrink: 0
                   }}
                   title="Click to view high-resolution certificate"
@@ -631,6 +660,25 @@ export const Downloads = () => {
                 {/* 2. CORE INFORMATION & DETAILS */}
                 <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
+                    {isScholarshipForm && (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        backgroundColor: '#DC2626',
+                        color: '#FFFFFF',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        marginBottom: '0.55rem',
+                        boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)'
+                      }}>
+                        <Sparkles size={12} color="#FEF08A" />
+                        <span>{lang === 'hi' ? '★ मुख्य छात्रवृत्ति आवेदन प्रपत्र सत्र 2026-27' : '★ OFFICIAL SCHOLARSHIP APPLICATION FORM 2026-27'}</span>
+                      </div>
+                    )}
+
                     {/* Meta row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.45rem' }}>
                       <span className="badge badge-navy" style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}>
@@ -728,10 +776,33 @@ export const Downloads = () => {
                   flexDirection: 'column',
                   gap: '0.55rem',
                   justifyContent: 'center',
-                  minWidth: '175px',
+                  minWidth: '190px',
                   borderLeft: '1px solid #F1F5F9',
                   paddingLeft: '1.25rem'
                 }}>
+                  {isScholarshipForm && (
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={() => navigate('/apply')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.45rem',
+                        fontWeight: 800,
+                        height: '42px',
+                        backgroundColor: '#16A34A',
+                        borderColor: '#16A34A',
+                        color: '#FFFFFF',
+                        boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)'
+                      }}
+                    >
+                      <Sparkles size={15} />
+                      <span>{lang === 'hi' ? 'ऑनलाइन फॉर्म भरें' : 'Open Online Form'}</span>
+                      <ArrowRight size={15} />
+                    </button>
+                  )}
+
                   {/* View / Preview Button */}
                   <button 
                     className="btn btn-outline btn-sm"
@@ -742,7 +813,7 @@ export const Downloads = () => {
                       justifyContent: 'center',
                       gap: '0.4rem',
                       fontWeight: 700,
-                      height: '40px',
+                      height: '38px',
                       backgroundColor: '#FFFFFF',
                       borderColor: '#CBD5E1',
                       color: '#0F172A',
@@ -750,12 +821,12 @@ export const Downloads = () => {
                     }}
                   >
                     <Eye size={16} color="#2563EB" />
-                    <span>{lang === 'hi' ? 'दस्तावेज़ देखें' : 'View / Preview'}</span>
+                    <span>{isScholarshipForm ? (lang === 'hi' ? 'प्रपत्र का पूर्वावलोकन' : 'Preview Form') : (lang === 'hi' ? 'दस्तावेज़ देखें' : 'View / Preview')}</span>
                   </button>
 
                   {/* Download Button */}
                   <button 
-                    className="btn btn-primary btn-sm"
+                    className={isScholarshipForm ? "btn btn-secondary btn-sm" : "btn btn-primary btn-sm"}
                     onClick={(e) => handleDownload(item, e)}
                     disabled={isDownloading}
                     style={{
@@ -764,7 +835,7 @@ export const Downloads = () => {
                       justifyContent: 'center',
                       gap: '0.4rem',
                       fontWeight: 700,
-                      height: '40px',
+                      height: '38px',
                       boxShadow: '0 2px 4px rgba(30, 64, 175, 0.2)'
                     }}
                   >
@@ -776,7 +847,7 @@ export const Downloads = () => {
                     ) : (
                       <>
                         <Download size={16} />
-                        <span>{lang === 'hi' ? 'डाउनलोड करें' : 'Download File'}</span>
+                        <span>{isScholarshipForm ? (lang === 'hi' ? 'प्रिंटेड PDF डाउनलोड' : 'Download PDF Form') : (lang === 'hi' ? 'डाउनलोड करें' : 'Download File')}</span>
                       </>
                     )}
                   </button>
@@ -952,6 +1023,71 @@ export const Downloads = () => {
 
               {/* Header Action Controls */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {/* Multi-page switcher for Scholarship Form */}
+                {previewDoc.id === 'DOC-SCHOLARSHIP-FORM' && (
+                  <div style={{ display: 'flex', gap: '0.3rem', backgroundColor: '#EFF6FF', padding: '3px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+                    <button
+                      onClick={() => setFormPreviewPage(1)}
+                      style={{
+                        padding: '0.25rem 0.65rem',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        backgroundColor: formPreviewPage === 1 ? '#1E40AF' : 'transparent',
+                        color: formPreviewPage === 1 ? '#FFFFFF' : '#1E40AF'
+                      }}
+                    >
+                      {lang === 'hi' ? 'पृष्ठ 1: विवरण' : 'Page 1: Details'}
+                    </button>
+                    <button
+                      onClick={() => setFormPreviewPage(2)}
+                      style={{
+                        padding: '0.25rem 0.65rem',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        backgroundColor: formPreviewPage === 2 ? '#1E40AF' : 'transparent',
+                        color: formPreviewPage === 2 ? '#FFFFFF' : '#1E40AF'
+                      }}
+                    >
+                      {lang === 'hi' ? 'पृष्ठ 2: बैंक व सत्यापन' : 'Page 2: Bank & Attestation'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Direct Online Apply Button in Modal Header */}
+                {previewDoc.id === 'DOC-SCHOLARSHIP-FORM' && (
+                  <button
+                    onClick={() => {
+                      setPreviewDoc(null);
+                      navigate('/apply');
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      height: '32px',
+                      backgroundColor: '#16A34A',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 5px rgba(22, 163, 74, 0.3)'
+                    }}
+                  >
+                    <Sparkles size={13} />
+                    <span>{lang === 'hi' ? 'सीधे ऑनलाइन फॉर्म भरें' : 'Fill Form Online'}</span>
+                    <ArrowRight size={13} />
+                  </button>
+                )}
+
                 {/* View Mode Toggle if PDF */}
                 {previewDoc.format === 'PDF' && (
                   <div style={{ display: 'flex', backgroundColor: '#E2E8F0', borderRadius: '8px', padding: '2px' }}>
@@ -1093,7 +1229,10 @@ export const Downloads = () => {
                   transformOrigin: 'top center'
                 }}>
                   <img
-                    src={previewDoc.preview_image_url || previewDoc.file_url}
+                    src={previewDoc.id === 'DOC-SCHOLARSHIP-FORM'
+                      ? (formPreviewPage === 1 ? '/downloads/scholarship_application_form_page_1.png' : '/downloads/scholarship_application_form_page_2.png')
+                      : (previewDoc.preview_image_url || previewDoc.file_url)
+                    }
                     alt={previewDoc.title_en}
                     style={{
                       maxWidth: '100%',

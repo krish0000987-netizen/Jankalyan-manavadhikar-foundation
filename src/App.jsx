@@ -62,6 +62,17 @@ const MainRouter = () => {
       case '/scholarship-2026':
         return <Scholarship />;
       case '/apply':
+      case '/apply/':
+      case '/apply-now':
+      case '/scholarship-form':
+      case '/scholarship-form-2026':
+      case '/scholarship-application':
+      case '/scholarship-application-form':
+      case '/application-form':
+      case '/form':
+      case '/forms':
+      case '/apply-scholarship':
+      case '/registration':
         return <Apply />;
       case '/documents':
         return <Documents />;
