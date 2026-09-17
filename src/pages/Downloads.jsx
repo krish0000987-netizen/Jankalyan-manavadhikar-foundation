@@ -210,83 +210,259 @@ export const Downloads = () => {
         {/* 4 Pillars Trust Ribbon */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '1rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '1.25rem',
           marginBottom: '2.5rem'
         }}>
           {/* Card 1: MCA */}
-          <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #2563EB', backgroundColor: '#FFFFFF' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF', flexShrink: 0 }}>
-              <Building2 size={22} />
-            </div>
+          <div className="card" style={{
+            padding: '1.4rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            borderRadius: '14px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderTop: '4px solid #2563EB',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
+            height: '100%'
+          }}>
             <div>
-              <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                MCA Section 8 Non-Profit
+              {/* Header: Icon + Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF' }}>
+                  <Building2 size={20} />
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '6px', backgroundColor: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE' }}>
+                  MCA SECTION 8
+                </span>
               </div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>
-                CIN: U85500MP2024NPL069532
+
+              {/* Title & Code */}
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                Corporate Identity No. (CIN)
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.2rem' }}>
-                <CheckCircle2 size={12} />
-                <span>Incorporated: 29 Jan 2024</span>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                color: '#0F172A',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                padding: '0.4rem 0.65rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.3rem',
+                marginBottom: '0.85rem'
+              }}>
+                <span style={{ letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  U85500MP2024NPL069532
+                </span>
+                <button
+                  onClick={() => handleCopy('U85500MP2024NPL069532', 'cin')}
+                  title="Copy CIN"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: copiedId === 'cin' ? '#16A34A' : '#94A3B8', padding: '0.1rem', display: 'flex', alignItems: 'center' }}
+                >
+                  {copiedId === 'cin' ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                </button>
               </div>
+            </div>
+
+            {/* Bottom Status */}
+            <div style={{ fontSize: '0.76rem', color: '#15803D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
+              <CheckCircle2 size={13} color="#16A34A" style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Inc: 29 Jan 2024 (CRC Manesar)</span>
             </div>
           </div>
 
           {/* Card 2: 80G */}
-          <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #16A34A', backgroundColor: '#FFFFFF' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534', flexShrink: 0 }}>
-              <Award size={22} />
-            </div>
+          <div className="card" style={{
+            padding: '1.4rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            borderRadius: '14px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderTop: '4px solid #16A34A',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
+            height: '100%'
+          }}>
             <div>
-              <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                Income Tax 80G Approved
+              {/* Header: Icon + Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#15803D' }}>
+                  <Award size={20} />
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '6px', backgroundColor: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0' }}>
+                  INCOME TAX 80G
+                </span>
               </div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>
-                URN: AAGCJ3046CF20241
+
+              {/* Title & Code */}
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                Approval Order (URN)
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.2rem' }}>
-                <CheckCircle2 size={12} />
-                <span>50% Tax Deduction on Donations</span>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                color: '#0F172A',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                padding: '0.4rem 0.65rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.3rem',
+                marginBottom: '0.85rem'
+              }}>
+                <span style={{ letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  AAGCJ3046CF20241
+                </span>
+                <button
+                  onClick={() => handleCopy('AAGCJ3046CF20241', '80g')}
+                  title="Copy 80G URN"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: copiedId === '80g' ? '#16A34A' : '#94A3B8', padding: '0.1rem', display: 'flex', alignItems: 'center' }}
+                >
+                  {copiedId === '80g' ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                </button>
               </div>
+            </div>
+
+            {/* Bottom Status */}
+            <div style={{ fontSize: '0.76rem', color: '#15803D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
+              <CheckCircle2 size={13} color="#16A34A" style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>50% Tax Deduction on Donations</span>
             </div>
           </div>
 
           {/* Card 3: 12A */}
-          <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #D97706', backgroundColor: '#FFFFFF' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B45309', flexShrink: 0 }}>
-              <FileCheck2 size={22} />
-            </div>
+          <div className="card" style={{
+            padding: '1.4rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            borderRadius: '14px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderTop: '4px solid #D97706',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
+            height: '100%'
+          }}>
             <div>
-              <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                Income Tax 12A Registered
+              {/* Header: Icon + Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B45309' }}>
+                  <FileCheck2 size={20} />
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '6px', backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A' }}>
+                  INCOME TAX 12A
+                </span>
               </div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>
-                URN: AAGCJ3046CE20231
+
+              {/* Title & Code */}
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                Registration Order (URN)
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#B45309', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.2rem' }}>
-                <CheckCircle2 size={12} />
-                <span>Tax-Exempt Charitable Entity</span>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                color: '#0F172A',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                padding: '0.4rem 0.65rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.3rem',
+                marginBottom: '0.85rem'
+              }}>
+                <span style={{ letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  AAGCJ3046CE20231
+                </span>
+                <button
+                  onClick={() => handleCopy('AAGCJ3046CE20231', '12a')}
+                  title="Copy 12A URN"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: copiedId === '12a' ? '#16A34A' : '#94A3B8', padding: '0.1rem', display: 'flex', alignItems: 'center' }}
+                >
+                  {copiedId === '12a' ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                </button>
               </div>
+            </div>
+
+            {/* Bottom Status */}
+            <div style={{ fontSize: '0.76rem', color: '#B45309', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
+              <CheckCircle2 size={13} color="#D97706" style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Tax-Exempt Charitable Status</span>
             </div>
           </div>
 
           {/* Card 4: PAN & LEI */}
-          <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #7C3AED', backgroundColor: '#FFFFFF' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#F3E8FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6D28D9', flexShrink: 0 }}>
-              <FileBadge size={22} />
-            </div>
+          <div className="card" style={{
+            padding: '1.4rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            borderRadius: '14px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderTop: '4px solid #7C3AED',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
+            height: '100%'
+          }}>
             <div>
-              <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                PAN & Global LEI Code
+              {/* Header: Icon + Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#F3E8FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6D28D9' }}>
+                  <FileBadge size={20} />
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '6px', backgroundColor: '#FAF5FF', color: '#6D28D9', border: '1px solid #E9D5FF' }}>
+                  PAN & LEI CODE
+                </span>
               </div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>
-                PAN: AAGCJ3046C
+
+              {/* Title & Code */}
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                Permanent Account No. (PAN)
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#6D28D9', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.2rem' }}>
-                <CheckCircle2 size={12} />
-                <span>LEI: 391200G440EGSOONQG84</span>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                color: '#0F172A',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                padding: '0.4rem 0.65rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.3rem',
+                marginBottom: '0.85rem'
+              }}>
+                <span style={{ letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  AAGCJ3046C
+                </span>
+                <button
+                  onClick={() => handleCopy('AAGCJ3046C', 'pan')}
+                  title="Copy PAN"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: copiedId === 'pan' ? '#16A34A' : '#94A3B8', padding: '0.1rem', display: 'flex', alignItems: 'center' }}
+                >
+                  {copiedId === 'pan' ? <Check size={13} color="#16A34A" /> : <Copy size={13} />}
+                </button>
               </div>
+            </div>
+
+            {/* Bottom Status */}
+            <div style={{ fontSize: '0.76rem', color: '#6D28D9', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
+              <CheckCircle2 size={13} color="#7C3AED" style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>LEI: 391200G440EGSOONQG84</span>
             </div>
           </div>
         </div>
