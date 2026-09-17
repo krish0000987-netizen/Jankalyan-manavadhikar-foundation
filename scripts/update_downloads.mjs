@@ -1,4 +1,9 @@
-const token = process.env.SUPABASE_ACCESS_TOKEN;
+import fs from 'fs';
+let token = process.env.SUPABASE_ACCESS_TOKEN;
+if (!token && fs.existsSync('.env.local')) {
+  const match = fs.readFileSync('.env.local', 'utf8').match(/SUPABASE_ACCESS_TOKEN=["']?([^"'\r\n]+)/);
+  if (match) token = match[1];
+}
 const ref = process.env.SUPABASE_PROJECT_REF || 'qvtrplnxipcagqozjdop';
 
 async function runSql(sql) {
@@ -72,7 +77,7 @@ async function main() {
       'Provisional approval order under section 80G(5)(iv) of the Income Tax Act, 1961 granting 50% income tax exemption to donors. Assessment Years: 2024-25 to 2026-2027.',
       'आयकर अधिनियम 1961 की धारा 80G(5) के तहत दानदाताओं हेतु 50% कर कटौती की वैधानिक स्वीकृति। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
       '/downloads/form_10ac_80g_and_12a_approval.pdf',
-      '/downloads/form_10ac_80g_and_12a_approval.pdf',
+      '/downloads/form_10ac_80g_and_12a_approval_page_1.png',
       'PDF',
       '440.5 KB',
       2,
@@ -90,7 +95,7 @@ async function main() {
       'Provisional registration order under Section 12A(1)(ac)(vi) of the Income Tax Act, 1961 granting tax-exempt status to Jankalyan Manavadhikar Foundation for charitable education work.',
       'आयकर अधिनियम 1961 की धारा 12A(1)(ac)(vi) के तहत धर्मार्थ शैक्षणिक गतिविधियों हेतु कर-मुक्त संस्था के रूप में पंजीकरण आदेश। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
       '/downloads/form_10ac_80g_and_12a_approval.pdf',
-      '/downloads/form_10ac_80g_and_12a_approval.pdf',
+      '/downloads/form_10ac_80g_and_12a_approval_page_2.png',
       'PDF',
       '440.5 KB',
       3,

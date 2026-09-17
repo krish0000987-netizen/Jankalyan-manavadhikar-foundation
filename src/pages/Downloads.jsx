@@ -17,7 +17,9 @@ import {
   Sparkles,
   X,
   FileBadge,
-  Printer
+  Loader2,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 
 export const Downloads = () => {
@@ -26,6 +28,9 @@ export const Downloads = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState(null);
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [viewMode, setViewMode] = useState('image'); // 'image' | 'pdf'
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const rawDownloadsList = (cms.downloads && cms.downloads.length > 0) ? cms.downloads : [
     {
@@ -39,7 +44,7 @@ export const Downloads = () => {
       description_en: 'Certificate of Incorporation issued under Section 8(1) of the Companies Act, 2013 by the Central Registration Centre, Manesar. Registered office at Dixit Colony, Jabalpur, Madhya Pradesh.',
       description_hi: 'कंपनी अधिनियम 2013 की धारा 8(1) के अंतर्गत केंद्रीय पंजीकरण केंद्र (CRC मानेसर) द्वारा जारी वैधानिक निगमन प्रमाण पत्र। पंजीकृत कार्यालय: दीक्षित कॉलोनी, जबलपुर (म.प्र.)।',
       file_url: '/downloads/mca_certificate_of_incorporation.pdf',
-      preview_image_url: '/downloads/mca_incorporation_certified_copy.jpg',
+      preview_image_url: '/downloads/mca_certificate_of_incorporation_page_1.png',
       format: 'PDF',
       size_display: '72.6 KB',
       display_order: 1
@@ -55,7 +60,7 @@ export const Downloads = () => {
       description_en: 'Provisional approval order under section 80G(5)(iv) of the Income Tax Act, 1961 granting 50% income tax exemption to donors. Assessment Years: 2024-25 to 2026-2027.',
       description_hi: 'आयकर अधिनियम 1961 की धारा 80G(5) के तहत दानदाताओं हेतु 50% कर कटौती की वैधानिक स्वीकृति। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
       file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
-      preview_image_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+      preview_image_url: '/downloads/form_10ac_80g_and_12a_approval_page_1.png',
       format: 'PDF',
       size_display: '440.5 KB',
       display_order: 2
@@ -71,7 +76,7 @@ export const Downloads = () => {
       description_en: 'Provisional registration order under Section 12A(1)(ac)(vi) of the Income Tax Act, 1961 granting tax-exempt status to Jankalyan Manavadhikar Foundation for charitable education work.',
       description_hi: 'आयकर अधिनियम 1961 की धारा 12A(1)(ac)(vi) के तहत धर्मार्थ शैक्षणिक गतिविधियों हेतु कर-मुक्त संस्था के रूप में पंजीकरण आदेश। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
       file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
-      preview_image_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+      preview_image_url: '/downloads/form_10ac_80g_and_12a_approval_page_2.png',
       format: 'PDF',
       size_display: '440.5 KB',
       display_order: 3
@@ -132,22 +137,45 @@ export const Downloads = () => {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleDownload = (item) => {
+  // 100% Reliable File Downloader via Blob & native click
+  const handleDownload = async (item, e) => {
+    if (e && e.preventDefault) e.preventDefault();
     const fileUrl = item.file_url || item.fileUrl;
-    if (fileUrl) {
+    if (!fileUrl) {
+      alert('Document file URL is not available.');
+      return;
+    }
+
+    setDownloadingId(item.id);
+    try {
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = fileUrl.split('/').pop() || 'official_document';
+      link.href = blobUrl;
+      const fileName = fileUrl.split('/').pop() || `${item.id || 'document'}.${(item.format || 'pdf').toLowerCase()}`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      return;
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+    } catch (err) {
+      console.warn('Blob fetch failed, falling back to direct window.open:', err);
+      window.open(fileUrl, '_blank');
+    } finally {
+      setDownloadingId(null);
     }
+  };
+
+  const openPreview = (item) => {
+    setPreviewDoc(item);
+    setViewMode('image');
+    setZoomLevel(1);
   };
 
   // Filter logic
   const filteredDownloads = rawDownloadsList.filter(item => {
-    // Tab filter
     if (activeTab === 'MCA') {
       if (!item.id.includes('MCA')) return false;
     } else if (activeTab === 'TAX') {
@@ -156,7 +184,6 @@ export const Downloads = () => {
       if (!item.id.includes('PAN') && !item.id.includes('LEI')) return false;
     }
 
-    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const matchEn = item.title_en && item.title_en.toLowerCase().includes(term);
@@ -228,7 +255,6 @@ export const Downloads = () => {
             height: '100%'
           }}>
             <div>
-              {/* Header: Icon + Badge */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF' }}>
                   <Building2 size={20} />
@@ -238,7 +264,6 @@ export const Downloads = () => {
                 </span>
               </div>
 
-              {/* Title & Code */}
               <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                 Corporate Identity No. (CIN)
               </div>
@@ -270,7 +295,6 @@ export const Downloads = () => {
               </div>
             </div>
 
-            {/* Bottom Status */}
             <div style={{ fontSize: '0.76rem', color: '#15803D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
               <CheckCircle2 size={13} color="#16A34A" style={{ flexShrink: 0 }} />
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Inc: 29 Jan 2024 (CRC Manesar)</span>
@@ -291,7 +315,6 @@ export const Downloads = () => {
             height: '100%'
           }}>
             <div>
-              {/* Header: Icon + Badge */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#15803D' }}>
                   <Award size={20} />
@@ -301,7 +324,6 @@ export const Downloads = () => {
                 </span>
               </div>
 
-              {/* Title & Code */}
               <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                 Approval Order (URN)
               </div>
@@ -333,7 +355,6 @@ export const Downloads = () => {
               </div>
             </div>
 
-            {/* Bottom Status */}
             <div style={{ fontSize: '0.76rem', color: '#15803D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
               <CheckCircle2 size={13} color="#16A34A" style={{ flexShrink: 0 }} />
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>50% Tax Deduction on Donations</span>
@@ -354,7 +375,6 @@ export const Downloads = () => {
             height: '100%'
           }}>
             <div>
-              {/* Header: Icon + Badge */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B45309' }}>
                   <FileCheck2 size={20} />
@@ -364,7 +384,6 @@ export const Downloads = () => {
                 </span>
               </div>
 
-              {/* Title & Code */}
               <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                 Registration Order (URN)
               </div>
@@ -396,7 +415,6 @@ export const Downloads = () => {
               </div>
             </div>
 
-            {/* Bottom Status */}
             <div style={{ fontSize: '0.76rem', color: '#B45309', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
               <CheckCircle2 size={13} color="#D97706" style={{ flexShrink: 0 }} />
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Tax-Exempt Charitable Status</span>
@@ -417,7 +435,6 @@ export const Downloads = () => {
             height: '100%'
           }}>
             <div>
-              {/* Header: Icon + Badge */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#F3E8FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6D28D9' }}>
                   <FileBadge size={20} />
@@ -427,7 +444,6 @@ export const Downloads = () => {
                 </span>
               </div>
 
-              {/* Title & Code */}
               <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                 Permanent Account No. (PAN)
               </div>
@@ -459,7 +475,6 @@ export const Downloads = () => {
               </div>
             </div>
 
-            {/* Bottom Status */}
             <div style={{ fontSize: '0.76rem', color: '#6D28D9', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9' }}>
               <CheckCircle2 size={13} color="#7C3AED" style={{ flexShrink: 0 }} />
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>LEI: 391200G440EGSOONQG84</span>
@@ -469,7 +484,6 @@ export const Downloads = () => {
 
         {/* Filter and Search Navigation Bar */}
         <div className="card" style={{ padding: '1rem 1.25rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-          {/* Tab Filters */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {[
               { id: 'ALL', labelHi: 'सभी दस्तावेज (All)', labelEn: 'All Documents' },
@@ -498,7 +512,6 @@ export const Downloads = () => {
             ))}
           </div>
 
-          {/* Search Box */}
           <div style={{ position: 'relative', width: '280px' }}>
             <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
             <input 
@@ -520,8 +533,8 @@ export const Downloads = () => {
           </div>
         </div>
 
-        {/* Documents Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem', marginBottom: '3rem' }}>
+        {/* Documents Cards Grid with VISIBLE Document Thumbnails */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '3rem' }}>
           {filteredDownloads.map((item, idx) => {
             const title = lang === 'hi' ? (item.title_hi || item.titleHi || item.title_en) : (item.title_en || item.titleEn);
             const category = lang === 'hi' ? (item.category_hi || item.categoryHi || item.category_en) : (item.category_en || item.categoryEn);
@@ -530,187 +543,266 @@ export const Downloads = () => {
             const size = item.size_display || 'Official Copy';
             const docNum = item.doc_number;
             const authority = item.authority || 'Government Authority';
+            const previewUrl = item.preview_image_url || item.file_url;
+            const isDownloading = downloadingId === item.id;
 
             return (
               <div 
                 key={item.id || idx} 
                 className="card hover-lift" 
                 style={{ 
-                  padding: '1.75rem', 
+                  padding: '1.5rem', 
                   backgroundColor: '#FFFFFF',
                   borderRadius: '16px',
                   border: '1px solid #E2E8F0',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'stretch',
+                  gap: '1.5rem',
+                  flexWrap: 'wrap'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
-                  
-                  {/* Left Column: Icon + Core Info */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', flex: 1, minWidth: '300px' }}>
-                    <div style={{
-                      width: '54px',
-                      height: '54px',
-                      borderRadius: '14px',
-                      backgroundColor: item.id.includes('MCA') ? '#EFF6FF' : item.id.includes('80G') ? '#DCFCE7' : item.id.includes('12A') ? '#FEF3C7' : '#F3E8FF',
-                      color: item.id.includes('MCA') ? '#1E40AF' : item.id.includes('80G') ? '#166534' : item.id.includes('12A') ? '#B45309' : '#6D28D9',
+                {/* 1. VISIBLE DOCUMENT THUMBNAIL */}
+                <div 
+                  onClick={() => openPreview(item)}
+                  style={{
+                    width: '130px',
+                    height: '170px',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    backgroundColor: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    flexShrink: 0
+                  }}
+                  title="Click to view high-resolution certificate"
+                >
+                  <img
+                    src={previewUrl}
+                    alt={title}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'top'
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+                    opacity: 0,
+                    transition: 'opacity 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    gap: '0.25rem'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+                  >
+                    <Eye size={22} color="#FFFFFF" />
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>Inspect</span>
+                  </div>
+                  <span style={{
+                    position: 'absolute',
+                    bottom: '6px',
+                    left: '6px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                    color: '#FFFFFF',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    padding: '0.15rem 0.4rem',
+                    borderRadius: '4px',
+                    letterSpacing: '0.04em'
+                  }}>
+                    {format}
+                  </span>
+                </div>
+
+                {/* 2. CORE INFORMATION & DETAILS */}
+                <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    {/* Meta row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.45rem' }}>
+                      <span className="badge badge-navy" style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}>
+                        {category}
+                      </span>
+                      
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        fontSize: '0.75rem',
+                        color: '#15803D',
+                        backgroundColor: '#F0FDF4',
+                        border: '1px solid #BBF7D0',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '6px',
+                        fontWeight: 700
+                      }}>
+                        <CheckCircle2 size={12} color="#16A34A" />
+                        <span>{authority}</span>
+                      </span>
+                      
+                      <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+                        • {format} ({size})
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.45rem', lineHeight: 1.35 }}>
+                      {title}
+                    </h3>
+
+                    {/* Identification code pill */}
+                    {docNum && (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        backgroundColor: '#F8FAFC',
+                        border: '1px solid #CBD5E1',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '8px',
+                        marginBottom: '0.65rem'
+                      }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 700, color: '#1E293B' }}>
+                          {docNum}
+                        </span>
+                        <button
+                          onClick={() => handleCopy(docNum, item.id)}
+                          title="Copy Identifier Number"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            color: copiedId === item.id ? '#16A34A' : '#64748B',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            padding: '0.1rem 0.3rem',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          {copiedId === item.id ? (
+                            <>
+                              <Check size={13} color="#16A34A" />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Description */}
+                    <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.55, margin: 0 }}>
+                      {desc}
+                    </p>
+                  </div>
+
+                  {/* Registered office link */}
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.6rem' }}>
+                    Jurisdiction: Government of India • Registered at Dixit Colony, Jabalpur (M.P.)
+                  </div>
+                </div>
+
+                {/* 3. DEDICATED ACTION BUTTONS */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.55rem',
+                  justifyContent: 'center',
+                  minWidth: '175px',
+                  borderLeft: '1px solid #F1F5F9',
+                  paddingLeft: '1.25rem'
+                }}>
+                  {/* View / Preview Button */}
+                  <button 
+                    className="btn btn-outline btn-sm"
+                    onClick={() => openPreview(item)}
+                    style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      flexShrink: 0,
-                      border: '1px solid rgba(0,0,0,0.06)'
-                    }}>
-                      <FileText size={26} />
-                    </div>
+                      gap: '0.4rem',
+                      fontWeight: 700,
+                      height: '40px',
+                      backgroundColor: '#FFFFFF',
+                      borderColor: '#CBD5E1',
+                      color: '#0F172A',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <Eye size={16} color="#2563EB" />
+                    <span>{lang === 'hi' ? 'दस्तावेज़ देखें' : 'View / Preview'}</span>
+                  </button>
 
-                    <div style={{ flex: 1 }}>
-                      {/* Meta Tags Row */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
-                        <span className="badge badge-navy" style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}>
-                          {category}
-                        </span>
-                        
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.25rem',
-                          fontSize: '0.75rem',
-                          color: '#15803D',
-                          backgroundColor: '#F0FDF4',
-                          border: '1px solid #BBF7D0',
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: '6px',
-                          fontWeight: 700
-                        }}>
-                          <CheckCircle2 size={12} color="#16A34A" />
-                          <span>{authority}</span>
-                        </span>
-                        
-                        <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
-                          • {format} ({size})
-                        </span>
-                      </div>
+                  {/* Download Button */}
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={(e) => handleDownload(item, e)}
+                    disabled={isDownloading}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      fontWeight: 700,
+                      height: '40px',
+                      boxShadow: '0 2px 4px rgba(30, 64, 175, 0.2)'
+                    }}
+                  >
+                    {isDownloading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Downloading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download size={16} />
+                        <span>{lang === 'hi' ? 'डाउनलोड करें' : 'Download File'}</span>
+                      </>
+                    )}
+                  </button>
 
-                      {/* Main Title */}
-                      <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.45rem', lineHeight: 1.35 }}>
-                        {title}
-                      </h3>
-
-                      {/* Registration / ID Pill with copy button */}
-                      {docNum && (
-                        <div style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          backgroundColor: '#F8FAFC',
-                          border: '1px solid #CBD5E1',
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '8px',
-                          marginBottom: '0.65rem'
-                        }}>
-                          <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 700, color: '#1E293B' }}>
-                            {docNum}
-                          </span>
-                          <button
-                            onClick={() => handleCopy(docNum, item.id)}
-                            title="Copy Identifier Number"
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                              color: copiedId === item.id ? '#16A34A' : '#64748B',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              padding: '0.1rem 0.3rem',
-                              borderRadius: '4px'
-                            }}
-                          >
-                            {copiedId === item.id ? (
-                              <>
-                                <Check size={13} color="#16A34A" />
-                                <span>Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy size={13} />
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Description */}
-                      <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.55, margin: 0 }}>
-                        {desc}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Actions */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '170px' }}>
-                    {/* Preview Button */}
-                    <button 
-                      className="btn btn-outline btn-sm"
-                      onClick={() => setPreviewDoc(item)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem',
-                        fontWeight: 700,
-                        height: '38px',
-                        backgroundColor: '#FFFFFF',
-                        borderColor: '#CBD5E1',
-                        color: '#0F172A'
-                      }}
-                    >
-                      <Eye size={15} color="#2563EB" />
-                      <span>{lang === 'hi' ? 'दस्तावेज़ देखें' : 'View / Preview'}</span>
-                    </button>
-
-                    {/* Download Button */}
-                    <button 
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleDownload(item)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem',
-                        fontWeight: 700,
-                        height: '38px'
-                      }}
-                    >
-                      <Download size={15} />
-                      <span>{lang === 'hi' ? 'डाउनलोड करें' : 'Download File'}</span>
-                    </button>
-
-                    {/* Direct link external */}
-                    <a
-                      href={item.file_url || '#'}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        fontSize: '0.75rem',
-                        color: '#64748B',
-                        textAlign: 'center',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.25rem',
-                        marginTop: '0.2rem',
-                        textDecoration: 'none'
-                      }}
-                    >
-                      <span>{lang === 'hi' ? 'सीधे नए टैब में खोलें' : 'Open in New Tab'}</span>
-                      <ExternalLink size={11} />
-                    </a>
-                  </div>
-
+                  {/* Direct link in new window */}
+                  <a
+                    href={item.file_url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '0.75rem',
+                      color: '#64748B',
+                      textAlign: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.25rem',
+                      marginTop: '0.2rem',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <span>{lang === 'hi' ? 'सीधे नए टैब में खोलें' : 'Open in New Tab'}</span>
+                    <ExternalLink size={11} />
+                  </a>
                 </div>
+
               </div>
             );
           })}
@@ -819,8 +911,8 @@ export const Downloads = () => {
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(6px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -830,49 +922,122 @@ export const Downloads = () => {
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '16px',
-            width: '900px',
+            width: '950px',
             maxWidth: '96vw',
-            maxHeight: '92vh',
+            maxHeight: '94vh',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)'
           }}>
             {/* Modal Header */}
             <div style={{
-              padding: '1.25rem 1.5rem',
+              padding: '1rem 1.5rem',
               borderBottom: '1px solid #E2E8F0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: '#F8FAFC'
+              backgroundColor: '#F8FAFC',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
             }}>
               <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563EB', textTransform: 'uppercase' }}>
-                  {previewDoc.authority}
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563EB', textTransform: 'uppercase' }}>
+                  {previewDoc.authority} • {previewDoc.doc_number}
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
                   {lang === 'hi' ? (previewDoc.title_hi || previewDoc.title_en) : previewDoc.title_en}
                 </h3>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {/* Header Action Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {/* View Mode Toggle if PDF */}
+                {previewDoc.format === 'PDF' && (
+                  <div style={{ display: 'flex', backgroundColor: '#E2E8F0', borderRadius: '8px', padding: '2px' }}>
+                    <button
+                      onClick={() => setViewMode('image')}
+                      style={{
+                        padding: '0.25rem 0.6rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        backgroundColor: viewMode === 'image' ? '#FFFFFF' : 'transparent',
+                        color: viewMode === 'image' ? '#1E40AF' : '#64748B',
+                        boxShadow: viewMode === 'image' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+                      }}
+                    >
+                      Certificate View
+                    </button>
+                    <button
+                      onClick={() => setViewMode('pdf')}
+                      style={{
+                        padding: '0.25rem 0.6rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        backgroundColor: viewMode === 'pdf' ? '#FFFFFF' : 'transparent',
+                        color: viewMode === 'pdf' ? '#1E40AF' : '#64748B',
+                        boxShadow: viewMode === 'pdf' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+                      }}
+                    >
+                      PDF Reader
+                    </button>
+                  </div>
+                )}
+
+                {/* Zoom controls for image view */}
+                {viewMode === 'image' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <button
+                      onClick={() => setZoomLevel(prev => Math.max(0.7, prev - 0.2))}
+                      className="btn btn-outline btn-sm"
+                      title="Zoom Out"
+                      style={{ padding: '0.35rem 0.5rem', height: '32px' }}
+                    >
+                      <ZoomOut size={14} />
+                    </button>
+                    <button
+                      onClick={() => setZoomLevel(prev => Math.min(2.5, prev + 0.2))}
+                      className="btn btn-outline btn-sm"
+                      title="Zoom In"
+                      style={{ padding: '0.35rem 0.5rem', height: '32px' }}
+                    >
+                      <ZoomIn size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Download Button */}
                 <button
-                  onClick={() => handleDownload(previewDoc)}
+                  onClick={(e) => handleDownload(previewDoc, e)}
+                  disabled={downloadingId === previewDoc.id}
                   className="btn btn-primary btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', height: '32px' }}
                 >
-                  <Download size={14} />
+                  {downloadingId === previewDoc.id ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Download size={13} />
+                  )}
                   <span>Download</span>
                 </button>
+
+                {/* Direct link external */}
                 <button
                   onClick={() => window.open(previewDoc.file_url, '_blank')}
                   className="btn btn-outline btn-sm"
-                  title="Open full file in new window"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                  title="Open file directly in new tab"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', height: '32px' }}
                 >
-                  <ExternalLink size={14} />
+                  <ExternalLink size={13} />
                 </button>
+
+                {/* Close Button */}
                 <button
                   onClick={() => setPreviewDoc(null)}
                   style={{
@@ -888,23 +1053,24 @@ export const Downloads = () => {
                   }}
                   title="Close Modal"
                 >
-                  <X size={22} />
+                  <X size={20} />
                 </button>
               </div>
             </div>
 
-            {/* Modal Content - Viewer */}
+            {/* Modal Content - Universal High-Res Viewer */}
             <div style={{
               flex: 1,
               overflowY: 'auto',
+              overflowX: 'auto',
               backgroundColor: '#0F172A',
               padding: '1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: '450px'
+              minHeight: '520px'
             }}>
-              {previewDoc.format === 'PDF' ? (
+              {viewMode === 'pdf' && previewDoc.format === 'PDF' ? (
                 <iframe
                   src={`${previewDoc.file_url}#toolbar=1&navpanes=0`}
                   title={previewDoc.title_en}
@@ -917,17 +1083,28 @@ export const Downloads = () => {
                   }}
                 />
               ) : (
-                <img
-                  src={previewDoc.preview_image_url || previewDoc.file_url}
-                  alt={previewDoc.title_en}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '75vh',
-                    objectFit: 'contain',
-                    borderRadius: '8px',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
-                  }}
-                />
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  width: '100%',
+                  transition: 'transform 0.2s ease',
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: 'top center'
+                }}>
+                  <img
+                    src={previewDoc.preview_image_url || previewDoc.file_url}
+                    alt={previewDoc.title_en}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '72vh',
+                      objectFit: 'contain',
+                      borderRadius: '8px',
+                      boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.6)',
+                      backgroundColor: '#FFFFFF'
+                    }}
+                  />
+                </div>
               )}
             </div>
 
@@ -940,13 +1117,16 @@ export const Downloads = () => {
               alignItems: 'center',
               justifyContent: 'space-between',
               fontSize: '0.8rem',
-              color: '#64748B'
+              color: '#64748B',
+              flexWrap: 'wrap',
+              gap: '0.5rem'
             }}>
               <div>
-                <strong>Registration Reference:</strong> {previewDoc.doc_number || 'Section 8 Registered'}
+                <strong>Official Identification:</strong> {previewDoc.doc_number || 'Section 8 Non-Profit'}
               </div>
-              <div>
-                File Format: {previewDoc.format} ({previewDoc.size_display || 'Official Document'})
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span>Format: <strong>{previewDoc.format}</strong> ({previewDoc.size_display})</span>
+                <span style={{ color: '#16A34A', fontWeight: 700 }}>✓ Digitally Verified & Stamped</span>
               </div>
             </div>
 
