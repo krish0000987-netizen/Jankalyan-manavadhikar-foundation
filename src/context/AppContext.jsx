@@ -303,6 +303,80 @@ const INITIAL_CMS = {
       aEn: "You can track your application directly using your registered mobile number, or contact the helpline at 8871557054 / jankalyanmanavadhikar@gmail.com with your student details.",
       aHi: "आप अपने पंजीकृत मोबाइल नंबर द्वारा भी आवेदन ट्रैक कर सकते हैं, अथवा हेल्पलाइन 8871557054 / jankalyanmanavadhikar@gmail.com पर संपर्क कर सकते हैं।"
     }
+  ],
+  heroSlides: [
+    {
+      id: 'e0000000-0000-0000-0000-000000000001',
+      image_url: '/assets/hero_slide_1.jpg',
+      heading_en: 'Dedicated to Human Rights & Direct Scholastic Empowerment',
+      heading_hi: 'मानवाधिकार संरक्षण एवं प्रत्यक्ष शैक्षणिक प्रोत्साहन',
+      eyebrow_en: 'Empowering Tomorrow, Today',
+      eyebrow_hi: 'उज्ज्वल भविष्य, आज से',
+      description_en: 'Empowering deserving and meritorious students across India with direct scholastic grants, verifiable multi-tier scrutiny, and transparent Direct Benefit Transfer.',
+      description_hi: 'भारत भर के मेधावी एवं जरूरतमंद छात्र-छात्राओं को प्रत्यक्ष छात्रवृत्ति अनुदान, पारदर्शी बहु-स्तरीय संवीक्षा एवं प्रत्यक्ष लाभ अंतरण (DBT) द्वारा सशक्त बनाना।',
+      slide_duration_ms: 3000,
+      is_active: true
+    },
+    {
+      id: 'e0000000-0000-0000-0000-000000000002',
+      image_url: '/assets/hero_slide_2.jpg',
+      heading_en: 'Supporting Academic Ambition Across Colleges & Universities',
+      heading_hi: 'महाविद्यालयीन एवं विश्वविद्यालयीन छात्रों को आर्थिक संबल',
+      eyebrow_en: 'Quality Higher Education',
+      eyebrow_hi: 'गुणवत्तापूर्ण उच्च शिक्षा',
+      description_en: 'Providing unconditional financial security so no aspiring student is forced to discontinue their higher education due to financial hardship.',
+      description_hi: 'प्रत्येक मेधावी युवा की उच्च शिक्षा को निरंतर रखने हेतु निर्बाध वित्तीय सुरक्षा एवं संस्थागत सहयोग।',
+      slide_duration_ms: 3000,
+      is_active: true
+    },
+    {
+      id: 'e0000000-0000-0000-0000-000000000003',
+      image_url: '/assets/hero_slide_3.jpg',
+      heading_en: 'Direct Financial Assistance Delivered to Deserving Classrooms',
+      heading_hi: 'प्रत्येक पात्र विद्यार्थी तक शत-प्रतिशत निष्पक्ष सहायता',
+      eyebrow_en: 'Transparent Direct Benefit Transfer',
+      eyebrow_hi: 'पारदर्शी प्रत्यक्ष लाभ अंतरण',
+      description_en: 'Direct Benefit Transfer ensures assistance reaches directly to verified student bank accounts without intermediaries.',
+      description_hi: 'प्रत्यक्ष लाभ अंतरण (DBT) सुनिश्चित करता है कि सहायता बिना किसी बिचौलिए के सीधे सत्यापित बैंक खातों में पहुंचे।',
+      slide_duration_ms: 3000,
+      is_active: true
+    },
+    {
+      id: 'e0000000-0000-0000-0000-000000000004',
+      image_url: '/assets/hero_slide_4.jpg',
+      heading_en: 'Recognizing Merit, Dedication, and Resilient Aspirations',
+      heading_hi: 'प्रतिभा, लगन एवं परिश्रम का सच्चा सम्मान',
+      eyebrow_en: 'Scholastic Excellence',
+      eyebrow_hi: 'शैक्षणिक उत्कृष्टता',
+      description_en: 'Awarding scholarship certificates, timely grants, and academic recognition through our unified digital portal.',
+      description_hi: 'एकल डिजिटल पोर्टल के माध्यम से आधिकारिक प्रमाण पत्र, समयबद्ध छात्रवृत्ति अनुदान एवं शैक्षणिक सम्मान।',
+      slide_duration_ms: 3000,
+      is_active: true
+    },
+    {
+      id: 'e0000000-0000-0000-0000-000000000005',
+      image_url: '/assets/hero_slide_5.jpg',
+      heading_en: '100% Paperless Online Verification & Redressal Cell',
+      heading_hi: 'शत-प्रतिशत कागजरहित ऑनलाइन सत्यापन एवं समाधान',
+      eyebrow_en: 'Digital India Integration',
+      eyebrow_hi: 'डिजिटल सशक्तिकरण',
+      description_en: 'Experience end-to-end transparency with QR-verifiable application receipts, grievance resolution within 48 hours, and live SMS updates.',
+      description_hi: 'क्यूआर कोड युक्त रसीद, 48 घंटे में शिकायत निवारण और रियल-टाइम एसएमएस अलर्ट के साथ संपूर्ण पारदर्शिता।',
+      slide_duration_ms: 3000,
+      is_active: true
+    },
+    {
+      id: 'e0000000-0000-0000-0000-000000000006',
+      image_url: '/assets/hero_slide_6.jpg',
+      heading_en: 'Encouraging Research, Innovation, and Higher Studies',
+      heading_hi: 'उच्च अध्ययन, शोध एवं नवाचार को प्रोत्साहन',
+      eyebrow_en: 'Higher Studies & Research',
+      eyebrow_hi: 'उच्च अध्ययन एवं शोध',
+      description_en: 'Nurturing innovative minds and supporting advanced degree aspirants across colleges, universities, and research institutes.',
+      description_hi: 'महाविद्यालयों एवं विश्वविद्यालयों में अध्ययनरत प्रतिभावान विद्यार्थियों को उच्च शोध व नवाचार हेतु सहायता।',
+      slide_duration_ms: 3000,
+      is_active: true
+    }
   ]
 };
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../api/supabase';
+import { useApp } from '../../context/AppContext';
+import { toIsoDate } from '../../services/cmsService';
 import { 
   GraduationCap, 
   Calendar, 
@@ -23,6 +25,7 @@ import {
 } from 'lucide-react';
 
 export const SchemesManager = () => {
+  const { refreshCMS } = useApp();
   const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingScheme, setEditingScheme] = useState(null);
@@ -87,8 +90,8 @@ export const SchemesManager = () => {
             grant_amount: grantNum,
             grant_amount_display: `₹${grantNum.toLocaleString('en-IN')}/- Yearly`,
             academic_year: form.academic_year.trim(),
-            application_start_date: form.application_start_date,
-            application_end_date: form.application_end_date,
+            application_start_date: toIsoDate(form.application_start_date),
+            application_end_date: toIsoDate(form.application_end_date),
             application_fee: feeNum,
             is_active: form.is_active,
             eligibility_overview: `Min ${minMarks}% marks in previous exam; family annual income up to ₹${maxIncome.toLocaleString('en-IN')}.`,
@@ -97,6 +100,16 @@ export const SchemesManager = () => {
           .eq('id', editingScheme.id);
 
         if (error) throw error;
+
+        // If editing the umbrella scheme, sync system_settings as well
+        if (editingScheme.id === 'd0000000-0000-0000-0000-000000000001') {
+          await supabase.from('system_settings').upsert([
+            { key: 'grantAmount', value: grantNum, is_public: true, updated_at: new Date().toISOString() },
+            { key: 'grantAmountDisplay', value: `₹${grantNum.toLocaleString('en-IN')}/- Yearly`, is_public: true, updated_at: new Date().toISOString() },
+            { key: 'applicationStartDate', value: form.application_start_date, is_public: true, updated_at: new Date().toISOString() },
+            { key: 'applicationClosingDate', value: form.application_end_date, is_public: true, updated_at: new Date().toISOString() }
+          ], { onConflict: 'key' });
+        }
 
         // 2. Update or insert scheme_eligibility_rules
         const existingRule = editingScheme.scheme_eligibility_rules?.[0];
@@ -133,8 +146,8 @@ export const SchemesManager = () => {
             academic_year: form.academic_year.trim(),
             grant_amount: grantNum,
             grant_amount_display: `₹${grantNum.toLocaleString('en-IN')}/- Yearly`,
-            application_start_date: form.application_start_date,
-            application_end_date: form.application_end_date,
+            application_start_date: toIsoDate(form.application_start_date),
+            application_end_date: toIsoDate(form.application_end_date),
             application_fee: feeNum,
             is_fee_applicable: true,
             is_active: form.is_active,
@@ -160,6 +173,9 @@ export const SchemesManager = () => {
         setShowAddModal(false);
       }
       await loadData();
+      if (refreshCMS) {
+        await refreshCMS();
+      }
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Failed to save scheme.' });
     } finally {
@@ -179,6 +195,9 @@ export const SchemesManager = () => {
       if (error) throw error;
 
       setSchemes(prev => prev.map(s => s.id === scheme.id ? { ...s, is_active: nextStatus } : s));
+      if (refreshCMS) {
+        await refreshCMS();
+      }
       setFeedback({ 
         type: 'success', 
         message: `Scheme "${scheme.name}" is now ${nextStatus ? 'ACTIVE (Open for Applications)' : 'CLOSED'}` 
