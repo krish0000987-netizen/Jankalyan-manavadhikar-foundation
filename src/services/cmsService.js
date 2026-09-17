@@ -147,11 +147,36 @@ export const OFFICIAL_DEFAULT_DOWNLOADS = [
   }
 ];
 
+const CMS_CACHE_KEY = 'jmf_cms_public_cache_v2';
+const CMS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache to avoid wasteful Supabase egress
+
 export const cmsService = {
   /**
-   * Fetch complete consolidated CMS dataset for public pages and fallback
+   * Clear local CMS cache on edits
    */
-  async getPublicCmsData() {
+  clearCmsCache() {
+    try {
+      sessionStorage.removeItem(CMS_CACHE_KEY);
+    } catch (e) {}
+  },
+
+  /**
+   * Fetch complete consolidated CMS dataset for public pages and fallback
+   * Uses 10-minute sessionStorage caching to drastically reduce Supabase network egress
+   */
+  async getPublicCmsData(forceRefresh = false) {
+    if (!forceRefresh) {
+      try {
+        const cached = sessionStorage.getItem(CMS_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && (Date.now() - parsed.timestamp < CMS_CACHE_TTL) && parsed.data) {
+            return parsed.data;
+          }
+        }
+      } catch (e) {}
+    }
+
     try {
       const [
         schemesRes,
@@ -203,7 +228,7 @@ export const cmsService = {
         activeScheme.grant_amount_display || 
         (settingsMap.grantAmount ? `₹${Number(settingsMap.grantAmount).toLocaleString('en-IN')}/- Yearly` : '₹4,000/- to ₹22,000/- Yearly');
 
-      return {
+      const result = {
         scholarshipAmount: displayAmount,
         grantAmountRaw: activeScheme.grant_amount || (settingsMap.grantAmount ? Number(settingsMap.grantAmount) : 22000),
         registrationFee: portalConfig.registration_fee || (settingsMap.registrationFeeAmount ? `₹ ${Number(settingsMap.registrationFeeAmount).toFixed(2)}/-` : '₹ 211.30/-'),
@@ -234,6 +259,15 @@ export const cmsService = {
         ...(dynamicSlabs ? { scholarshipSlabs: dynamicSlabs } : {}),
         statsDisplayConfig: settingsMap.stats_display_config || {}
       };
+
+      try {
+        sessionStorage.setItem(CMS_CACHE_KEY, JSON.stringify({
+          timestamp: Date.now(),
+          data: result
+        }));
+      } catch (e) {}
+
+      return result;
     } catch (err) {
       console.warn('Error loading live CMS from Supabase, using defaults:', err);
       return {
@@ -263,6 +297,7 @@ export const cmsService = {
       .maybeSingle();
 
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -304,6 +339,7 @@ export const cmsService = {
       .upsert(entries, { onConflict: 'key' });
 
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -329,6 +365,7 @@ export const cmsService = {
       .single();
 
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 

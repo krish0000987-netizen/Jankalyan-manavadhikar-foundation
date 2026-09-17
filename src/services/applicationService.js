@@ -3,6 +3,12 @@ import { uploadFile } from '../api/storage.js';
 import { getAllStates, getDistrictsByState, getBlocksByDistrict, findStateByDistrict, INDIA_STATES_DATA } from '../data/indiaLocations.js';
 import { notificationService } from './notificationService.js';
 
+// In-memory & session caches to eliminate excessive database egress
+const INSTITUTIONS_CACHE = {};
+const DISTRICTS_CACHE = {};
+const COUNTERS_CACHE_KEY = 'jmf_counters_cache_v2';
+const COUNTERS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
 export const FALLBACK_APPLICATIONS = [
   {
     id: 'JMF-2026-108234',
@@ -254,9 +260,15 @@ export const FALLBACK_APPLICATIONS = [
 
 export const applicationService = {
   /**
-   * Fetch applications with role-based scoping and filters
+   * Fetch applications with role-based scoping and filters.
+   * Only authorized admin roles can query full applications to protect quota.
    */
   async getApplications(filters = {}, role = 'SUPER_ADMIN', jurisdiction = {}) {
+    const adminRoles = ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION'];
+    if (!adminRoles.includes(role)) {
+      return [];
+    }
+
     try {
       let query = supabase
         .from('applications')
@@ -266,10 +278,11 @@ export const applicationService = {
           institutions (id, name, code),
           districts (id, name),
           blocks (id, name),
-          application_documents (*),
-          payments (*)
+          application_documents (id, application_id, document_type_id, verification_status, rejection_reason, file_name),
+          payments (id, amount, utr_number, payment_date, status, payment_method)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(250);
 
       // Role-based scoping
       if (role === 'DISTRICT_COORDINATOR' && jurisdiction.district?.id) {
@@ -363,6 +376,10 @@ export const applicationService = {
    * Fetch registered institutions from Supabase with categorized metadata
    */
   async getInstitutions(districtId = null) {
+    const cacheKey = districtId ? `inst_${districtId}` : 'inst_all';
+    if (INSTITUTIONS_CACHE[cacheKey]) {
+      return INSTITUTIONS_CACHE[cacheKey];
+    }
     try {
       let q = supabase
         .from('institutions')
@@ -385,6 +402,7 @@ export const applicationService = {
 
       const { data, error } = await q;
       if (!error && data && data.length > 0) {
+        INSTITUTIONS_CACHE[cacheKey] = data;
         return data;
       }
     } catch (err) {
@@ -402,12 +420,13 @@ export const applicationService = {
   },
 
   /**
-   * Fetch active districts
-   */
-  /**
    * Fetch active districts (optionally filtered by state)
    */
   async getDistricts(stateName = null) {
+    const cacheKey = stateName ? `dist_${stateName}` : 'dist_all';
+    if (DISTRICTS_CACHE[cacheKey]) {
+      return DISTRICTS_CACHE[cacheKey];
+    }
     try {
       let q = supabase
         .from('districts')
@@ -436,8 +455,11 @@ export const applicationService = {
               });
             }
           });
-          return merged.sort((a, b) => a.name.localeCompare(b.name));
+          const sorted = merged.sort((a, b) => a.name.localeCompare(b.name));
+          DISTRICTS_CACHE[cacheKey] = sorted;
+          return sorted;
         }
+        DISTRICTS_CACHE[cacheKey] = data;
         return data;
       }
     } catch (err) {}
@@ -1081,8 +1103,21 @@ export const applicationService = {
 
   /**
    * Aggregate Live Statistics directly from Database (Total, Approved, Disbursed, Districts)
+   * Uses 5-minute sessionStorage cache to prevent high bandwidth egress
    */
-  async getLivePublicCounters() {
+  async getLivePublicCounters(forceRefresh = false) {
+    if (!forceRefresh) {
+      try {
+        const cached = sessionStorage.getItem(COUNTERS_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && (Date.now() - parsed.timestamp < COUNTERS_CACHE_TTL) && parsed.data) {
+            return parsed.data;
+          }
+        }
+      } catch (e) {}
+    }
+
     try {
       const [
         totalRes,
@@ -1096,12 +1131,21 @@ export const applicationService = {
         supabase.from('districts').select('id', { count: 'exact', head: true }).eq('is_active', true)
       ]);
 
-      return {
+      const result = {
         totalApplications: totalRes.count || 0,
         approvedApplications: approvedRes.count || 0,
         scholarshipsReleased: releasedRes.count || 0,
         coveredDistricts: districtsRes.count || 6
       };
+
+      try {
+        sessionStorage.setItem(COUNTERS_CACHE_KEY, JSON.stringify({
+          timestamp: Date.now(),
+          data: result
+        }));
+      } catch (e) {}
+
+      return result;
     } catch (err) {
       console.warn('Error fetching live public counters:', err);
       return { totalApplications: 148, approvedApplications: 92, scholarshipsReleased: 74, coveredDistricts: 6 };

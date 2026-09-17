@@ -114,8 +114,10 @@ export const Admin = () => {
     );
     if (!isAuthorized) {
       navigate('/admin/login');
+    } else if (applications.length === 0) {
+      loadApplications(authRole, jurisdiction);
     }
-  }, [authUser, authRole, authLoading, navigate]);
+  }, [authUser, authRole, authLoading, navigate, applications.length, loadApplications, jurisdiction]);
 
   // Loading state while verifying credentials on boot
   if (authLoading) {

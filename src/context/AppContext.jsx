@@ -619,8 +619,13 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  // Load Live Applications from Supabase
+  // Load Live Applications from Supabase (Guarded for authorized Admin roles only)
   const loadApplications = useCallback(async (role = authRole, jur = jurisdiction) => {
+    const adminRoles = ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION'];
+    if (!adminRoles.includes(role)) {
+      setAppsLoaded(true);
+      return;
+    }
     try {
       const data = await applicationService.getApplications({}, role, jur);
       if (data && data.length > 0) {
@@ -629,13 +634,14 @@ export const AppProvider = ({ children }) => {
       setAppsLoaded(true);
     } catch (err) {
       console.warn('Error loading Supabase applications:', err);
+      setAppsLoaded(true);
     }
   }, [authRole, jurisdiction]);
 
-  // Load Live Counters
-  const loadLiveCounters = useCallback(async () => {
+  // Load Live Counters (cached)
+  const loadLiveCounters = useCallback(async (forceRefresh = false) => {
     try {
-      const counters = await applicationService.getLivePublicCounters();
+      const counters = await applicationService.getLivePublicCounters(forceRefresh);
       setLiveCounters(counters);
     } catch (err) {
       console.warn('Error loading live counters:', err);
@@ -686,7 +692,11 @@ export const AppProvider = ({ children }) => {
             }
           }
 
-          await loadApplications(current.role || 'SUPER_ADMIN', current.jurisdiction || {});
+          // ONLY load full applications list if user is an authorized admin
+          const adminRoles = ['SUPER_ADMIN', 'DISTRICT_COORDINATOR', 'BLOCK_COORDINATOR', 'INSTITUTION'];
+          if (adminRoles.includes(current.role)) {
+            await loadApplications(current.role, current.jurisdiction || {});
+          }
         } else {
           // Check if student was previously logged in via localStorage keys
           const savedRole = localStorage.getItem('jmf_role');
@@ -723,11 +733,10 @@ export const AppProvider = ({ children }) => {
               console.warn('Student restore from storage error:', e);
             }
           }
-          await loadApplications();
+          // Public guests do NOT load full application records
         }
       } catch (err) {
         console.warn('Auth initialization error:', err);
-        await loadApplications();
       } finally {
         setAuthLoading(false);
       }
@@ -735,27 +744,19 @@ export const AppProvider = ({ children }) => {
     initSessionAndData();
     loadCmsData();
     loadLiveCounters();
-    loadGrievances();
   }, []);
 
-  // Multi-tab and window-focus live CMS synchronization
+  // Multi-tab live CMS synchronization (only fires on actual admin storage update)
   useEffect(() => {
-    const handleSync = () => {
-      loadCmsData();
-      loadLiveCounters();
-    };
-
     const handleStorage = (e) => {
       if (e.key === 'jmf_cms_updated') {
-        loadCmsData();
-        loadLiveCounters();
+        loadCmsData(true);
+        loadLiveCounters(true);
       }
     };
 
-    window.addEventListener('focus', handleSync);
     window.addEventListener('storage', handleStorage);
     return () => {
-      window.removeEventListener('focus', handleSync);
       window.removeEventListener('storage', handleStorage);
     };
   }, [loadCmsData, loadLiveCounters]);
