@@ -1175,7 +1175,7 @@ export const Admin = () => {
                   <p style={{ color: '#64748B', fontSize: '0.875rem' }}>
                     {authRole === 'INSTITUTION'
                       ? `Master database of enrolled students and official application forms for ${jurisdiction?.institution?.name || 'this institution'}`
-                      : 'Official applicant master database: view student details, fee reconciliation ledger (Razorpay ₹211.30), printable forms, and CSV data export'}
+                      : 'Official applicant master database: view student details, fee reconciliation ledger (Razorpay), printable forms, and CSV data export'}
                   </p>
                 </div>
 
@@ -1326,7 +1326,7 @@ export const Admin = () => {
                       <th>District / Block</th>
                       <th>Institution & Course</th>
                       <th>Category</th>
-                      <th>Reg. Fee (₹ 211.30)</th>
+                      <th>Reg. Fee</th>
                       <th>Status</th>
                       <th>Date</th>
                       <th>Actions</th>
@@ -1349,7 +1349,7 @@ export const Admin = () => {
                         <td>
                           <div>
                             <span className={`badge ${app.registrationFeeStatus === 'PAID' ? 'badge-green' : 'badge-yellow'}`}>
-                              {app.registrationFeeStatus === 'PAID' ? '✓ PAID ₹211.30' : 'PENDING'}
+                              {app.registrationFeeStatus === 'PAID' ? `✓ PAID ₹${Number(app.registrationFeeAmount || 1).toFixed(2)}` : 'PENDING'}
                             </span>
                             {app.razorpayPaymentId && (
                               <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: '#2563EB', marginTop: '3px' }}>

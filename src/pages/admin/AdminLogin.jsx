@@ -29,7 +29,9 @@ import { initiateScholarshipFeePayment, isRazorpayTestMode } from '../../service
 import { getAllStates, getDistrictsByState, getBlocksByDistrict } from '../../data/indiaLocations';
 
 export const AdminLogin = ({ defaultRole = null }) => {
-  const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant, activeStudentApp, setActiveStudentApp, authRole } = useApp();
+  const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant, activeStudentApp, setActiveStudentApp, authRole, cms } = useApp();
+  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : 1.00;
+  const regFeeRaw = `₹ ${regFeeAmount.toFixed(2)}`;
 
   // Role Types - Only Student and Super Admin
   const ROLE_CONFIGS = [
@@ -42,8 +44,8 @@ export const AdminLogin = ({ defaultRole = null }) => {
       badgeHi: 'विद्यार्थी आवेदन पोर्टल',
       color: '#2563EB',
       bgLight: '#EFF6FF',
-      descriptionEn: 'Access scholarship status, pay registration fee ₹ 211.30 via Razorpay, track DBT payment timeline, verify documents, and download certificates.',
-      descriptionHi: 'छात्रवृत्ति आवेदन स्थिति, रेजरपे द्वारा ₹ 211.30 पंजीकरण शुल्क भुगतान, डीबीटी स्थिति एवं प्रमाण पत्र देखें।',
+      descriptionEn: `Access scholarship status, pay registration fee ${regFeeRaw} via Razorpay, track DBT payment timeline, verify documents, and download certificates.`,
+      descriptionHi: `छात्रवृत्ति आवेदन स्थिति, रेजरपे द्वारा ${regFeeRaw} पंजीकरण शुल्क भुगतान, डीबीटी स्थिति एवं प्रमाण पत्र देखें।`,
       inputLabel: lang === 'hi' ? 'आवेदन क्रमांक / मोबाइल नंबर' : 'Application ID / Registered Mobile',
       inputPlaceholder: 'JMF-2026-108234 or 9826112233',
       identifierType: 'student'
@@ -173,7 +175,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
     }
   };
 
-  // 2. Handle Create New Applicant Registration Submit (Requires Mandatory Razorpay Payment of ₹ 211.30)
+  // 2. Handle Create New Applicant Registration Submit (Requires Mandatory Razorpay Payment of ₹ 1.00)
   const handleRegisterSubmit = async (e) => {
     e?.preventDefault();
     const cleanMobile = (regForm.mobile || '').replace(/[^0-9]/g, '');
@@ -202,9 +204,9 @@ export const AdminLogin = ({ defaultRole = null }) => {
       const chosenPass = regForm.password?.trim() || '123456';
       const studentEmail = regForm.email?.trim() || `student_${cleanMobile}@jankalyan.org`;
 
-      // Trigger mandatory Razorpay Live Payment of ₹ 211.30
+      // Trigger mandatory Razorpay Live Payment
       await initiateScholarshipFeePayment({
-        amountInRupees: 211.30,
+        amountInRupees: regFeeAmount,
         student: {
           fullName: regForm.fullName.trim(),
           mobile: cleanMobile,
@@ -235,8 +237,8 @@ export const AdminLogin = ({ defaultRole = null }) => {
 
             setSuccessMessage(
               lang === 'hi'
-                ? `🎉 ₹ 211.30 शुल्क भुगतान सफल! नया आवेदक खाता बन गया। आवेदन क्रमांक: ${result.applicationId} | पिन: ${chosenPass}`
-                : `🎉 Registration fee of ₹ 211.30 paid successfully! New applicant created: ${result.applicationId} | PIN: ${chosenPass}`
+                ? `🎉 ${regFeeRaw} शुल्क भुगतान सफल! नया आवेदक खाता बन गया। आवेदन क्रमांक: ${result.applicationId} | पिन: ${chosenPass}`
+                : `🎉 Registration fee of ${regFeeRaw} paid successfully! New applicant created: ${result.applicationId} | PIN: ${chosenPass}`
             );
 
             setTimeout(() => {
@@ -253,8 +255,8 @@ export const AdminLogin = ({ defaultRole = null }) => {
           setLoading(false);
           setErrorMessage(
             lang === 'hi'
-              ? 'भुगतान पूर्ण नहीं हुआ: ' + (err?.message || 'लेन-देन अस्वीकृत या रद्द कर दिया गया। नया आवेदक खाता बनाने हेतु ₹ 211.30 शुल्क अनिवार्य है।')
-              : 'Payment not completed: ' + (err?.message || 'Transaction was declined or cancelled. Registration fee of ₹ 211.30 is mandatory to create an applicant account.')
+              ? `भुगतान पूर्ण नहीं हुआ: ` + (err?.message || `लेन-देन अस्वीकृत या रद्द कर दिया गया। नया आवेदक खाता बनाने हेतु ${regFeeRaw} शुल्क अनिवार्य है।`)
+              : `Payment not completed: ` + (err?.message || `Transaction was declined or cancelled. Registration fee of ${regFeeRaw} is mandatory to create an applicant account.`)
           );
         },
         onDismiss: () => {
@@ -843,7 +845,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
 
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#1E40AF' }}>
-                      ₹ 211.30
+                      {regFeeRaw}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end', marginTop: '2px' }}>
                       {isRazorpayTestMode() ? (
@@ -878,7 +880,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
                   <span>
                     {loading 
                       ? (lang === 'hi' ? 'रेज़रपे भुगतान जारी...' : 'Processing Razorpay...') 
-                      : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें एवं खाता बनाएं' : 'Pay ₹ 211.30 via Razorpay & Create Account')}
+                      : (lang === 'hi' ? `रेज़रपे से ${regFeeRaw} का भुगतान करें एवं खाता बनाएं` : `Pay ${regFeeRaw} via Razorpay & Create Account`)}
                   </span>
                 </button>
 

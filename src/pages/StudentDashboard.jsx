@@ -43,6 +43,8 @@ export const StudentDashboard = () => {
 
   // Default to activeStudentApp or search
   const student = activeStudentApp;
+  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : (student?.registrationFeeAmount || 1.00);
+  const regFeeRaw = `₹ ${Number(regFeeAmount).toFixed(2)}`;
 
   // Refresh active student application record directly from Supabase
   const refreshStudentApplication = async (silent = false) => {
@@ -662,7 +664,7 @@ export const StudentDashboard = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>
-                    {student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId ? 'Fee: ₹211.30 Paid ✓' : 'Fee: Pending'}
+                    {student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId ? `Fee: ${regFeeRaw} Paid ✓` : 'Fee: Pending'}
                   </span>
                 </div>
               </div>
@@ -695,7 +697,7 @@ export const StudentDashboard = () => {
                   </div>
                   <div>
                     <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0F172A' }}>
-                      Scholarship Registration Fee: <strong>₹ 211.30</strong>
+                      Scholarship Registration Fee: <strong>{regFeeRaw}</strong>
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
                       {student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId
@@ -714,7 +716,7 @@ export const StudentDashboard = () => {
                       setPayingFee(true);
                       try {
                         await initiateScholarshipFeePayment({
-                          amountInRupees: 211.30,
+                          amountInRupees: regFeeAmount,
                           student: {
                             fullName: student.studentName,
                             mobile: student.mobile,
@@ -732,7 +734,7 @@ export const StudentDashboard = () => {
                               razorpayPaymentId: paymentResult.paymentId,
                               feePaymentDate: paymentResult.date
                             }));
-                            alert('Registration fee of ₹211.30 paid successfully via Razorpay!');
+                            alert(`Registration fee of ${regFeeRaw} paid successfully via Razorpay!`);
                           },
                           onFailure: (err) => {
                             setPayingFee(false);
@@ -749,7 +751,7 @@ export const StudentDashboard = () => {
                     style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
                   >
                     <Sparkles size={14} />
-                    <span>{payingFee ? 'Processing...' : 'Pay ₹ 211.30 via Razorpay'}</span>
+                    <span>{payingFee ? 'Processing...' : `Pay ${regFeeRaw} via Razorpay`}</span>
                     {isRazorpayTestMode() ? (
                       <span style={{ backgroundColor: '#FEF08A', color: '#854D0E', fontSize: '0.65rem', fontWeight: 900, padding: '1px 5px', borderRadius: '4px' }}>TEST MODE</span>
                     ) : (

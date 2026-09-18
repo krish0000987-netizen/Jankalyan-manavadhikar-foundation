@@ -118,7 +118,7 @@ async function createScholarshipFormPdf() {
   page1.drawText('Date of Issue: ____/____/2026', { x: 260, y: currY, size: 8.5, font: fontRegular, color: darkSlate });
   currY -= 16;
   page1.drawText('Coordinator / Center Code: ____________________', { x: 35, y: currY, size: 8.5, font: fontRegular, color: darkSlate });
-  page1.drawText('Application Fee: Rs. 211.30 (Paid)', { x: 260, y: currY, size: 8.5, font: fontBold, color: greenText });
+  page1.drawText('Application Fee: Rs. 1.00 (Paid)', { x: 260, y: currY, size: 8.5, font: fontBold, color: greenText });
 
   // SECTION 1: APPLICANT PERSONAL DETAILS
   currY -= 20;
@@ -284,7 +284,7 @@ async function createScholarshipFormPdf() {
   page2.drawText('SECTION 5: APPLICANT & PARENT UNDERTAKING AND DECLARATION', { x: 35, y: p2Y, size: 8.5, font: fontBold, color: navy });
 
   p2Y -= 14;
-  const declarationText = 'I hereby solemnly declare that all particulars entered above are true, accurate and complete to the best of my knowledge. I am enrolled as a regular student in the declared academic institution. I understand that the non-refundable registration & scrutiny fee of Rs. 211.30/- is paid towards administrative verification. If any document is found falsified, my scholarship grant will be immediately cancelled without notice.';
+  const declarationText = 'I hereby solemnly declare that all particulars entered above are true, accurate and complete to the best of my knowledge. I am enrolled as a regular student in the declared academic institution. I understand that the non-refundable registration & scrutiny fee of Rs. 1.00/- is paid towards administrative verification. If any document is found falsified, my scholarship grant will be immediately cancelled without notice.';
   page2.drawText(declarationText, {
     x: 35,
     y: p2Y,
@@ -330,7 +330,7 @@ async function createScholarshipFormPdf() {
   page2.drawText('SECTION 7: DISTRICT NODAL OFFICE / COORDINATOR ENDORSEMENT', { x: 35, y: p2Y, size: 8.5, font: fontBold, color: greenText });
 
   p2Y -= 15;
-  page2.drawText('Application Recd. Date: ____/____/2026  |  Fee Status: [X] Paid Rs. 211.30  |  Scrutiny: [  ] Verified & Approved', {
+  page2.drawText('Application Recd. Date: ____/____/2026  |  Fee Status: [X] Paid Rs. 1.00  |  Scrutiny: [  ] Verified & Approved', {
     x: 35,
     y: p2Y,
     size: 7.5,

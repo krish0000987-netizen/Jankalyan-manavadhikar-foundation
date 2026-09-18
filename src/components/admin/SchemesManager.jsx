@@ -43,7 +43,7 @@ export const SchemesManager = () => {
     grant_amount: 12000,
     application_start_date: '2026-09-15',
     application_end_date: '2026-11-30',
-    application_fee: 211.30,
+    application_fee: 1.00,
     is_active: true,
     min_percentage: 50,
     max_annual_income: 300000,
@@ -76,7 +76,7 @@ export const SchemesManager = () => {
     setSubmitting(true);
     try {
       const grantNum = parseFloat(form.grant_amount) || 12000;
-      const feeNum = parseFloat(form.application_fee) || 211.30;
+      const feeNum = parseFloat(form.application_fee) !== undefined && !isNaN(parseFloat(form.application_fee)) ? parseFloat(form.application_fee) : 1.00;
       const minMarks = parseFloat(form.min_percentage) || 50;
       const maxIncome = parseFloat(form.max_annual_income) || 300000;
 
@@ -225,7 +225,7 @@ export const SchemesManager = () => {
       grant_amount: scheme.grant_amount || 12000,
       application_start_date: scheme.application_start_date || '2026-09-15',
       application_end_date: scheme.application_end_date || '2026-11-30',
-      application_fee: scheme.application_fee !== undefined ? scheme.application_fee : 211.30,
+      application_fee: scheme.application_fee !== undefined ? scheme.application_fee : 1.00,
       is_active: scheme.is_active !== undefined ? scheme.is_active : true,
       min_percentage: rules.min_percentage !== undefined ? rules.min_percentage : 50,
       max_annual_income: rules.max_annual_income !== undefined ? rules.max_annual_income : 300000,
@@ -278,7 +278,7 @@ export const SchemesManager = () => {
               grant_amount: 12000,
               application_start_date: '2026-09-15',
               application_end_date: '2026-11-30',
-              application_fee: 211.30,
+              application_fee: 1.00,
               is_active: true,
               min_percentage: 50,
               max_annual_income: 300000,
@@ -437,7 +437,7 @@ export const SchemesManager = () => {
                   <div>
                     <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Reg. Fee</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E40AF', marginTop: '0.1rem' }}>
-                      ₹{Number(scheme.application_fee !== undefined ? scheme.application_fee : 211.30).toFixed(2)}
+                      ₹{Number(scheme.application_fee !== undefined ? scheme.application_fee : 1.00).toFixed(2)}
                     </div>
                   </div>
                 </div>

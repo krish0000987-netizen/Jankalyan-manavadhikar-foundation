@@ -19,7 +19,8 @@ export default defineConfig(({ mode }) => {
                   const parsed = body ? JSON.parse(body) : {};
                   const keyId = env.VITE_RAZORPAY_KEY_ID || 'rzp_live_TceflpS8ncUJPO';
                   const keySecret = env.RAZORPAY_KEY_SECRET || env.VITE_RAZORPAY_KEY_SECRET || 'Q00wCUJHNbd3PEl2Yx6dZ2du';
-                  const amountInPaise = Math.round((parsed.amountInRupees || 211.30) * 100);
+                  const amountInRupees = parseFloat(parsed.amountInRupees) || 1.00;
+                  const amountInPaise = Math.round(amountInRupees * 100);
                   const receipt = `rcpt_${String(parsed.applicationId || 'NEW').replace(/[^a-zA-Z0-9_]/g, '')}_${Date.now().toString(36)}`.slice(0, 40);
 
                   const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
@@ -35,7 +36,7 @@ export default defineConfig(({ mode }) => {
                       receipt,
                       notes: {
                         application_id: String(parsed.applicationId || 'NEW'),
-                        purpose: 'Scholarship Registration Fee ₹211.30'
+                        purpose: `Scholarship Registration Fee ₹${amountInRupees.toFixed(2)}`
                       }
                     })
                   });

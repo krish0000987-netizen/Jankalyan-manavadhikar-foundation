@@ -44,16 +44,16 @@ export const isRazorpayTestMode = () => {
 };
 
 /**
- * Initiate Razorpay payment for scholarship registration fee (₹ 211.30)
+ * Initiate Razorpay payment for scholarship registration fee (e.g. ₹ 1.00)
  * @param {Object} params
- * @param {number} params.amountInRupees - Amount in INR (e.g. 211.30)
+ * @param {number} params.amountInRupees - Amount in INR (e.g. 1.00)
  * @param {Object} params.student - Student info { fullName, email, mobile, applicationId }
  * @param {Function} params.onSuccess - Callback receiving { paymentId, orderId, signature, amount, date }
  * @param {Function} params.onFailure - Callback receiving error object
  * @param {Function} params.onDismiss - Callback when checkout is closed
  */
 export const initiateScholarshipFeePayment = async ({
-  amountInRupees = 211.30,
+  amountInRupees = 1.00,
   student = {},
   onSuccess,
   onFailure,
@@ -62,7 +62,7 @@ export const initiateScholarshipFeePayment = async ({
   const isLoaded = await loadRazorpayScript();
   const configuredKey = import.meta.env.VITE_RAZORPAY_KEY_ID || DEFAULT_KEY_ID;
   const isTest = isRazorpayTestMode();
-  const amountInPaise = Math.round(amountInRupees * 100); // 21130 paise
+  const amountInPaise = Math.round(amountInRupees * 100); // 100 paise = ₹ 1.00
 
   // If SDK failed to load
   if (!isLoaded || !window.Razorpay) {
@@ -137,7 +137,7 @@ export const initiateScholarshipFeePayment = async ({
       },
       notes: {
         application_id: student.applicationId || student.id || 'NEW_APPLICATION',
-        purpose: 'Scholarship Registration Fee ₹211.30',
+        purpose: `Scholarship Registration Fee ₹${amountInRupees}`,
         environment: isTest ? 'test' : 'live'
       },
       theme: {

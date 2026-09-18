@@ -33,6 +33,7 @@ export const Scholarship = () => {
   const { lang, setSpecificLanguage, t, navigate, cms } = useApp();
 
   const isHindi = lang === 'hi';
+  const regFeeDisplay = cms?.registrationFee || '₹ 1.00/-';
 
   const baseSlabs = [
     {
@@ -461,7 +462,7 @@ export const Scholarship = () => {
                 </div>
 
                 <div style={{ fontSize: '3rem', fontWeight: 950, color: '#DC2626', margin: '0.2rem 0', lineHeight: 1 }}>
-                  ₹ 211.30/-
+                  {regFeeDisplay}
                 </div>
 
                 <div style={{ fontSize: '0.88rem', color: '#64748B', fontWeight: 700, marginBottom: '1.5rem' }}>
@@ -688,8 +689,8 @@ export const Scholarship = () => {
               <div>
                 <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#991B1B' }}>
                   {isHindi 
-                    ? 'आवेदन प्रक्रिया शुल्क: ₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)' 
-                    : 'Application Processing Fee: ₹ 211.30/- (Processing Fee Only)'}
+                    ? `आवेदन प्रक्रिया शुल्क: ${regFeeDisplay} (केवल आवेदन प्रक्रिया हेतु)` 
+                    : `Application Processing Fee: ${regFeeDisplay} (Processing Fee Only)`}
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#7F1D1D', marginTop: '2px' }}>
                   {isHindi 

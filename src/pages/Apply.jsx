@@ -54,6 +54,10 @@ export const Apply = () => {
     logout 
   } = useApp();
 
+  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : 1.00;
+  const regFeeDisplay = `₹ ${regFeeAmount.toFixed(2)}/-`;
+  const regFeeRaw = `₹ ${regFeeAmount.toFixed(2)}`;
+
   const isStudentLoggedIn = Boolean(
     authRole === 'STUDENT' || 
     authUser?.user_metadata?.role === 'STUDENT' || 
@@ -118,7 +122,7 @@ export const Apply = () => {
       institutionCategory: 'School',
       selectedSlab: 'slab-3',
       scholarshipAmount: 12000,
-      registrationFee: '₹ 211.30/-',
+      registrationFee: '₹ 1.00/-',
       classCourse: 'Class 12th',
       academicYear: '2026-27',
       boardUni: '',
@@ -162,7 +166,7 @@ export const Apply = () => {
 
       // Step 8: Registration Fee & Razorpay Payment
       registrationFeeStatus: 'PENDING',
-      registrationFeeAmount: 211.30,
+      registrationFeeAmount: 1.00,
       razorpayPaymentId: null,
       feePaymentDate: null,
 
@@ -464,7 +468,7 @@ export const Apply = () => {
     if (!isFeeAlreadyPaid) {
       setIsPayingFee(true);
       await initiateScholarshipFeePayment({
-        amountInRupees: 211.30,
+        amountInRupees: regFeeAmount,
         student: {
           fullName: formData.fullName,
           mobile: formData.mobile,
@@ -477,7 +481,7 @@ export const Apply = () => {
             ...formData,
             declared: true,
             registrationFeeStatus: 'PAID',
-            registrationFeeAmount: 211.30,
+            registrationFeeAmount: regFeeAmount,
             razorpayPaymentId: paymentResult.paymentId,
             feePaymentDate: paymentResult.date
           };
@@ -488,8 +492,8 @@ export const Apply = () => {
           setIsPayingFee(false);
           alert(
             lang === 'hi'
-              ? 'छात्रवृत्ति आवेदन जमा करने के लिए ₹ 211.30 का रेज़रपे शुल्क भुगतान अनिवार्य है: ' + (err?.message || 'भुगतान पूर्ण नहीं हुआ')
-              : 'Please complete the mandatory scholarship registration fee payment of ₹ 211.30 via Razorpay to finalize your application: ' + (err?.message || 'Payment not completed')
+              ? `छात्रवृत्ति आवेदन जमा करने के लिए ${regFeeDisplay} का रेज़रपे शुल्क भुगतान अनिवार्य है: ` + (err?.message || 'भुगतान पूर्ण नहीं हुआ')
+              : `Please complete the mandatory scholarship registration fee payment of ${regFeeDisplay} via Razorpay to finalize your application: ` + (err?.message || 'Payment not completed')
           );
         },
         onDismiss: () => {
@@ -784,7 +788,7 @@ export const Apply = () => {
                 <div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#14532D', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span>{lang === 'hi' ? 'छात्रवृत्ति पंजीकरण शुल्क भुगतान रसीद' : 'Scholarship Registration Fee Receipt'}</span>
-                    <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>₹ 211.30 PAID ✓</span>
+                    <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>{regFeeRaw} PAID ✓</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#166534', marginTop: '3px' }}>
                     Razorpay Payment ID: <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{submittedRecord.razorpayPaymentId || formData.razorpayPaymentId || 'pay_jmf2026_verified'}</strong>
@@ -1522,7 +1526,7 @@ export const Apply = () => {
                         आवेदन प्रक्रिया शुल्क (Registration Fee)
                       </div>
                       <div style={{ fontSize: '1.55rem', fontWeight: 900, color: '#DC2626', marginTop: '2px' }}>
-                        ₹ 211.30/-
+                        {regFeeDisplay}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: '#7F1D1D', fontWeight: 600 }}>
                         (केवल आवेदन प्रक्रिया हेतु / Application processing only)
@@ -1975,7 +1979,7 @@ export const Apply = () => {
                     <div><strong>Institution:</strong> {formData.institutionName || '-'}</div>
                     <div><strong>Course / Class:</strong> {formData.classCourse || '-'}</div>
                     <div><strong>Entitled Scholarship:</strong> <span style={{ color: '#16A34A', fontWeight: 800 }}>₹ {formData.scholarshipAmount?.toLocaleString('en-IN') || '12,000'}/- वार्षिक</span></div>
-                    <div><strong>Registration Fee:</strong> <span style={{ color: '#DC2626', fontWeight: 800 }}>₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)</span></div>
+                    <div><strong>Registration Fee:</strong> <span style={{ color: '#DC2626', fontWeight: 800 }}>{regFeeDisplay} (केवल आवेदन प्रक्रिया हेतु)</span></div>
                     <div><strong>Category:</strong> {formData.category}</div>
                     <div><strong>Percentage:</strong> {formData.percentage ? `${formData.percentage}%` : '-'}</div>
                     <div><strong>Bank:</strong> {formData.bankName}</div>
@@ -2018,7 +2022,7 @@ export const Apply = () => {
 
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1E40AF' }}>
-                        ₹ 211.30
+                        {regFeeRaw}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700 }}>
                         {lang === 'hi' ? 'केवल आवेदन प्रक्रिया हेतु' : 'Mandatory Processing Fee'}
@@ -2161,8 +2165,8 @@ export const Apply = () => {
                         : Boolean(formData.razorpayPaymentId && (isRazorpayTestMode() ? true : !formData.razorpayPaymentId.startsWith('pay_test_')))
                         ? (lang === 'hi' ? 'आवेदन अंतिम रूप से जमा करें' : 'Submit Final Application')
                         : !formData.declared
-                        ? (lang === 'hi' ? 'घोषणा स्वीकार कर ₹ 211.30 का भुगतान करें' : 'Accept Declaration to Pay ₹ 211.30 & Submit')
-                        : (lang === 'hi' ? 'रेज़रपे से ₹ 211.30 का भुगतान करें एवं जमा करें' : 'Pay ₹ 211.30 via Razorpay & Submit')}
+                        ? (lang === 'hi' ? `घोषणा स्वीकार कर ${regFeeRaw} का भुगतान करें` : `Accept Declaration to Pay ${regFeeRaw} & Submit`)
+                        : (lang === 'hi' ? `रेज़रपे से ${regFeeRaw} का भुगतान करें एवं जमा करें` : `Pay ${regFeeRaw} via Razorpay & Submit`)}
                     </span>
                   </button>
                 )}

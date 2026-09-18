@@ -147,7 +147,7 @@ export const OFFICIAL_DEFAULT_DOWNLOADS = [
   }
 ];
 
-const CMS_CACHE_KEY = 'jmf_cms_public_cache_v3';
+const CMS_CACHE_KEY = 'jmf_cms_public_cache_v4';
 const CMS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache to avoid wasteful Supabase egress
 
 export const cmsService = {
@@ -231,8 +231,9 @@ export const cmsService = {
       const result = {
         scholarshipAmount: displayAmount,
         grantAmountRaw: activeScheme.grant_amount || (settingsMap.grantAmount ? Number(settingsMap.grantAmount) : 22000),
-        registrationFee: portalConfig.registration_fee || (settingsMap.registrationFeeAmount ? `₹ ${Number(settingsMap.registrationFeeAmount).toFixed(2)}/-` : '₹ 211.30/-'),
-        registrationFeeNote: '₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)',
+        registrationFee: portalConfig.registration_fee || (settingsMap.registrationFeeAmount ? `₹ ${Number(settingsMap.registrationFeeAmount).toFixed(2)}/-` : '₹ 1.00/-'),
+        registrationFeeAmount: settingsMap.registrationFeeAmount ? Number(settingsMap.registrationFeeAmount) : 1.00,
+        registrationFeeNote: `₹ ${Number(settingsMap.registrationFeeAmount || 1).toFixed(2)}/- (केवल आवेदन प्रक्रिया हेतु)`,
         applicationStartDate: toDisplayDate(rawStartDate) || '15/09/2026',
         applicationLastDate: toDisplayDate(rawEndDate) || '30/11/2026',
         eligibilityCriteria: settingsMap.eligibilityCriteria || activeScheme.eligibility_overview || 'Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.',
