@@ -26,22 +26,46 @@ export const CertificateView = ({ certId = '' }) => {
   const [photoError, setPhotoError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [allCerts, setAllCerts] = useState([]);
+  const [selectedCertIndex, setSelectedCertIndex] = useState(0);
 
   useEffect(() => {
     async function loadCert() {
       setLoading(true);
       try {
         let found = null;
+        let certList = [];
         let appData = null;
         let resolvedPhotoUrl = '';
 
         // 1. Try resolving certificate from certificates table
         if (certId) {
-          found = await certificateService.getCertificateByAppId(certId) 
-            || await certificateService.getCertificateByToken(certId);
+          const byId = await certificateService.getCertificateById(certId);
+          if (byId) {
+            found = byId;
+            certList = await certificateService.getCertificatesByAppId(byId.application_id);
+          } else {
+            certList = await certificateService.getCertificatesByAppId(certId);
+            if (certList.length > 0) {
+              found = certList[0];
+            } else {
+              found = await certificateService.getCertificateByToken(certId);
+              if (found) {
+                certList = await certificateService.getCertificatesByAppId(found.application_id);
+              }
+            }
+          }
         }
         if (!found && activeStudentApp) {
-          found = await certificateService.getCertificateByAppId(activeStudentApp.id);
+          certList = await certificateService.getCertificatesByAppId(activeStudentApp.id);
+          if (certList.length > 0) {
+            found = certList[0];
+          }
+        }
+        setAllCerts(certList);
+        if (certList.length > 0) {
+          const idx = certList.findIndex(c => c.id === found?.id);
+          setSelectedCertIndex(idx >= 0 ? idx : 0);
         }
 
         // 2. Fetch linked application data with joined student profile & documents
@@ -167,6 +191,11 @@ export const CertificateView = ({ certId = '' }) => {
           </button>
 
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-outline btn-sm" onClick={() => navigate('/receipt/' + (cert?.application_id || activeStudentApp?.id || ''))} title="View registration fee receipt">
+              <ShieldCheck size={14} color="#16A34A" />
+              <span>{lang === 'hi' ? 'शुल्क रसीद देखें' : 'View Fee Receipt'}</span>
+            </button>
+
             <button className="btn btn-outline btn-sm" onClick={copyVerifyLink}>
               {copied ? <Check size={14} color="#16A34A" /> : <Copy size={14} />}
               <span>{copied ? (lang === 'hi' ? 'लिंक कॉपी हो गया' : 'Link Copied!') : (lang === 'hi' ? 'सत्यापन लिंक कॉपी करें' : 'Copy Verification Link')}</span>
@@ -178,6 +207,54 @@ export const CertificateView = ({ certId = '' }) => {
             </button>
           </div>
         </div>
+
+        {/* Multi-Installment Certificate Switcher Tabs */}
+        {allCerts.length > 1 && (
+          <div className="no-print" style={{ 
+            display: 'flex', 
+            gap: '0.65rem', 
+            marginBottom: '1.25rem', 
+            flexWrap: 'wrap',
+            backgroundColor: '#FFFFFF',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '12px',
+            border: '1.5px solid #BBF7D0',
+            alignItems: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Award size={16} color="#16A34A" />
+              <span>Installment Certificates ({allCerts.length} Issued):</span>
+            </span>
+            {allCerts.map((c, idx) => (
+              <button
+                key={c.id || idx}
+                type="button"
+                className={`btn btn-sm ${selectedCertIndex === idx ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => {
+                  setSelectedCertIndex(idx);
+                  setCert(c);
+                }}
+                style={{ 
+                  fontWeight: selectedCertIndex === idx ? 800 : 600,
+                  fontSize: '0.78rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  backgroundColor: selectedCertIndex === idx ? '#1E40AF' : '#FFFFFF',
+                  borderColor: selectedCertIndex === idx ? '#1E40AF' : '#CBD5E1',
+                  color: selectedCertIndex === idx ? '#FFFFFF' : '#334155'
+                }}
+              >
+                <span>
+                  {c.scheme_name?.includes('Installment') 
+                    ? c.scheme_name.split('(')[1]?.replace(')', '') || `Installment #${idx + 1}` 
+                    : `Installment #${idx + 1}`} (₹{Number(c.grant_amount || 0).toLocaleString('en-IN')})
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* The Printable Official Scholarship Certificate Frame */}
         {cert ? (

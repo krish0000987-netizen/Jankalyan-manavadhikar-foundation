@@ -730,16 +730,22 @@ export const Admin = () => {
         console.warn('Status history note:', e);
       }
 
-      // 4. If full payout, issue certificate
-      if (isFullPayout) {
-        try {
-          await certificateService.issueCertificate({
-            applicationId: markingTransferredApp.id,
-            studentName: markingTransferredApp.studentName,
-            schemeName: 'Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27',
-            grantAmount: sanctioned
-          });
-        } catch (cErr) {}
+      // 4. Issue official scholarship award certificate for each installment
+      try {
+        const existingCerts = await certificateService.getCertificatesByAppId(markingTransferredApp.id);
+        const installmentNumber = (existingCerts?.length || 0) + 1;
+
+        await certificateService.issueCertificate({
+          applicationId: markingTransferredApp.id,
+          studentName: markingTransferredApp.studentName,
+          schemeName: `Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27 (Installment #${installmentNumber})`,
+          grantAmount: installment,
+          installmentNumber,
+          utrNumber: utr,
+          paymentDate: transferModalForm.paymentDate
+        });
+      } catch (cErr) {
+        console.warn('Certificate issuance note:', cErr);
       }
 
       // 5. Automated Stage Notification Dispatch to Student Email & In-App Center

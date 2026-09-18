@@ -10,6 +10,7 @@ import {
   Award, 
   Clock, 
   Check, 
+  Copy,
   Eye, 
   Download,
   ShieldCheck,
@@ -40,10 +41,20 @@ export const ApplicationScrutinyModal = ({
   const [rejectingDocKey, setRejectingDocKey] = useState(null);
   const [rejectReasonInput, setRejectReasonInput] = useState('');
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [appCertificates, setAppCertificates] = useState([]);
+  const [txnCopied, setTxnCopied] = useState(false);
 
   useEffect(() => {
     setDocsState(application?.documents || {});
   }, [application]);
+
+  useEffect(() => {
+    if (application?.id) {
+      certificateService.getCertificatesByAppId(application.id)
+        .then(certs => setAppCertificates(certs || []))
+        .catch(e => console.warn('Cert fetch note:', e));
+    }
+  }, [application?.id]);
 
   if (!application) return null;
 
@@ -213,7 +224,7 @@ export const ApplicationScrutinyModal = ({
           color: '#FFFFFF'
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '1.1rem', color: '#FEF08A' }}>
                 {application.id}
               </span>
@@ -225,6 +236,26 @@ export const ApplicationScrutinyModal = ({
               }`}>
                 {application.status}
               </span>
+              {(application.transactionId || application.razorpayPaymentId) && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#1E293B', border: '1px solid #334155', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 600 }}>TXN ID:</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#38BDF8', fontSize: '0.8rem' }}>
+                    {application.transactionId || application.razorpayPaymentId}
+                  </span>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(application.transactionId || application.razorpayPaymentId);
+                      setTxnCopied(true);
+                      setTimeout(() => setTxnCopied(false), 2000);
+                    }} 
+                    title="Copy Transaction ID"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: txnCopied ? '#4ADE80' : '#94A3B8', padding: '0 2px', display: 'flex', alignItems: 'center' }}
+                  >
+                    {txnCopied ? <Check size={12} /> : <Copy size={12} />}
+                  </button>
+                </div>
+              )}
             </div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFFFFF' }}>
               {readOnly ? `Application Master Record: ${application.studentName}` : `Verification Dossier: ${application.studentName}`}
@@ -424,15 +455,27 @@ export const ApplicationScrutinyModal = ({
 
               {/* Section 4: Registration Fee & Razorpay Payment Record */}
               <div style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ShieldCheck size={18} color="#2563EB" />
-                  <span>Student Scholarship Registration Fee & Razorpay Verification</span>
-                </h4>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldCheck size={18} color="#2563EB" />
+                    <span>Student Scholarship Registration Fee & Transaction Record</span>
+                  </h4>
+                  <button 
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => window.open(`/receipt/${application.id}`, '_blank')}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#166534', borderColor: '#86EFAC', backgroundColor: '#F0FDF4', fontWeight: 700 }}
+                    title="Open official fee payment receipt in new tab"
+                  >
+                    <FileText size={13} />
+                    <span>View / Print Fee Receipt</span>
+                  </button>
+                </div>
                 <div className="grid-3" style={{ gap: '0.75rem', fontSize: '0.85rem' }}>
                   <div>
                     <strong>Registration Fee Amount:</strong>{' '}
                     <span style={{ fontWeight: 800, color: '#0F172A' }}>
-                      ₹ {application.registrationFeeAmount ? Number(application.registrationFeeAmount).toFixed(2) : '211.30'}
+                      ₹ {application.registrationFeeAmount !== null && application.registrationFeeAmount !== undefined ? Number(application.registrationFeeAmount).toFixed(2) : '211.30'}
                     </span>
                   </div>
                   <div>
@@ -442,9 +485,9 @@ export const ApplicationScrutinyModal = ({
                     </span>
                   </div>
                   <div>
-                    <strong>Razorpay Payment ID:</strong>{' '}
-                    <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563EB' }}>
-                      {application.razorpayPaymentId || 'rzp_verified_direct'}
+                    <strong>Transaction ID (Razorpay ID):</strong>{' '}
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#2563EB' }}>
+                      {application.transactionId || application.razorpayPaymentId || 'pay_jmf_verified'}
                     </span>
                   </div>
                   <div>
@@ -460,6 +503,39 @@ export const ApplicationScrutinyModal = ({
                   </div>
                 </div>
               </div>
+
+              {/* Section 5: Issued Scholarship Certificates (Per Installment) */}
+              {appCertificates.length > 0 && (
+                <div style={{ backgroundColor: '#F0FDF4', padding: '1.25rem', borderRadius: '12px', border: '1.5px solid #BBF7D0' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#166534', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Award size={18} color="#16A34A" />
+                    <span>Issued Scholarship Certificates ({appCertificates.length} Installment{appCertificates.length > 1 ? 's' : ''})</span>
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {appCertificates.map((c, idx) => (
+                      <div key={c.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid #DCFCE7' }}>
+                        <div>
+                          <strong style={{ fontSize: '0.85rem', color: '#0F172A' }}>
+                            {c.scheme_name || `Installment #${idx + 1}`}
+                          </strong>
+                          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                            Certificate: <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{c.certificate_number}</span> • Amount: <strong style={{ color: '#16A34A' }}>₹{Number(c.grant_amount || 0).toLocaleString('en-IN')}</strong> • Date: {c.issue_date}
+                          </div>
+                        </div>
+                        <button 
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          onClick={() => window.open(`/certificate/${c.id}`, '_blank')}
+                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                        >
+                          <ExternalLink size={12} />
+                          <span>View Certificate</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             </div>
           )}

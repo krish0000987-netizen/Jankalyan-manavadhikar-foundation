@@ -29,6 +29,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { initiateScholarshipFeePayment, isRazorpayTestMode } from '../services/razorpayService';
+import { certificateService } from '../services/certificateService';
 
 export const StudentDashboard = () => {
   const { lang, t, navigate, activeStudentApp, setActiveStudentApp, updateStudentFeePayment, cms, grievances, logout } = useApp();
@@ -38,8 +39,8 @@ export const StudentDashboard = () => {
   const [searchError, setSearchError] = useState('');
   const [studentGrievances, setStudentGrievances] = useState([]);
   const [payingFee, setPayingFee] = useState(false);
-
   const [allStudentApps, setAllStudentApps] = useState([]);
+  const [studentCertificates, setStudentCertificates] = useState([]);
 
   // Default to activeStudentApp or search
   const student = activeStudentApp;
@@ -88,6 +89,14 @@ export const StudentDashboard = () => {
       }).catch(err => console.warn('Error fetching all apps for student:', err));
     }
   }, [student?.mobile]);
+
+  useEffect(() => {
+    if (student?.id) {
+      certificateService.getCertificatesByAppId(student.id).then(certs => {
+        if (certs) setStudentCertificates(certs);
+      }).catch(err => console.warn('Error fetching certificates:', err));
+    }
+  }, [student?.id]);
 
   useEffect(() => {
     if (student?.id || student?.mobile) {
@@ -339,9 +348,9 @@ export const StudentDashboard = () => {
               <Award size={14} />
               <span>{lang === 'hi' ? 'मेरिट सूची' : 'Merit List'}</span>
             </button>
-            <button className="btn btn-primary btn-sm" onClick={() => window.print()} style={{ padding: '0.38rem 0.75rem', flexShrink: 0 }}>
-              <Printer size={14} />
-              <span>{t.btnDownloadReceipt}</span>
+            <button className="btn btn-primary btn-sm" onClick={() => navigate(`/receipt/${student.id}`)} style={{ padding: '0.38rem 0.75rem', flexShrink: 0, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              <FileText size={14} />
+              <span>{lang === 'hi' ? 'शुल्क रसीद' : 'Fee Receipt'}</span>
             </button>
           </div>
         </div>
@@ -520,10 +529,30 @@ export const StudentDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <button className="btn btn-sm" style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A' }} onClick={() => navigate(`/certificate/${student.id}`)}>
-                  <Award size={14} />
-                  <span>{lang === 'hi' ? 'किस्त रसीद / प्रमाण पत्र' : 'View Grant Certificate'}</span>
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {studentCertificates.length > 0 ? (
+                    studentCertificates.map((c, idx) => (
+                      <button 
+                        key={c.id || idx}
+                        className="btn btn-sm" 
+                        style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }} 
+                        onClick={() => navigate(`/certificate/${c.id}`)}
+                      >
+                        <Award size={14} />
+                        <span>{c.scheme_name?.includes('Installment') ? c.scheme_name.split('(')[1]?.replace(')', '') : `Installment #${idx + 1}`} (₹{Number(c.grant_amount || 0).toLocaleString('en-IN')})</span>
+                      </button>
+                    ))
+                  ) : (
+                    <button className="btn btn-sm" style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A', fontWeight: 700 }} onClick={() => navigate(`/certificate/${student.id}`)}>
+                      <Award size={14} />
+                      <span>{lang === 'hi' ? 'किस्त प्रमाण पत्र देखें' : 'View Installment Certificate'}</span>
+                    </button>
+                  )}
+                  <button className="btn btn-sm btn-outline" style={{ borderColor: '#86EFAC', color: '#166534', backgroundColor: '#FFFFFF', fontWeight: 700 }} onClick={() => navigate(`/receipt/${student.id}`)}>
+                    <FileText size={14} />
+                    <span>{lang === 'hi' ? 'शुल्क रसीद' : 'Fee Receipt'}</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -541,10 +570,30 @@ export const StudentDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <button className="btn btn-sm" style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A' }} onClick={() => navigate(`/certificate/${student.id}`)}>
-                  <Award size={14} />
-                  <span>{lang === 'hi' ? 'प्रमाण पत्र डाउनलोड करें' : 'Download Award Certificate'}</span>
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {studentCertificates.length > 0 ? (
+                    studentCertificates.map((c, idx) => (
+                      <button 
+                        key={c.id || idx}
+                        className="btn btn-sm" 
+                        style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }} 
+                        onClick={() => navigate(`/certificate/${c.id}`)}
+                      >
+                        <Award size={14} />
+                        <span>{c.scheme_name?.includes('Installment') ? c.scheme_name.split('(')[1]?.replace(')', '') : `Installment #${idx + 1}`} (₹{Number(c.grant_amount || 0).toLocaleString('en-IN')})</span>
+                      </button>
+                    ))
+                  ) : (
+                    <button className="btn btn-sm" style={{ backgroundColor: '#16A34A', color: '#FFFFFF', borderColor: '#16A34A', fontWeight: 700 }} onClick={() => navigate(`/certificate/${student.id}`)}>
+                      <Award size={14} />
+                      <span>{lang === 'hi' ? 'प्रमाण पत्र डाउनलोड करें' : 'Download Award Certificate'}</span>
+                    </button>
+                  )}
+                  <button className="btn btn-sm btn-outline" style={{ borderColor: '#86EFAC', color: '#166534', backgroundColor: '#FFFFFF', fontWeight: 700 }} onClick={() => navigate(`/receipt/${student.id}`)}>
+                    <FileText size={14} />
+                    <span>{lang === 'hi' ? 'शुल्क रसीद' : 'Fee Receipt'}</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -706,6 +755,26 @@ export const StudentDashboard = () => {
                     </div>
                   </div>
                 </div>
+
+                {(student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId) && (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => navigate(`/receipt/${student.id}`)}
+                    style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '0.35rem', 
+                      borderColor: '#86EFAC', 
+                      backgroundColor: '#F0FDF4', 
+                      color: '#166534', 
+                      fontWeight: 700 
+                    }}
+                  >
+                    <FileText size={14} />
+                    <span>{lang === 'hi' ? 'रसीद देखें / डाउनलोड' : 'View & Download Receipt'}</span>
+                  </button>
+                )}
 
                 {!(student.registrationFeeStatus === 'PAID' || student.razorpayPaymentId) && (
                   <button

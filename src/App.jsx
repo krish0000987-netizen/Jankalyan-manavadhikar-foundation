@@ -19,6 +19,7 @@ import { Legal } from './pages/Legal';
 import { NotFound } from './pages/NotFound';
 import { QrVerify } from './pages/QrVerify';
 import { CertificateView } from './pages/CertificateView';
+import { PaymentReceiptView } from './pages/PaymentReceiptView';
 import { MeritList } from './pages/MeritList';
 import { Home as HomeIcon, Sparkles, Search, User, LifeBuoy } from 'lucide-react';
 
@@ -28,7 +29,8 @@ const MainRouter = () => {
   const isStudentLoggedIn = Boolean(
     authRole === 'STUDENT' || 
     activeStudentApp || 
-    authUser?.user_metadata?.role === 'STUDENT'
+    localStorage.getItem('jmf_active_app_id') || 
+    localStorage.getItem('jmf_student_user')
   );
 
   const renderRoute = () => {
@@ -50,6 +52,12 @@ const MainRouter = () => {
     if (currentRoute.startsWith('/certificate/')) {
       const certId = currentRoute.replace('/certificate/', '');
       return <CertificateView certId={decodeURIComponent(certId)} />;
+    }
+
+    // Dynamic match for Payment Receipt View: /receipt/:id or /payment-receipt/:id
+    if (currentRoute.startsWith('/receipt/') || currentRoute.startsWith('/payment-receipt/')) {
+      const receiptId = currentRoute.replace('/receipt/', '').replace('/payment-receipt/', '');
+      return <PaymentReceiptView receiptId={decodeURIComponent(receiptId)} />;
     }
 
     switch (currentRoute) {
@@ -124,6 +132,9 @@ const MainRouter = () => {
       }
       case '/certificate':
         return <CertificateView />;
+      case '/receipt':
+      case '/payment-receipt':
+        return <PaymentReceiptView />;
       case '/downloads':
       case '/downloads/':
       case '/download':

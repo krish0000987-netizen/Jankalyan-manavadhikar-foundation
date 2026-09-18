@@ -1292,8 +1292,9 @@ export const applicationService = {
       correctionRemarks: app.correction_remarks,
       verificationToken: app.verification_token,
       registrationFeeStatus: app.registration_fee_status || 'PAID',
-      registrationFeeAmount: app.registration_fee_amount ? parseFloat(app.registration_fee_amount) : 211.30,
-      razorpayPaymentId: app.razorpay_payment_id || null,
+      registrationFeeAmount: (app.registration_fee_amount !== null && app.registration_fee_amount !== undefined) ? parseFloat(app.registration_fee_amount) : 211.30,
+      razorpayPaymentId: app.razorpay_payment_id || (app.payments?.find(p => p.payment_method?.includes('RAZORPAY') || p.utr_number?.startsWith('pay_'))?.utr_number) || null,
+      transactionId: app.razorpay_payment_id || (app.payments?.find(p => p.payment_method?.includes('RAZORPAY') || p.utr_number?.startsWith('pay_'))?.utr_number) || null,
       feePaymentDate: app.fee_payment_date || app.created_at || null,
       documents: docs,
       history: app.application_status_history || []
