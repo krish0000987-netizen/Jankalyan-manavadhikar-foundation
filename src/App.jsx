@@ -125,6 +125,13 @@ const MainRouter = () => {
       case '/certificate':
         return <CertificateView />;
       case '/downloads':
+      case '/downloads/':
+      case '/download':
+      case '/download/':
+      case '/download-forms':
+      case '/downloads-forms':
+      case '/offline-forms':
+      case '/offline-form':
         return <Downloads />;
       case '/merit-list':
       case '/merit':

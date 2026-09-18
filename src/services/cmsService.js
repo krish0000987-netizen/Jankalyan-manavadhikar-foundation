@@ -54,7 +54,7 @@ export const OFFICIAL_DEFAULT_DOWNLOADS = [
     description_en: 'Certificate of Incorporation issued under Section 8(1) of the Companies Act, 2013 by the Central Registration Centre, Manesar. Registered office at Dixit Colony, Jabalpur, Madhya Pradesh.',
     description_hi: 'कंपनी अधिनियम 2013 की धारा 8(1) के अंतर्गत केंद्रीय पंजीकरण केंद्र (CRC मानेसर) द्वारा जारी वैधानिक निगमन प्रमाण पत्र। पंजीकृत कार्यालय: दीक्षित कॉलोनी, जबलपुर (म.प्र.)।',
     file_url: '/downloads/mca_certificate_of_incorporation.pdf',
-    preview_image_url: '/downloads/mca_incorporation_certified_copy.jpg',
+    preview_image_url: '/downloads/mca_certificate_of_incorporation_page_1.png',
     format: 'PDF',
     size_display: '72.6 KB',
     display_order: 1,
@@ -71,7 +71,7 @@ export const OFFICIAL_DEFAULT_DOWNLOADS = [
     description_en: 'Provisional approval order under section 80G(5)(iv) of the Income Tax Act, 1961 granting 50% income tax exemption to donors. Assessment Years: 2024-25 to 2026-2027.',
     description_hi: 'आयकर अधिनियम 1961 की धारा 80G(5) के तहत दानदाताओं हेतु 50% कर कटौती की वैधानिक स्वीकृति। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
     file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
-    preview_image_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+    preview_image_url: '/downloads/form_10ac_80g_and_12a_approval_page_1.png',
     format: 'PDF',
     size_display: '440.5 KB',
     display_order: 2,
@@ -88,7 +88,7 @@ export const OFFICIAL_DEFAULT_DOWNLOADS = [
     description_en: 'Provisional registration order under Section 12A(1)(ac)(vi) of the Income Tax Act, 1961 granting tax-exempt status to Jankalyan Manavadhikar Foundation for charitable education work.',
     description_hi: 'आयकर अधिनियम 1961 की धारा 12A(1)(ac)(vi) के तहत धर्मार्थ शैक्षणिक गतिविधियों हेतु कर-मुक्त संस्था के रूप में पंजीकरण आदेश। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
     file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
-    preview_image_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
+    preview_image_url: '/downloads/form_10ac_80g_and_12a_approval_page_2.png',
     format: 'PDF',
     size_display: '440.5 KB',
     display_order: 3,
@@ -147,7 +147,7 @@ export const OFFICIAL_DEFAULT_DOWNLOADS = [
   }
 ];
 
-const CMS_CACHE_KEY = 'jmf_cms_public_cache_v2';
+const CMS_CACHE_KEY = 'jmf_cms_public_cache_v3';
 const CMS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache to avoid wasteful Supabase egress
 
 export const cmsService = {

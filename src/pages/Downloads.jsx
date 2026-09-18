@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { OFFICIAL_DEFAULT_DOWNLOADS } from '../services/cmsService';
 import { 
   Download, 
   FileText, 
@@ -33,124 +34,45 @@ export const Downloads = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [formPreviewPage, setFormPreviewPage] = useState(1); // 1 | 2 for scholarship form
 
-  const rawDownloadsList = (cms.downloads && cms.downloads.length > 0) ? cms.downloads : [
-    {
-      id: 'DOC-SCHOLARSHIP-FORM',
-      title_en: 'National Scholarship Yojna 2026-27 : Official Prescribed Application Form',
-      title_hi: 'राष्ट्रीय छात्रवृत्ति योजना 2026-27 : आधिकारिक विहित आवेदन प्रपत्र (डिजिटल व ऑफलाइन)',
-      category_en: 'Scholarship Application Forms',
-      category_hi: 'छात्रवृत्ति आवेदन प्रपत्र',
-      doc_number: 'FORM NO: JMF-SCH-2026',
-      authority: 'Jankalyan Manavadhikar Foundation (Regd. Under Section 8 MCA)',
-      description_en: 'Official prescribed scholarship application form for Class 5th to PG & Diploma students. Fill directly through online digital portal or download high-resolution printable PDF for offline submission.',
-      description_hi: 'कक्षा 5वीं से स्नातकोत्तर (PG) एवं डिप्लोमा विद्यार्थियों हेतु अधिकृत छात्रवृत्ति आवेदन प्रपत्र। सीधे ऑनलाइन भरें अथवा मुद्रण (प्रिंट) एवं ऑफलाइन जमा करने हेतु मूल PDF डाउनलोड करें।',
-      file_url: '/downloads/scholarship_application_form_2026_27.pdf',
-      preview_image_url: '/downloads/scholarship_application_form_page_1.png',
-      preview_image_page2_url: '/downloads/scholarship_application_form_page_2.png',
-      format: 'PDF',
-      size_display: '6.8 KB (Vector PDF) / Printable A4',
-      display_order: 0,
-      is_active: true,
-      is_form: true,
-      online_apply_route: '/apply'
-    },
-    {
-      id: 'DOC-MCA-COI',
-      title_en: 'Ministry of Corporate Affairs - Certificate of Incorporation (Section 8 Non-Profit)',
-      title_hi: 'भारत सरकार कॉर्पोरेट कार्य मंत्रालय - कंपनी निगमन प्रमाण पत्र (धारा 8 एनजीओ)',
-      category_en: 'Legal & Statutory Registrations',
-      category_hi: 'वैधानिक पंजीकरण एवं प्रमाण पत्र',
-      doc_number: 'CIN: U85500MP2024NPL069532',
-      authority: 'Ministry of Corporate Affairs, Govt. of India',
-      description_en: 'Certificate of Incorporation issued under Section 8(1) of the Companies Act, 2013 by the Central Registration Centre, Manesar. Registered office at Dixit Colony, Jabalpur, Madhya Pradesh.',
-      description_hi: 'कंपनी अधिनियम 2013 की धारा 8(1) के अंतर्गत केंद्रीय पंजीकरण केंद्र (CRC मानेसर) द्वारा जारी वैधानिक निगमन प्रमाण पत्र। पंजीकृत कार्यालय: दीक्षित कॉलोनी, जबलपुर (म.प्र.)।',
-      file_url: '/downloads/mca_certificate_of_incorporation.pdf',
-      preview_image_url: '/downloads/mca_certificate_of_incorporation_page_1.png',
-      format: 'PDF',
-      size_display: '72.6 KB',
-      display_order: 1
-    },
-    {
-      id: 'DOC-IT-80G',
-      title_en: 'Income Tax Section 80G Provisional Approval Order (Form 10AC - 50% Tax Exemption)',
-      title_hi: 'आयकर विभाग धारा 80G अनुमोदन आदेश (प्रपत्र 10AC - दानदाताओं हेतु 50% कर छूट)',
-      category_en: 'Tax Exemption & Approvals',
-      category_hi: 'कर छूट एवं शासकीय स्वीकृतियां',
-      doc_number: 'URN: AAGCJ3046CF20241',
-      authority: 'Income Tax Department, Govt. of India',
-      description_en: 'Provisional approval order under section 80G(5)(iv) of the Income Tax Act, 1961 granting 50% income tax exemption to donors. Assessment Years: 2024-25 to 2026-2027.',
-      description_hi: 'आयकर अधिनियम 1961 की धारा 80G(5) के तहत दानदाताओं हेतु 50% कर कटौती की वैधानिक स्वीकृति। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
-      file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
-      preview_image_url: '/downloads/form_10ac_80g_and_12a_approval_page_1.png',
-      format: 'PDF',
-      size_display: '440.5 KB',
-      display_order: 2
-    },
-    {
-      id: 'DOC-IT-12A',
-      title_en: 'Income Tax Section 12A Provisional Registration Order (Form 10AC - Charitable Entity)',
-      title_hi: 'आयकर विभाग धारा 12A पंजीकरण आदेश (प्रपत्र 10AC - धर्मार्थ संस्था)',
-      category_en: 'Tax Exemption & Approvals',
-      category_hi: 'कर छूट एवं शासकीय स्वीकृतियां',
-      doc_number: 'URN: AAGCJ3046CE20231',
-      authority: 'Income Tax Department, Govt. of India',
-      description_en: 'Provisional registration order under Section 12A(1)(ac)(vi) of the Income Tax Act, 1961 granting tax-exempt status to Jankalyan Manavadhikar Foundation for charitable education work.',
-      description_hi: 'आयकर अधिनियम 1961 की धारा 12A(1)(ac)(vi) के तहत धर्मार्थ शैक्षणिक गतिविधियों हेतु कर-मुक्त संस्था के रूप में पंजीकरण आदेश। प्रभाव: निर्धारण वर्ष 2024-25 से 2026-27।',
-      file_url: '/downloads/form_10ac_80g_and_12a_approval.pdf',
-      preview_image_url: '/downloads/form_10ac_80g_and_12a_approval_page_2.png',
-      format: 'PDF',
-      size_display: '440.5 KB',
-      display_order: 3
-    },
-    {
-      id: 'DOC-IT-PAN',
-      title_en: 'Permanent Account Number (PAN) & TAN Official Card (Govt. of India)',
-      title_hi: 'आयकर विभाग स्थायी खाता संख्या (PAN) एवं TAN कार्ड (भारत सरकार)',
-      category_en: 'Institutional Identity & KYC',
-      category_hi: 'संस्थागत पहचान एवं केवाईसी',
-      doc_number: 'PAN: AAGCJ3046C | TAN: JBPJ03720D',
-      authority: 'Income Tax Department (NSDL / Protean eGov)',
-      description_en: 'Digitally certified Permanent Account Number (PAN) and Tax Deduction and Collection Account Number (TAN) issued by the Income Tax Department.',
-      description_hi: 'आयकर विभाग भारत सरकार द्वारा जारी डिजिटल हस्ताक्षरित ई-पैन कार्ड (PAN: AAGCJ3046C) एवं टैन विवरण (TAN: JBPJ03720D)।',
-      file_url: '/downloads/pan_card_jankalyan_foundation.jpg',
-      preview_image_url: '/downloads/pan_card_jankalyan_foundation.jpg',
-      format: 'JPG',
-      size_display: '106.7 KB',
-      display_order: 4
-    },
-    {
-      id: 'DOC-LEI-GLOBAL',
-      title_en: 'Global Legal Entity Identifier (LEI) Certificate (RBI Guidelines Compliant)',
-      title_hi: 'वैश्विक लीगल एंटिटी आइडेंटिफायर (LEI) प्रमाण पत्र (आरबीआई अनुपालन)',
-      category_en: 'Banking & Financial Compliance',
-      category_hi: 'बैंकिंग एवं वित्तीय अनुपालन',
-      doc_number: 'LEI: 391200G440EGSOONQG84',
-      authority: 'Global LEI Foundation (GLEIF) / LEI Register India',
-      description_en: 'International 20-character Legal Entity Identifier code ensuring banking compliance, institutional transparency and verification under RBI guidelines. Valid through 2027-04-28.',
-      description_hi: 'भारतीय रिज़र्व बैंक (RBI) दिशा-निर्देशों के अनुरूप संस्थागत पारदर्शिता, वैश्विक वित्तीय पहचान एवं बैंकिंग सत्यापन हेतु 20-अंकीय LEI कोड। अगली नवीनीकरण तिथि: 28-04-2027।',
-      file_url: '/downloads/lei_certificate_jankalyan.jpg',
-      preview_image_url: '/downloads/lei_certificate_jankalyan.jpg',
-      format: 'JPG',
-      size_display: '91.5 KB',
-      display_order: 5
-    },
-    {
-      id: 'DOC-MCA-CERTIFIED',
-      title_en: 'Digitally Verified MCA Incorporation Certificate (*.mca.gov.in Sealed)',
-      title_hi: 'डिजिटल सत्यापित कॉर्पोरेट निगमन प्रमाण पत्र (*.mca.gov.in अधिकृत)',
-      category_en: 'Legal & Statutory Registrations',
-      category_hi: 'वैधानिक पंजीकरण एवं प्रमाण पत्र',
-      doc_number: 'CIN: U85500MP2024NPL069532',
-      authority: 'Registrar of Companies, Central Registration Centre',
-      description_en: 'Certified authentic copy bearing the verified digital signature of Sheetal Kumari, Assistant Registrar of Companies, CRC Manesar and official Government of India emblem.',
-      description_hi: 'सहायक कंपनी रजिस्ट्रार द्वारा डिजिटल रूप से हस्ताक्षरित एवं कॉर्पोरेट कार्य मंत्रालय के आधिकारिक पोर्टल (*.mca.gov.in) से सत्यापित प्रति।',
-      file_url: '/downloads/mca_incorporation_certified_copy.jpg',
-      preview_image_url: '/downloads/mca_incorporation_certified_copy.jpg',
-      format: 'JPG',
-      size_display: '147.8 KB',
-      display_order: 6
+  const baseDownloads = (cms.downloads && cms.downloads.length > 0) ? cms.downloads : OFFICIAL_DEFAULT_DOWNLOADS;
+  const rawDownloadsList = baseDownloads.map(d => {
+    const fallback = OFFICIAL_DEFAULT_DOWNLOADS.find(f => f.id === d.id) || {};
+    
+    // Resolve preview image URL: if it ends with .pdf or is empty, use the image fallback
+    let previewImg = d.preview_image_url || d.previewImageUrl || fallback.preview_image_url;
+    if (!previewImg || previewImg.endsWith('.pdf')) {
+      if (d.id === 'DOC-IT-80G') previewImg = '/downloads/form_10ac_80g_and_12a_approval_page_1.png';
+      else if (d.id === 'DOC-IT-12A') previewImg = '/downloads/form_10ac_80g_and_12a_approval_page_2.png';
+      else if (d.id === 'DOC-MCA-COI') previewImg = '/downloads/mca_certificate_of_incorporation_page_1.png';
+      else if (d.id === 'DOC-SCHOLARSHIP-FORM') previewImg = '/downloads/scholarship_application_form_page_1.png';
+      else previewImg = fallback.preview_image_url || previewImg;
     }
-  ];
+
+    const fileUrl = d.file_url || d.fileUrl || fallback.file_url || '/downloads/scholarship_application_form_2026_27.pdf';
+
+    return {
+      ...fallback,
+      ...d,
+      id: d.id,
+      title_en: d.title_en || d.titleEn || fallback.title_en,
+      title_hi: d.title_hi || d.titleHi || fallback.title_hi,
+      category_en: d.category_en || d.categoryEn || fallback.category_en,
+      category_hi: d.category_hi || d.categoryHi || fallback.category_hi,
+      format: d.format || fallback.format || 'PDF',
+      size_display: d.size_display || d.size || fallback.size_display || 'Official Document',
+      file_url: fileUrl,
+      fileUrl: fileUrl,
+      preview_image_url: previewImg,
+      previewImageUrl: previewImg,
+      preview_image_page2_url: d.preview_image_page2_url || d.previewImagePage2Url || fallback.preview_image_page2_url || '/downloads/scholarship_application_form_page_2.png',
+      doc_number: d.doc_number || d.docNumber || fallback.doc_number,
+      authority: d.authority || fallback.authority || 'Government Authority',
+      description_en: d.description_en || d.descriptionEn || fallback.description_en,
+      description_hi: d.description_hi || d.descriptionHi || fallback.description_hi,
+      is_form: d.is_form ?? d.isForm ?? fallback.is_form ?? (d.id?.includes('FORM') || false),
+      online_apply_route: d.online_apply_route || d.onlineApplyRoute || fallback.online_apply_route || '/apply'
+    };
+  });
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -158,16 +80,19 @@ export const Downloads = () => {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  // 100% Reliable File Downloader via Blob & native click
+  // 100% Reliable File Downloader via Blob & Native Anchor Download Fallback
   const handleDownload = async (item, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const fileUrl = item.file_url || item.fileUrl;
+    const fallbackItem = OFFICIAL_DEFAULT_DOWNLOADS.find(f => f.id === item?.id) || {};
+    const fileUrl = item?.file_url || item?.fileUrl || fallbackItem.file_url;
     if (!fileUrl) {
-      alert('Document file URL is not available.');
+      alert(lang === 'hi' ? 'दस्तावेज़ फ़ाइल लिंक लोड नहीं हो सका।' : 'Document file URL is not available.');
       return;
     }
 
-    setDownloadingId(item.id);
+    setDownloadingId(item.id || 'downloading');
+    const fileName = fileUrl.split('/').pop() || `${item.id || 'document'}.${(item.format || 'pdf').toLowerCase()}`;
+
     try {
       const response = await fetch(fileUrl);
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
@@ -175,22 +100,43 @@ export const Downloads = () => {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      const fileName = fileUrl.split('/').pop() || `${item.id || 'document'}.${(item.format || 'pdf').toLowerCase()}`;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 3000);
     } catch (err) {
-      console.warn('Blob fetch failed, falling back to direct window.open:', err);
-      window.open(fileUrl, '_blank');
+      console.warn('Blob fetch failed, falling back to direct anchor download:', err);
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } finally {
-      setDownloadingId(null);
+      setTimeout(() => setDownloadingId(null), 500);
     }
   };
 
   const openPreview = (item) => {
-    setPreviewDoc(item);
+    const fallbackItem = OFFICIAL_DEFAULT_DOWNLOADS.find(f => f.id === item?.id) || {};
+    let previewImg = item.preview_image_url || item.previewImageUrl || fallbackItem.preview_image_url;
+    if (!previewImg || previewImg.endsWith('.pdf')) {
+      if (item.id === 'DOC-IT-80G') previewImg = '/downloads/form_10ac_80g_and_12a_approval_page_1.png';
+      else if (item.id === 'DOC-IT-12A') previewImg = '/downloads/form_10ac_80g_and_12a_approval_page_2.png';
+      else if (item.id === 'DOC-MCA-COI') previewImg = '/downloads/mca_certificate_of_incorporation_page_1.png';
+      else if (item.id === 'DOC-SCHOLARSHIP-FORM') previewImg = '/downloads/scholarship_application_form_page_1.png';
+      else previewImg = fallbackItem.preview_image_url || previewImg;
+    }
+
+    setPreviewDoc({
+      ...fallbackItem,
+      ...item,
+      file_url: item.file_url || item.fileUrl || fallbackItem.file_url,
+      preview_image_url: previewImg
+    });
     setViewMode('image');
     setFormPreviewPage(1);
     setZoomLevel(1);
@@ -619,7 +565,12 @@ export const Downloads = () => {
                       objectPosition: 'top'
                     }}
                     onError={(e) => {
-                      e.target.style.display = 'none';
+                      const fallback = OFFICIAL_DEFAULT_DOWNLOADS.find(f => f.id === item.id);
+                      if (fallback && fallback.preview_image_url && !e.target.src.includes(fallback.preview_image_url)) {
+                        e.target.src = fallback.preview_image_url;
+                      } else {
+                        e.target.style.display = 'none';
+                      }
                     }}
                   />
                   <div style={{
