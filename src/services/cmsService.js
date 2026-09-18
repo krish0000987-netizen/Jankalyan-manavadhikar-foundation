@@ -147,33 +147,48 @@ export const OFFICIAL_DEFAULT_DOWNLOADS = [
   }
 ];
 
-const CMS_CACHE_KEY = 'jmf_cms_public_cache_v5';
-const CMS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache to avoid wasteful Supabase egress
+const CMS_CACHE_KEY = 'jmf_cms_public_cache_v6';
+const CMS_CACHE_TTL = 15 * 1000; // 15 seconds max memory cache to ensure real-time CMS sync
 
 export const cmsService = {
   /**
-   * Clear local CMS cache on edits
+   * Clear local CMS cache on edits and broadcast to all tabs
    */
   clearCmsCache() {
     try {
       sessionStorage.removeItem(CMS_CACHE_KEY);
+      sessionStorage.removeItem('jmf_cms_public_cache_v5');
+      const v = Date.now().toString();
+      localStorage.setItem('jmf_cms_version', v);
+      localStorage.setItem('jmf_cms_updated', v);
     } catch (e) {}
   },
 
   /**
    * Fetch complete consolidated CMS dataset for public pages and fallback
-   * Uses 10-minute sessionStorage caching to drastically reduce Supabase network egress
+   * Uses fast version-tracked caching that instantly invalidates when CMS is edited
    */
   async getPublicCmsData(forceRefresh = false) {
+    const currentVersion = (typeof window !== 'undefined' && localStorage.getItem('jmf_cms_version')) || '0';
+
     if (!forceRefresh) {
       try {
         const cached = sessionStorage.getItem(CMS_CACHE_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (parsed && (Date.now() - parsed.timestamp < CMS_CACHE_TTL) && parsed.data) {
+          if (
+            parsed &&
+            parsed.version === currentVersion &&
+            (Date.now() - parsed.timestamp < CMS_CACHE_TTL) &&
+            parsed.data
+          ) {
             return parsed.data;
           }
         }
+      } catch (e) {}
+    } else {
+      try {
+        sessionStorage.removeItem(CMS_CACHE_KEY);
       } catch (e) {}
     }
 
@@ -262,7 +277,9 @@ export const cmsService = {
       };
 
       try {
+        const latestVer = (typeof window !== 'undefined' && localStorage.getItem('jmf_cms_version')) || '0';
         sessionStorage.setItem(CMS_CACHE_KEY, JSON.stringify({
+          version: latestVer,
           timestamp: Date.now(),
           data: result
         }));
@@ -411,6 +428,7 @@ export const cmsService = {
       if (error) console.warn('Could not update slide ' + s.id + ':', error);
       else results.push(data);
     }
+    this.clearCmsCache();
     return results;
   },
 
@@ -421,6 +439,7 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -432,6 +451,7 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -441,6 +461,7 @@ export const cmsService = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+    this.clearCmsCache();
     return true;
   },
 
@@ -482,6 +503,7 @@ export const cmsService = {
         }
       }
     }
+    this.clearCmsCache();
     return true;
   },
 
@@ -520,6 +542,7 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -546,12 +569,14 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
   async deleteNotice(id) {
     const { error } = await supabase.from('notices').delete().eq('id', id);
     if (error) throw error;
+    this.clearCmsCache();
     return true;
   },
 
@@ -573,6 +598,7 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -584,50 +610,14 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
   async deleteFaq(id) {
     const { error } = await supabase.from('faqs').delete().eq('id', id);
     if (error) throw error;
-    return true;
-  },
-
-  // ---------------- DOWNLOADS CRUD ----------------
-  async getDownloads() {
-    const { data, error } = await supabase
-      .from('downloads')
-      .select('*')
-      .order('id', { ascending: true });
-    if (error) throw error;
-    return data;
-  },
-
-  async createDownload(dl) {
-    const id = dl.id || `DL-${Math.floor(10 + Math.random() * 90)}`;
-    const { data, error } = await supabase
-      .from('downloads')
-      .insert({ ...dl, id })
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  },
-
-  async updateDownload(id, dl) {
-    const { data, error } = await supabase
-      .from('downloads')
-      .update({ ...dl, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  },
-
-  async deleteDownload(id) {
-    const { error } = await supabase.from('downloads').delete().eq('id', id);
-    if (error) throw error;
+    this.clearCmsCache();
     return true;
   },
 
@@ -648,6 +638,7 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -659,12 +650,14 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
   async deleteTeamMember(id) {
     const { error } = await supabase.from('team_members').delete().eq('id', id);
     if (error) throw error;
+    this.clearCmsCache();
     return true;
   },
 
@@ -718,6 +711,7 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
@@ -729,12 +723,14 @@ export const cmsService = {
       .select()
       .single();
     if (error) throw error;
+    this.clearCmsCache();
     return data;
   },
 
   async deleteDownload(id) {
     const { error } = await supabase.from('downloads').delete().eq('id', id);
     if (error) throw error;
+    this.clearCmsCache();
     return true;
   }
 };

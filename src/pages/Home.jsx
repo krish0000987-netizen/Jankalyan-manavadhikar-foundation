@@ -29,7 +29,25 @@ import {
 import { INDIA_ZONES } from '../data/indiaLocations';
 
 export const Home = () => {
-  const { lang, t, navigate, cms, applications, liveCounters } = useApp();
+  const { lang, t, navigate, cms, applications, liveCounters, refreshCMS } = useApp();
+
+  // Guarantee homepage always displays live published CMS content on mount
+  useEffect(() => {
+    if (refreshCMS) {
+      refreshCMS(true);
+    }
+  }, [refreshCMS]);
+
+  // If admin edits in another tab/window and focuses homepage, immediately re-sync
+  useEffect(() => {
+    const handleFocus = () => {
+      if (refreshCMS) {
+        refreshCMS(true);
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshCMS]);
 
   // Fallback slides
   const defaultSlides = [

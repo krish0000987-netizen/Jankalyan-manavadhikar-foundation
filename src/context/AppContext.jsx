@@ -586,16 +586,18 @@ export const AppProvider = ({ children }) => {
   }, [lang]);
 
   // Load Live CMS from Supabase
-  const loadCmsData = useCallback(async () => {
+  const loadCmsData = useCallback(async (forceRefresh = false) => {
     try {
-      const liveCms = await cmsService.getPublicCmsData();
+      const liveCms = await cmsService.getPublicCmsData(forceRefresh);
       if (liveCms) {
         setCms(prev => ({
           ...prev,
           ...liveCms,
-          heroSlides: liveCms.heroSlides?.length ? liveCms.heroSlides : prev.heroSlides,
-          announcements: liveCms.announcements?.length ? liveCms.announcements.map(a => ({ id: a.id, en: a.text_en, hi: a.text_hi })) : prev.announcements,
-          downloads: liveCms.downloads?.length ? liveCms.downloads.map(d => ({
+          heroSlides: (liveCms.heroSlides && liveCms.heroSlides.length > 0) ? liveCms.heroSlides : prev.heroSlides,
+          announcements: (liveCms.announcements && liveCms.announcements.length > 0) 
+            ? liveCms.announcements.map(a => ({ id: a.id, en: a.text_en, hi: a.text_hi, text_en: a.text_en, text_hi: a.text_hi })) 
+            : prev.announcements,
+          downloads: (liveCms.downloads && liveCms.downloads.length > 0) ? liveCms.downloads.map(d => ({
             ...d,
             id: d.id,
             title_en: d.title_en || d.titleEn,
@@ -623,21 +625,48 @@ export const AppProvider = ({ children }) => {
             is_form: d.is_form ?? d.isForm ?? (d.id?.includes('FORM') || false),
             online_apply_route: d.online_apply_route || d.onlineApplyRoute || '/apply'
           })) : prev.downloads,
-          faqs: liveCms.faqs?.length ? liveCms.faqs.map(f => ({ id: f.id, qEn: f.question_en, qHi: f.question_hi, aEn: f.answer_en, aHi: f.answer_hi })) : prev.faqs,
-          notices: liveCms.notices?.length ? liveCms.notices.map(n => ({
+          faqs: (liveCms.faqs && liveCms.faqs.length > 0) ? liveCms.faqs.map(f => ({ 
+            id: f.id, 
+            qEn: f.question_en, 
+            qHi: f.question_hi, 
+            aEn: f.answer_en, 
+            aHi: f.answer_hi,
+            question_en: f.question_en,
+            question_hi: f.question_hi,
+            answer_en: f.answer_en,
+            answer_hi: f.answer_hi
+          })) : prev.faqs,
+          notices: (liveCms.notices && liveCms.notices.length > 0) ? liveCms.notices.map(n => ({
             id: n.id,
             date: n.publish_date || n.date,
+            publish_date: n.publish_date || n.date,
             titleEn: n.title_en || n.titleEn,
             titleHi: n.title_hi || n.titleHi,
+            title_en: n.title_en || n.titleEn,
+            title_hi: n.title_hi || n.titleHi,
             categoryEn: n.category_en || n.categoryEn,
             categoryHi: n.category_hi || n.categoryHi,
+            category_en: n.category_en || n.categoryEn,
+            category_hi: n.category_hi || n.categoryHi,
             contentEn: n.content_en || n.contentEn,
             contentHi: n.content_hi || n.contentHi,
+            content_en: n.content_en || n.contentEn,
+            content_hi: n.content_hi || n.contentHi,
             priority: n.priority || 'NORMAL',
             isPinned: n.is_pinned ?? n.isPinned ?? false,
-            isPublished: n.is_published ?? n.isPublished ?? true
+            is_pinned: n.is_pinned ?? n.isPinned ?? false,
+            isPublished: n.is_published ?? n.isPublished ?? true,
+            is_published: n.is_published ?? n.isPublished ?? true
           })) : prev.notices,
-          teamMembers: liveCms.teamMembers?.length ? liveCms.teamMembers.map(m => ({ id: m.id, name: m.name, roleEn: m.role_en, roleHi: m.role_hi, bioEn: m.bio_en, bioHi: m.bio_hi, photo: m.photo_url })) : prev.teamMembers
+          teamMembers: (liveCms.teamMembers && liveCms.teamMembers.length > 0) ? liveCms.teamMembers.map(m => ({ 
+            id: m.id, 
+            name: m.name, 
+            roleEn: m.role_en, 
+            roleHi: m.role_hi, 
+            bioEn: m.bio_en, 
+            bioHi: m.bio_hi, 
+            photo: m.photo_url 
+          })) : prev.teamMembers
         }));
       }
       setCmsLoaded(true);
@@ -773,10 +802,11 @@ export const AppProvider = ({ children }) => {
     loadLiveCounters();
   }, []);
 
-  // Multi-tab live CMS synchronization (only fires on actual admin storage update)
+  // Multi-tab live CMS synchronization (fires on admin storage updates across tabs)
   useEffect(() => {
     const handleStorage = (e) => {
-      if (e.key === 'jmf_cms_updated') {
+      if (e.key === 'jmf_cms_updated' || e.key === 'jmf_cms_version') {
+        cmsService.clearCmsCache();
         loadCmsData(true);
         loadLiveCounters(true);
       }
@@ -812,7 +842,8 @@ export const AppProvider = ({ children }) => {
 
   // CMS update wrapper
   const updateCMS = async (newFields) => {
-    // 1. Optimistic update
+    // 1. Invalidate cache and apply optimistic update
+    cmsService.clearCmsCache();
     setCms(prev => ({
       ...prev,
       ...newFields
@@ -868,12 +899,15 @@ export const AppProvider = ({ children }) => {
         await cmsService.updateAnnouncements(newFields.announcements);
       }
 
-      // 6. Reload live consolidated CMS to ensure context is 100% updated
-      await loadCmsData();
+      // 6. Force-reload live consolidated CMS to ensure context is 100% updated immediately
+      cmsService.clearCmsCache();
+      await loadCmsData(true);
 
-      // 7. Notify other tabs via storage event
+      // 7. Notify other open tabs/windows via storage event
       try {
-        localStorage.setItem('jmf_cms_updated', Date.now().toString());
+        const v = Date.now().toString();
+        localStorage.setItem('jmf_cms_version', v);
+        localStorage.setItem('jmf_cms_updated', v);
       } catch (e) {}
 
       return true;
@@ -1090,7 +1124,7 @@ export const AppProvider = ({ children }) => {
       cms,
       updateCMS,
       updateCmsField,
-      refreshCMS: loadCmsData,
+      refreshCMS: (force = true) => loadCmsData(force),
       cmsLoaded,
       applications,
       loadApplications,

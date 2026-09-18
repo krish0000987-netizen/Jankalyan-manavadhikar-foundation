@@ -246,13 +246,18 @@ export const Admin = () => {
     cmsService.getDownloads().then(setDownloadsList);
   }, [activeTab, authRole, jurisdiction]);
 
-  // Keep cmsForm synced with cms context
+  const [cmsSyncedInitial, setCmsSyncedInitial] = useState(false);
+
+  // Keep cmsForm synced on initial load without clobbering active edits
   useEffect(() => {
-    setCmsForm(prev => ({ ...prev, ...cms }));
-    if (cms.heroSlides && cms.heroSlides.length > 0) {
-      setHeroSlides(cms.heroSlides);
+    if (!cmsSyncedInitial && cms && (cms.scholarshipAmount || cms.applicationStartDate)) {
+      setCmsForm(prev => ({ ...prev, ...cms }));
+      if (cms.heroSlides && cms.heroSlides.length > 0) {
+        setHeroSlides(cms.heroSlides);
+      }
+      setCmsSyncedInitial(true);
     }
-  }, [cms]);
+  }, [cms, cmsSyncedInitial]);
 
   // Base role-scoped applications
   const roleScopedApplications = applications.filter(app => {
@@ -417,6 +422,8 @@ export const Admin = () => {
         ...cmsForm,
         heroSlides
       });
+      cmsService.clearCmsCache();
+      if (refreshCMS) await refreshCMS(true);
       setCmsSaveAlert(true);
       setTimeout(() => setCmsSaveAlert(false), 5000);
       alert('✓ CMS updates successfully published to database!\nAll changes are now live on the public website.');
@@ -475,9 +482,10 @@ export const Admin = () => {
       } else {
         await cmsService.createNotice(editingNotice);
       }
+      cmsService.clearCmsCache();
       const refreshed = await cmsService.getNotices();
       setNoticesList(refreshed);
-      if (refreshCMS) refreshCMS();
+      if (refreshCMS) await refreshCMS(true);
       setIsNoticeModalOpen(false);
       setEditingNotice(null);
       alert('Notice saved successfully! Public Notice Board updated.');
@@ -490,9 +498,10 @@ export const Admin = () => {
     if (!window.confirm('Are you sure you want to delete this notice?')) return;
     try {
       await cmsService.deleteNotice(noticeId);
+      cmsService.clearCmsCache();
       const refreshed = await cmsService.getNotices();
       setNoticesList(refreshed);
-      if (refreshCMS) refreshCMS();
+      if (refreshCMS) await refreshCMS(true);
       alert('Notice deleted successfully.');
     } catch (err) {
       alert('Failed to delete notice: ' + err.message);
@@ -503,9 +512,10 @@ export const Admin = () => {
     try {
       const newPinned = !(notice.is_pinned ?? notice.isPinned);
       await cmsService.updateNotice(notice.id, { is_pinned: newPinned });
+      cmsService.clearCmsCache();
       const refreshed = await cmsService.getNotices();
       setNoticesList(refreshed);
-      if (refreshCMS) refreshCMS();
+      if (refreshCMS) await refreshCMS(true);
     } catch (err) {
       alert('Failed to toggle pin: ' + err.message);
     }

@@ -173,8 +173,9 @@ export const SchemesManager = () => {
         setShowAddModal(false);
       }
       await loadData();
+      cmsService.clearCmsCache();
       if (refreshCMS) {
-        await refreshCMS();
+        await refreshCMS(true);
       }
       try {
         localStorage.setItem('jmf_cms_updated', Date.now().toString());
@@ -198,8 +199,9 @@ export const SchemesManager = () => {
       if (error) throw error;
 
       setSchemes(prev => prev.map(s => s.id === scheme.id ? { ...s, is_active: nextStatus } : s));
+      cmsService.clearCmsCache();
       if (refreshCMS) {
-        await refreshCMS();
+        await refreshCMS(true);
       }
       try {
         localStorage.setItem('jmf_cms_updated', Date.now().toString());

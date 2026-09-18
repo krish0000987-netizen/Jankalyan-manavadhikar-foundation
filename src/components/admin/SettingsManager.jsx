@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../api/supabase';
 import { useApp } from '../../context/AppContext';
-import { toIsoDate } from '../../services/cmsService';
+import { toIsoDate, cmsService } from '../../services/cmsService';
 import { 
   Settings, 
   Save, 
@@ -135,8 +135,9 @@ export const SettingsManager = () => {
         updateCmsField('applicationLastDate', settings.applicationClosingDate);
       }
 
+      cmsService.clearCmsCache();
       if (refreshCMS) {
-        await refreshCMS();
+        await refreshCMS(true);
       }
 
       try {
