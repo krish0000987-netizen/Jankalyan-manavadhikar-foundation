@@ -716,14 +716,19 @@ export const Admin = () => {
         .eq('id', markingTransferredApp.id);
 
       // 3. Log history
-      await supabase.from('application_status_history').insert({
-        application_id: markingTransferredApp.id,
-        previous_status: markingTransferredApp.rawStatus || markingTransferredApp.status,
-        new_status: isFullPayout ? 'SCHOLARSHIP_RELEASED' : 'PARTIALLY_DISBURSED',
-        actor_id: authUser?.id && authUser.id.length === 36 ? authUser.id : null,
-        actor_role: authRole,
-        remarks
-      }).catch(e => console.warn('Status history note:', e));
+      try {
+        const { error: histErr } = await supabase.from('application_status_history').insert({
+          application_id: markingTransferredApp.id,
+          previous_status: markingTransferredApp.rawStatus || markingTransferredApp.status,
+          new_status: isFullPayout ? 'SCHOLARSHIP_RELEASED' : 'PARTIALLY_DISBURSED',
+          actor_id: authUser?.id && authUser.id.length === 36 ? authUser.id : null,
+          actor_role: authRole,
+          remarks
+        });
+        if (histErr) console.warn('Status history note:', histErr);
+      } catch (e) {
+        console.warn('Status history note:', e);
+      }
 
       // 4. If full payout, issue certificate
       if (isFullPayout) {

@@ -1,5 +1,5 @@
-import { supabase } from '../api/supabase';
-import { notificationService } from './notificationService';
+import { supabase } from '../api/supabase.js';
+import { notificationService } from './notificationService.js';
 
 const SUPER_ADMIN_UUID = '0dae62d6-310e-4564-8c4d-7da1f8db672f';
 const isValidUUID = (id) => typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
@@ -249,12 +249,27 @@ export const scrutinyService = {
       .eq('id', docId)
       .maybeSingle();
 
+    const normalizeDocTypeId = (key) => {
+      if (!key) return 'bonafide';
+      const k = String(key).toLowerCase();
+      if (k.includes('aadhaar')) return 'aadhaar';
+      if (k.includes('photo')) return 'photo';
+      if (k.includes('mark')) return 'marksheet';
+      if (k.includes('bonafide') || k.includes('admission')) return 'bonafide';
+      if (k.includes('passbook') || k.includes('bank')) return 'passbook';
+      if (k.includes('income')) return 'income';
+      if (k.includes('caste')) return 'caste';
+      return k;
+    };
+
+    const docTypeId = normalizeDocTypeId(extra.docKey);
+
     if (!currentDoc && extra.applicationId && extra.docKey) {
       const { data: byApp } = await supabase
         .from('application_documents')
         .select('*')
         .eq('application_id', extra.applicationId)
-        .eq('document_type_id', extra.docKey)
+        .or(`document_type_id.eq.${extra.docKey},document_type_id.eq.${docTypeId}`)
         .maybeSingle();
       if (byApp) {
         currentDoc = byApp;
@@ -281,12 +296,14 @@ export const scrutinyService = {
       if (error) throw error;
       updatedDoc = data;
     } else if (extra.applicationId && extra.docKey) {
+      const filePath = extra.file_path || extra.docUrl || `documents/${extra.applicationId}/${docTypeId}_document.pdf`;
       const { data, error } = await supabase
         .from('application_documents')
         .insert({
           application_id: extra.applicationId,
-          document_type_id: extra.docKey,
+          document_type_id: docTypeId,
           file_name: `${extra.docKey}_document.pdf`,
+          file_path: filePath,
           verification_status: newStatus,
           rejection_reason: newStatus === 'INVALID' || newStatus === 'CORRECTION_REQUIRED' ? remarks : null,
           verifier_id: validVerifierId,
@@ -336,15 +353,21 @@ export const scrutinyService = {
     }
 
     // Record scrutiny log
-    if (currentDoc || targetDocId) {
-      await supabase.from('document_verifications').insert({
-        document_id: targetDocId || currentDoc?.id,
-        application_id: targetAppId,
-        verifier_id: validVerifierId,
-        previous_status: previousStatus,
-        new_status: newStatus,
-        remarks
-      }).catch(e => console.warn('document_verifications log note:', e));
+    const validDocId = isValidUUID(targetDocId) ? targetDocId : (isValidUUID(updatedDoc?.id) ? updatedDoc.id : (isValidUUID(currentDoc?.id) ? currentDoc.id : null));
+    if (validDocId) {
+      try {
+        const { error: logErr } = await supabase.from('document_verifications').insert({
+          document_id: validDocId,
+          application_id: targetAppId,
+          verifier_id: validVerifierId,
+          previous_status: previousStatus,
+          new_status: newStatus,
+          remarks
+        });
+        if (logErr) console.warn('document_verifications log note:', logErr);
+      } catch (e) {
+        console.warn('document_verifications log note:', e);
+      }
     }
 
     return updatedDoc;
