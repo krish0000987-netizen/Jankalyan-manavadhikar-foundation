@@ -397,7 +397,7 @@ export const authService = {
             submission_date: new Date().toISOString().split('T')[0],
             disbursed_amount: scholarshipAmount || 12000.00,
             registration_fee_status: paymentData?.paymentId ? 'PAID' : 'PENDING',
-            registration_fee_amount: paymentData?.amount || 1.00,
+            registration_fee_amount: paymentData?.amount || 211.30,
             razorpay_payment_id: paymentData?.paymentId || null,
             fee_payment_date: paymentData?.date || (paymentData?.paymentId ? new Date().toISOString() : null)
           })
@@ -410,7 +410,7 @@ export const authService = {
             try {
               await supabase.from('payments').insert({
                 application_id: newApp.id,
-                amount: paymentData.amount || 1.00,
+                amount: paymentData.amount || 211.30,
                 payment_method: paymentData.method || 'RAZORPAY_LIVE',
                 utr_number: paymentData.paymentId,
                 status: 'SUCCESS',
@@ -469,7 +469,7 @@ export const authService = {
         utrNumber: '-',
         disbursedAmount: `₹${(scholarshipAmount || 12000).toLocaleString('en-IN')}`,
         registrationFeeStatus: paymentData?.paymentId ? 'PAID' : 'PENDING',
-        registrationFeeAmount: paymentData?.amount || 1.00,
+        registrationFeeAmount: paymentData?.amount || 211.30,
         razorpayPaymentId: paymentData?.paymentId || null,
         feePaymentDate: paymentData?.date || (paymentData?.paymentId ? new Date().toISOString() : null),
         login_pin: cleanPassword,

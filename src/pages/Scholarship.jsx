@@ -33,7 +33,7 @@ export const Scholarship = () => {
   const { lang, setSpecificLanguage, t, navigate, cms } = useApp();
 
   const isHindi = lang === 'hi';
-  const regFeeDisplay = cms?.registrationFee || '₹ 1.00/-';
+  const regFeeDisplay = cms?.registrationFee || '₹ 211.30/-';
 
   const baseSlabs = [
     {

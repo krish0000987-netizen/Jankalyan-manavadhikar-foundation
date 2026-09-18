@@ -975,12 +975,12 @@ export const applicationService = {
       console.warn('Bank details insert note:', bankErr?.message);
     }
 
-    // 8. Enforce Mandatory Razorpay Registration Fee Payment (₹ 1.00)
+    // 8. Enforce Mandatory Razorpay Registration Fee Payment (₹ 211.30)
     if (!formData.razorpayPaymentId) {
-      throw new Error('Mandatory scholarship application registration fee of ₹ 1.00 via Razorpay must be completed before submission.');
+      throw new Error('Mandatory scholarship application registration fee of ₹ 211.30 via Razorpay must be completed before submission.');
     }
 
-    const feeAmount = formData.registrationFeeAmount ? parseFloat(formData.registrationFeeAmount) : 1.00;
+    const feeAmount = formData.registrationFeeAmount ? parseFloat(formData.registrationFeeAmount) : 211.30;
 
     // Insert Main Application (trigger will auto-assign JMF-2026-XXXXXX)
     const { data: newApp, error: appError } = await supabase
@@ -1280,7 +1280,7 @@ export const applicationService = {
       correctionRemarks: app.correction_remarks,
       verificationToken: app.verification_token,
       registrationFeeStatus: app.registration_fee_status || 'PAID',
-      registrationFeeAmount: app.registration_fee_amount ? parseFloat(app.registration_fee_amount) : 1.00,
+      registrationFeeAmount: app.registration_fee_amount ? parseFloat(app.registration_fee_amount) : 211.30,
       razorpayPaymentId: app.razorpay_payment_id || null,
       feePaymentDate: app.fee_payment_date || app.created_at || null,
       documents: docs,
@@ -1298,7 +1298,7 @@ export const applicationService = {
         .from('applications')
         .update({
           registration_fee_status: 'PAID',
-          registration_fee_amount: paymentData.amount || 1.00,
+          registration_fee_amount: paymentData.amount || 211.30,
           razorpay_payment_id: paymentData.paymentId,
           fee_payment_date: paymentDate
         })

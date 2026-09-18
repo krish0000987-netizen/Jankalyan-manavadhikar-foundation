@@ -1349,7 +1349,7 @@ export const Admin = () => {
                         <td>
                           <div>
                             <span className={`badge ${app.registrationFeeStatus === 'PAID' ? 'badge-green' : 'badge-yellow'}`}>
-                              {app.registrationFeeStatus === 'PAID' ? `✓ PAID ₹${Number(app.registrationFeeAmount || 1).toFixed(2)}` : 'PENDING'}
+                              {app.registrationFeeStatus === 'PAID' ? `✓ PAID ₹${Number(app.registrationFeeAmount || 211.30).toFixed(2)}` : 'PENDING'}
                             </span>
                             {app.razorpayPaymentId && (
                               <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: '#2563EB', marginTop: '3px' }}>

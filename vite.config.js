@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
                   const parsed = body ? JSON.parse(body) : {};
                   const keyId = env.VITE_RAZORPAY_KEY_ID || 'rzp_live_TceflpS8ncUJPO';
                   const keySecret = env.RAZORPAY_KEY_SECRET || env.VITE_RAZORPAY_KEY_SECRET || 'Q00wCUJHNbd3PEl2Yx6dZ2du';
-                  const amountInRupees = parseFloat(parsed.amountInRupees) || 1.00;
+                  const amountInRupees = parseFloat(parsed.amountInRupees) || 211.30;
                   const amountInPaise = Math.round(amountInRupees * 100);
                   const receipt = `rcpt_${String(parsed.applicationId || 'NEW').replace(/[^a-zA-Z0-9_]/g, '')}_${Date.now().toString(36)}`.slice(0, 40);
 

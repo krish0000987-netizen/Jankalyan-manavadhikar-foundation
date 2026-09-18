@@ -54,7 +54,7 @@ export const Apply = () => {
     logout 
   } = useApp();
 
-  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : 1.00;
+  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : 211.30;
   const regFeeDisplay = `₹ ${regFeeAmount.toFixed(2)}/-`;
   const regFeeRaw = `₹ ${regFeeAmount.toFixed(2)}`;
 
@@ -122,7 +122,7 @@ export const Apply = () => {
       institutionCategory: 'School',
       selectedSlab: 'slab-3',
       scholarshipAmount: 12000,
-      registrationFee: '₹ 1.00/-',
+      registrationFee: '₹ 211.30/-',
       classCourse: 'Class 12th',
       academicYear: '2026-27',
       boardUni: '',
@@ -166,7 +166,7 @@ export const Apply = () => {
 
       // Step 8: Registration Fee & Razorpay Payment
       registrationFeeStatus: 'PENDING',
-      registrationFeeAmount: 1.00,
+      registrationFeeAmount: 211.30,
       razorpayPaymentId: null,
       feePaymentDate: null,
 

@@ -11,8 +11,8 @@ const AppContext = createContext();
 // Verified CMS Defaults as robust baseline
 const INITIAL_CMS = {
   scholarshipAmount: "₹4,000/- to ₹22,000/- Yearly",
-  registrationFee: "₹ 1.00/-",
-  registrationFeeNote: "₹ 1.00/- (केवल आवेदन प्रक्रिया हेतु)",
+  registrationFee: "₹ 211.30/-",
+  registrationFeeNote: "₹ 211.30/- (केवल आवेदन प्रक्रिया हेतु)",
   applicationStartDate: "15/09/2026",
   applicationLastDate: "30/11/2026",
   eligibilityCriteria: "Class 5th to Post Graduation students with min 50% marks in Graduation and family income up to ₹2,50,000.",
@@ -365,8 +365,8 @@ const INITIAL_CMS = {
       id: "FAQ-04",
       qEn: "Is there any application fee to apply?",
       qHi: "क्या आवेदन करने का कोई शुल्क है?",
-      aEn: "Yes, a nominal application registration and scrutiny processing fee of ₹ 1.00 is required. It is payable securely online via Razorpay (UPI, Debit/Credit Card, Net Banking) during application submission.",
-      aHi: "हाँ, सत्र 2026-27 हेतु छात्रवृत्ति आवेदन पंजीकरण एवं दस्तावेज़ संवीक्षा प्रक्रिया हेतु ₹ 1.00 का नाममात्र शुल्क अनिवार्य है। इसका भुगतान रेजरपे के माध्यम से ऑनलाइन (UPI, कार्ड, नेट बैंकिंग) सुरक्षित रूप से किया जाता है।"
+      aEn: "Yes, a nominal application registration and scrutiny processing fee of ₹ 211.30 is required. It is payable securely online via Razorpay (UPI, Debit/Credit Card, Net Banking) during application submission.",
+      aHi: "हाँ, सत्र 2026-27 हेतु छात्रवृत्ति आवेदन पंजीकरण एवं दस्तावेज़ संवीक्षा प्रक्रिया हेतु ₹ 211.30 का नाममात्र शुल्क अनिवार्य है। इसका भुगतान रेजरपे के माध्यम से ऑनलाइन (UPI, कार्ड, नेट बैंकिंग) सुरक्षित रूप से किया जाता है।"
     },
     {
       id: "FAQ-05",

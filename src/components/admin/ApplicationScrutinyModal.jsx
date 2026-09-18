@@ -431,7 +431,7 @@ export const ApplicationScrutinyModal = ({
                   <div>
                     <strong>Registration Fee Amount:</strong>{' '}
                     <span style={{ fontWeight: 800, color: '#0F172A' }}>
-                      ₹ {application.registrationFeeAmount ? Number(application.registrationFeeAmount).toFixed(2) : '1.00'}
+                      ₹ {application.registrationFeeAmount ? Number(application.registrationFeeAmount).toFixed(2) : '211.30'}
                     </span>
                   </div>
                   <div>
@@ -704,7 +704,7 @@ export const ApplicationScrutinyModal = ({
                 <span className="badge badge-navy" style={{ fontSize: '0.8rem' }}>Master Registry Dossier</span>
                 <span style={{ fontSize: '0.85rem', color: '#475569' }}>
                   Registration Fee: <strong style={{ color: application.registrationFeeStatus === 'PAID' ? '#16A34A' : '#D97706' }}>
-                    {application.registrationFeeStatus === 'PAID' ? `✓ ₹ ${application.registrationFeeAmount ? Number(application.registrationFeeAmount).toFixed(2) : '1.00'} Paid` : 'Pending'}
+                    {application.registrationFeeStatus === 'PAID' ? `✓ ₹ ${application.registrationFeeAmount ? Number(application.registrationFeeAmount).toFixed(2) : '211.30'} Paid` : 'Pending'}
                   </strong>
                   {application.razorpayPaymentId && (
                     <span style={{ fontFamily: 'monospace', marginLeft: '0.5rem', color: '#2563EB' }}>

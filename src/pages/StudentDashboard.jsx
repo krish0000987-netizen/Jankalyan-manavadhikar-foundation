@@ -43,7 +43,7 @@ export const StudentDashboard = () => {
 
   // Default to activeStudentApp or search
   const student = activeStudentApp;
-  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : (student?.registrationFeeAmount || 1.00);
+  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : (student?.registrationFeeAmount || 211.30);
   const regFeeRaw = `₹ ${Number(regFeeAmount).toFixed(2)}`;
 
   // Refresh active student application record directly from Supabase

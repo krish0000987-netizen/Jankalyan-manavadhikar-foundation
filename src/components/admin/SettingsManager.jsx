@@ -26,7 +26,7 @@ export const SettingsManager = () => {
   const [settings, setSettings] = useState({
     academicSession: '2026-27',
     grantAmount: 22000,
-    registrationFeeAmount: 1.00,
+    registrationFeeAmount: 211.30,
     razorpayKeyId: 'rzp_live_TceflpS8ncUJPO',
     applicationStartDate: '15/09/2026',
     applicationClosingDate: '30/11/2026',
@@ -298,7 +298,7 @@ export const SettingsManager = () => {
                 onChange={(e) => setSettings({ ...settings, registrationFeeAmount: parseFloat(e.target.value) || 0 })}
               />
               <span style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '3px', display: 'block' }}>
-                Foundation scholarship application registration fee per student application.
+                Standard foundation registration fee is ₹ 211.30 per student application.
               </span>
             </div>
 

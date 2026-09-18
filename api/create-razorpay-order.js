@@ -1,6 +1,6 @@
 /**
  * Vercel Serverless Function: POST /api/create-razorpay-order
- * Generates an official Razorpay Order ID for Scholarship Registration Fee (₹ 1.00)
+ * Generates an official Razorpay Order ID for Scholarship Registration Fee (₹ 211.30)
  * securely using server-side Razorpay API credentials.
  */
 export default async function handler(req, res) {
@@ -22,13 +22,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amountInRupees = 1.00, applicationId = 'NEW_APP', studentName = '' } = req.body || {};
+    const { amountInRupees = 211.30, applicationId = 'NEW_APP', studentName = '' } = req.body || {};
     
     // Live Credentials
     const keyId = process.env.VITE_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || 'rzp_live_TceflpS8ncUJPO';
     const keySecret = process.env.RAZORPAY_KEY_SECRET || process.env.VITE_RAZORPAY_KEY_SECRET || 'Q00wCUJHNbd3PEl2Yx6dZ2du';
 
-    // Amount in Paise (₹ 1.00 = 100 paise)
+    // Amount in Paise (e.g. ₹ 211.30 = 21130 paise)
     const amountInPaise = Math.round(Number(amountInRupees) * 100);
     const receipt = `rcpt_${String(applicationId).replace(/[^a-zA-Z0-9_]/g, '')}_${Date.now().toString(36)}`.slice(0, 40);
 

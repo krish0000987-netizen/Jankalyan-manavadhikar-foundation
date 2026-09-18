@@ -30,7 +30,7 @@ import { getAllStates, getDistrictsByState, getBlocksByDistrict } from '../../da
 
 export const AdminLogin = ({ defaultRole = null }) => {
   const { lang, currentRoute, navigate, login, loginStudent, createStudentApplicant, activeStudentApp, setActiveStudentApp, authRole, cms } = useApp();
-  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : 1.00;
+  const regFeeAmount = cms?.registrationFeeAmount ? parseFloat(cms.registrationFeeAmount) : 211.30;
   const regFeeRaw = `₹ ${regFeeAmount.toFixed(2)}`;
 
   // Role Types - Only Student and Super Admin
@@ -175,7 +175,7 @@ export const AdminLogin = ({ defaultRole = null }) => {
     }
   };
 
-  // 2. Handle Create New Applicant Registration Submit (Requires Mandatory Razorpay Payment of ₹ 1.00)
+  // 2. Handle Create New Applicant Registration Submit (Requires Mandatory Razorpay Payment of ₹ 211.30)
   const handleRegisterSubmit = async (e) => {
     e?.preventDefault();
     const cleanMobile = (regForm.mobile || '').replace(/[^0-9]/g, '');
