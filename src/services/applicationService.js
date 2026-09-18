@@ -6,7 +6,7 @@ import { notificationService } from './notificationService.js';
 // In-memory & session caches to eliminate excessive database egress
 const INSTITUTIONS_CACHE = {};
 const DISTRICTS_CACHE = {};
-const COUNTERS_CACHE_KEY = 'jmf_counters_cache_v2';
+const COUNTERS_CACHE_KEY = 'jmf_counters_cache_v3';
 const COUNTERS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
 export const FALLBACK_APPLICATIONS = [
