@@ -994,7 +994,7 @@ export const applicationService = {
         status: 'UNDER_VERIFICATION',
         stage: 2,
         submission_date: new Date().toISOString().split('T')[0],
-        disbursed_amount: formData.scholarshipAmount ? parseFloat(formData.scholarshipAmount) : schemeGrant,
+        disbursed_amount: 0,
         registration_fee_status: 'PAID',
         registration_fee_amount: feeAmount,
         razorpay_payment_id: formData.razorpayPaymentId,
@@ -1204,16 +1204,28 @@ export const applicationService = {
       }
     }
 
-    // Determine disbursed / paid amount from app.disbursed_amount or successful payments
-    const successfulPayments = (app.payments || []).filter(p => p.status === 'SUCCESS');
+    // Determine disbursed / paid amount from successful DBT payments or valid disbursed_amount
+    const successfulPayments = (app.payments || []).filter(p => p.status === 'SUCCESS' && p.payment_method !== 'RAZORPAY_LIVE' && p.payment_method !== 'RAZORPAY_TEST');
     const totalPaymentsAmount = successfulPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-    const rawDisbursedAmount = (app.disbursed_amount !== null && app.disbursed_amount !== undefined)
-      ? parseFloat(app.disbursed_amount)
-      : (totalPaymentsAmount > 0 ? totalPaymentsAmount : (app.status === 'SCHOLARSHIP_RELEASED' ? sanctionedAmount : 0));
+    
+    // Only treat as disbursed if actually in released/partially disbursed status or successful payments exist
+    const isExplicitlyReleased = app.status === 'SCHOLARSHIP_RELEASED' || app.status === 'Scholarship Released';
+    const isExplicitlyPartiallyDisbursed = app.status === 'PARTIALLY_DISBURSED' || app.status === 'Partially Disbursed';
+    
+    let rawDisbursedAmount = 0;
+    if (totalPaymentsAmount > 0) {
+      rawDisbursedAmount = totalPaymentsAmount;
+    } else if (isExplicitlyReleased) {
+      rawDisbursedAmount = (app.disbursed_amount !== null && app.disbursed_amount !== undefined && parseFloat(app.disbursed_amount) > 0)
+        ? parseFloat(app.disbursed_amount)
+        : sanctionedAmount;
+    } else if (isExplicitlyPartiallyDisbursed) {
+      rawDisbursedAmount = parseFloat(app.disbursed_amount) || 0;
+    }
 
     const rawRemainingAmount = Math.max(0, sanctionedAmount - rawDisbursedAmount);
-    const isReleased = app.status === 'SCHOLARSHIP_RELEASED' || (rawDisbursedAmount >= sanctionedAmount && sanctionedAmount > 0);
-    const isPartiallyDisbursed = (app.status === 'PARTIALLY_DISBURSED') || (rawDisbursedAmount > 0 && rawRemainingAmount > 0);
+    const isReleased = isExplicitlyReleased || (rawDisbursedAmount >= sanctionedAmount && sanctionedAmount > 0);
+    const isPartiallyDisbursed = isExplicitlyPartiallyDisbursed || (rawDisbursedAmount > 0 && rawRemainingAmount > 0);
 
     let statusDisplay = this.formatStatus(app.status);
     if (isReleased) {

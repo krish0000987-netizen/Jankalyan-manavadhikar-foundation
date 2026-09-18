@@ -395,7 +395,7 @@ export const authService = {
             status: 'UNDER_VERIFICATION',
             stage: 1,
             submission_date: new Date().toISOString().split('T')[0],
-            disbursed_amount: scholarshipAmount || 12000.00,
+            disbursed_amount: 0,
             registration_fee_status: paymentData?.paymentId ? 'PAID' : 'PENDING',
             registration_fee_amount: paymentData?.amount || 211.30,
             razorpay_payment_id: paymentData?.paymentId || null,

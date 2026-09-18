@@ -26,6 +26,7 @@ export const ApplicationScrutinyModal = ({
   onStatusUpdated,
   onDocumentVerified,
   onOpenBankRecords,
+  onOpenDisburse,
   currentUser,
   readOnly = false
 }) => {
@@ -718,7 +719,22 @@ export const ApplicationScrutinyModal = ({
                   </span>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {onOpenDisburse && ((application.rawRemainingAmount === undefined || application.rawRemainingAmount > 0) && application.status !== 'Scholarship Released' && application.rawStatus !== 'SCHOLARSHIP_RELEASED') && (
+                  <button 
+                    type="button" 
+                    className="btn btn-primary btn-sm" 
+                    style={{ backgroundColor: '#2563EB', borderColor: '#2563EB', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}
+                    onClick={() => {
+                      onClose();
+                      onOpenDisburse(application);
+                    }}
+                    title="Open installment disbursement modal for this applicant"
+                  >
+                    <CreditCard size={13} />
+                    <span>{(application.rawDisbursedAmount || 0) > 0 ? 'Pay Installment' : 'Disburse / Installment'}</span>
+                  </button>
+                )}
                 <button className="btn btn-primary btn-sm" onClick={() => window.print()}>
                   <Printer size={14} />
                   <span>Print Application</span>
@@ -848,6 +864,22 @@ export const ApplicationScrutinyModal = ({
                             </button>
                           )}
                         </div>
+                      )}
+
+                      {onOpenDisburse && ((application.rawRemainingAmount === undefined || application.rawRemainingAmount > 0) && application.status !== 'Scholarship Released' && application.rawStatus !== 'SCHOLARSHIP_RELEASED') && (
+                        <button 
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          style={{ backgroundColor: (application.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#2563EB', borderColor: (application.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#2563EB', color: '#FFFFFF', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                          onClick={() => {
+                            onClose();
+                            onOpenDisburse(application);
+                          }}
+                          title="Record offline DBT transfer or scholarship installment"
+                        >
+                          <CreditCard size={13} />
+                          <span>{(application.rawDisbursedAmount || 0) > 0 ? 'Pay Next Installment' : 'Disburse / Pay in Installments'}</span>
+                        </button>
                       )}
 
                       {application.status === 'Scholarship Released' && (

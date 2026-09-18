@@ -1,4 +1,4 @@
-import { supabase } from '../api/supabase';
+import { supabase } from '../api/supabase.js';
 
 export const notificationService = {
   /**

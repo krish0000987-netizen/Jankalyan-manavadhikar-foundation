@@ -645,20 +645,21 @@ export const Admin = () => {
     window.print();
   };
 
-  // Open modal to mark a student's manual transfer as done
   // Open modal to mark a student's manual transfer / installment payout as done
   const handleOpenMarkTransferred = (app) => {
     setMarkingTransferredApp(app);
     const sanctioned = app.sanctionedAmount || 12000;
     const paidSoFar = app.rawDisbursedAmount || 0;
-    const remaining = Math.max(0, sanctioned - paidSoFar);
+    const remaining = app.rawRemainingAmount !== undefined ? app.rawRemainingAmount : Math.max(0, sanctioned - paidSoFar);
 
     setTransferModalForm({
       installmentAmount: remaining > 0 ? remaining : sanctioned,
       paymentDate: new Date().toISOString().split('T')[0],
       utrNumber: '',
       disbursingBank: 'State Bank of India - Trust A/c',
-      remarks: remaining < sanctioned ? 'Installment disbursement via DBT/NEFT' : 'Scholarship grant disbursement via DBT/NEFT'
+      remarks: paidSoFar > 0 
+        ? `Installment payout (Remaining balance: ₹${remaining.toLocaleString('en-IN')}) via DBT/NEFT` 
+        : 'Scholarship grant disbursement via DBT/NEFT'
     });
   };
 
@@ -1386,9 +1387,28 @@ export const Admin = () => {
                             >
                               <Award size={13} />
                             </button>
-                            {app.status === 'Scholarship Released' && (
+                            {((app.rawRemainingAmount === undefined || app.rawRemainingAmount > 0) && app.status !== 'Scholarship Released' && app.rawStatus !== 'SCHOLARSHIP_RELEASED') ? (
+                              <button 
+                                className="btn btn-primary btn-sm" 
+                                onClick={() => handleOpenMarkTransferred(app)}
+                                title="Disburse scholarship grant or installment"
+                                style={{ 
+                                  padding: '0.3rem 0.6rem', 
+                                  fontSize: '0.75rem', 
+                                  backgroundColor: (app.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#2563EB', 
+                                  borderColor: (app.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#2563EB', 
+                                  color: '#FFFFFF',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem'
+                                }}
+                              >
+                                <CreditCard size={12} />
+                                <span>{(app.rawDisbursedAmount || 0) > 0 ? 'Pay Installment' : 'Disburse / Installment'}</span>
+                              </button>
+                            ) : (
                               <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>
-                                ✓ Disbursed
+                                ✓ Fully Disbursed
                               </span>
                             )}
                           </div>
@@ -2047,11 +2067,14 @@ export const Admin = () => {
                                     fontSize: '0.75rem',
                                     backgroundColor: (b.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#1E40AF',
                                     borderColor: (b.rawDisbursedAmount || 0) > 0 ? '#D97706' : '#1E40AF',
-                                    color: '#FFFFFF'
+                                    color: '#FFFFFF',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem'
                                   }}
                                 >
                                   <CreditCard size={12} />
-                                  <span>{(b.rawDisbursedAmount || 0) > 0 ? 'Pay Installment' : 'Disburse Grant'}</span>
+                                  <span>{(b.rawDisbursedAmount || 0) > 0 ? 'Pay Next Installment' : 'Disburse / Pay in Installments'}</span>
                                 </button>
                               ) : (
                                 <span style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
@@ -4183,6 +4206,7 @@ export const Admin = () => {
           onClose={() => setActiveViewApp(null)}
           readOnly={true}
           currentUser={{ ...authUser, role: authRole, jurisdiction }}
+          onOpenDisburse={handleOpenMarkTransferred}
           onOpenBankRecords={() => {
             setActiveViewApp(null);
             setActiveTab('payments');
@@ -4196,6 +4220,7 @@ export const Admin = () => {
           application={activeModalApp}
           onClose={() => setActiveModalApp(null)}
           readOnly={false}
+          onOpenDisburse={handleOpenMarkTransferred}
           onOpenBankRecords={() => {
             setActiveModalApp(null);
             setActiveTab('payments');
@@ -4333,9 +4358,89 @@ export const Admin = () => {
               {/* Form Inputs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div className="form-group">
-                  <label className="form-label required" style={{ fontSize: '0.82rem', marginBottom: '0.3rem' }}>
-                    Installment / Payout Amount to Disburse (₹)
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                    <label className="form-label required" style={{ fontSize: '0.82rem', margin: 0 }}>
+                      Installment / Payout Amount to Disburse (₹)
+                    </label>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      Select quick installment preset or enter custom amount
+                    </span>
+                  </div>
+
+                  {/* Quick Installment Selectors */}
+                  {(() => {
+                    const sanc = markingTransferredApp.sanctionedAmount || 12000;
+                    const paid = markingTransferredApp.rawDisbursedAmount || 0;
+                    const rem = markingTransferredApp.rawRemainingAmount !== undefined 
+                      ? markingTransferredApp.rawRemainingAmount 
+                      : Math.max(0, sanc - paid);
+                    const half = Math.round(sanc / 2);
+                    const isFirstInstallment = paid === 0;
+                    
+                    return (
+                      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+                        {isFirstInstallment && rem >= half && (
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={() => setTransferModalForm(prev => ({ 
+                              ...prev, 
+                              installmentAmount: half,
+                              remarks: `Installment #1 (50% Grant - ₹${half.toLocaleString('en-IN')}) via DBT/NEFT`
+                            }))}
+                            style={{ 
+                              fontSize: '0.75rem', 
+                              padding: '0.3rem 0.65rem',
+                              borderColor: Number(transferModalForm.installmentAmount) === half ? '#2563EB' : '#CBD5E1',
+                              backgroundColor: Number(transferModalForm.installmentAmount) === half ? '#EFF6FF' : '#FFF',
+                              color: Number(transferModalForm.installmentAmount) === half ? '#1E40AF' : '#475569',
+                              fontWeight: 700,
+                              borderRadius: '6px'
+                            }}
+                          >
+                            ⚡ 50% Installment (₹{half.toLocaleString('en-IN')})
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          onClick={() => setTransferModalForm(prev => ({ 
+                            ...prev, 
+                            installmentAmount: rem,
+                            remarks: paid > 0 
+                              ? `Final Installment (Remaining Balance - ₹${rem.toLocaleString('en-IN')}) via DBT/NEFT`
+                              : `Full Scholarship Grant (₹${rem.toLocaleString('en-IN')}) via DBT/NEFT`
+                          }))}
+                          style={{ 
+                            fontSize: '0.75rem', 
+                            padding: '0.3rem 0.65rem',
+                            borderColor: Number(transferModalForm.installmentAmount) === rem ? '#16A34A' : '#CBD5E1',
+                            backgroundColor: Number(transferModalForm.installmentAmount) === rem ? '#DCFCE7' : '#FFF',
+                            color: Number(transferModalForm.installmentAmount) === rem ? '#15803D' : '#475569',
+                            fontWeight: 700,
+                            borderRadius: '6px'
+                          }}
+                        >
+                          ✓ Full Balance (₹{rem.toLocaleString('en-IN')})
+                        </button>
+                        {paid > 0 && (
+                          <span style={{ 
+                            alignSelf: 'center', 
+                            fontSize: '0.72rem', 
+                            fontWeight: 700, 
+                            color: '#D97706', 
+                            backgroundColor: '#FEF3C7', 
+                            padding: '0.25rem 0.55rem', 
+                            borderRadius: '4px',
+                            border: '1px solid #FDE68A'
+                          }}>
+                            Installment #2 Payout
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   <input 
                     type="number" 
                     value={transferModalForm.installmentAmount ?? ''}
