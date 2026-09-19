@@ -528,6 +528,7 @@ export const applicationService = {
    */
   async getApplicationById(appId) {
     try {
+      const cleanId = String(appId || '').trim();
       const { data, error } = await supabase
         .from('applications')
         .select(`
@@ -540,7 +541,7 @@ export const applicationService = {
           application_status_history (*),
           payments (*)
         `)
-        .eq('id', appId)
+        .ilike('id', cleanId)
         .maybeSingle();
 
       if (!error && data) {
@@ -550,7 +551,8 @@ export const applicationService = {
       console.warn('Live getApplicationById failed, checking fallback:', err);
     }
 
-    return FALLBACK_APPLICATIONS.find(a => a.id === appId) || null;
+    const cleanId = String(appId || '').trim().toLowerCase();
+    return FALLBACK_APPLICATIONS.find(a => a.id.toLowerCase() === cleanId) || null;
   },
 
   /**

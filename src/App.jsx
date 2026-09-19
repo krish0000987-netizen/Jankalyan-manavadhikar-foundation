@@ -50,14 +50,25 @@ const MainRouter = () => {
 
     // Dynamic match for Certificate View: /certificate/:id
     if (currentRoute.startsWith('/certificate/')) {
-      const certId = currentRoute.replace('/certificate/', '');
-      return <CertificateView certId={decodeURIComponent(certId)} />;
+      const origPath = (typeof window !== 'undefined' && window.location.pathname) || currentRoute;
+      const certId = origPath.toLowerCase().startsWith('/certificate/')
+        ? origPath.slice(13)
+        : currentRoute.replace('/certificate/', '');
+      return <CertificateView certId={decodeURIComponent(certId.trim())} />;
     }
 
     // Dynamic match for Payment Receipt View: /receipt/:id or /payment-receipt/:id
     if (currentRoute.startsWith('/receipt/') || currentRoute.startsWith('/payment-receipt/')) {
-      const receiptId = currentRoute.replace('/receipt/', '').replace('/payment-receipt/', '');
-      return <PaymentReceiptView receiptId={decodeURIComponent(receiptId)} />;
+      const origPath = (typeof window !== 'undefined' && window.location.pathname) || currentRoute;
+      let rawId = '';
+      if (origPath.toLowerCase().startsWith('/receipt/')) {
+        rawId = origPath.slice(9);
+      } else if (origPath.toLowerCase().startsWith('/payment-receipt/')) {
+        rawId = origPath.slice(17);
+      } else {
+        rawId = currentRoute.replace('/receipt/', '').replace('/payment-receipt/', '');
+      }
+      return <PaymentReceiptView receiptId={decodeURIComponent(rawId.trim())} />;
     }
 
     switch (currentRoute) {

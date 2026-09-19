@@ -13,6 +13,7 @@ import {
   ShieldCheck, 
   AlertCircle, 
   FileCheck, 
+  FileText,
   Lock,
   Eye,
   RefreshCw,
@@ -799,9 +800,31 @@ export const Apply = () => {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Payment Status</div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#16A34A' }}>VERIFIED & SETTLED</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Payment Status</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#16A34A' }}>VERIFIED & SETTLED</div>
+                </div>
+
+                <button 
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => window.open(`/receipt/${submittedRecord.id}`, '_blank')}
+                  style={{ 
+                    backgroundColor: '#16A34A', 
+                    borderColor: '#16A34A', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '0.4rem', 
+                    fontWeight: 800,
+                    padding: '0.45rem 0.95rem',
+                    boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)'
+                  }}
+                  title="Open official fee payment receipt in a new tab"
+                >
+                  <FileText size={15} />
+                  <span>{lang === 'hi' ? 'शुल्क रसीद देखें / प्रिंट करें' : 'View / Print Fee Receipt'}</span>
+                </button>
               </div>
             </div>
 
@@ -858,7 +881,25 @@ export const Apply = () => {
             {/* Actions (Hidden when printing) */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', borderTop: '1px solid #E2E8F0', paddingTop: '2rem' }} className="no-print">
               <button 
+                type="button"
                 className="btn btn-primary"
+                onClick={() => window.open(`/receipt/${submittedRecord.id}`, '_blank')}
+                style={{ 
+                  backgroundColor: '#16A34A', 
+                  borderColor: '#16A34A', 
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 3px 10px rgba(22, 163, 74, 0.25)'
+                }}
+              >
+                <FileText size={16} />
+                <span>{lang === 'hi' ? 'शुल्क भुगतान रसीद (Fee Receipt)' : 'Official Fee Payment Receipt'}</span>
+              </button>
+
+              <button 
+                className="btn btn-outline"
                 onClick={() => window.print()}
               >
                 <Printer size={16} />
@@ -881,6 +922,7 @@ export const Apply = () => {
                 <span>{t.btnGoDashboard}</span>
               </button>
             </div>
+
 
           </div>
         ) : (

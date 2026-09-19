@@ -39,6 +39,7 @@ import {
   ShieldAlert,
   Printer,
   Pin,
+  Receipt,
   Loader2
 } from 'lucide-react';
 import { supabase } from '../api/supabase';
@@ -1378,6 +1379,31 @@ export const Admin = () => {
                                 {app.razorpayPaymentId}
                               </div>
                             )}
+                            {app.registrationFeeStatus === 'PAID' && (
+                              <div style={{ marginTop: '4px' }}>
+                                <button 
+                                  type="button"
+                                  onClick={() => window.open(`/receipt/${app.id}`, '_blank')}
+                                  style={{ 
+                                    fontSize: '0.68rem', 
+                                    fontWeight: 700, 
+                                    color: '#15803D', 
+                                    backgroundColor: '#DCFCE7', 
+                                    border: '1px solid #86EFAC', 
+                                    borderRadius: '4px', 
+                                    padding: '2px 6px', 
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                  title={`Open official fee payment receipt for ${app.studentName} in new tab`}
+                                >
+                                  <Receipt size={10} />
+                                  <span>Fee Receipt</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td>
@@ -1400,6 +1426,14 @@ export const Admin = () => {
                             >
                               <FileText size={13} />
                               <span>View Form</span>
+                            </button>
+                            <button 
+                              className="btn btn-outline btn-sm" 
+                              onClick={() => window.open(`/receipt/${app.id}`, '_blank')}
+                              title={`View / Print Fee Receipt for ${app.studentName}`}
+                              style={{ borderColor: '#86EFAC', color: '#166534', backgroundColor: '#F0FDF4' }}
+                            >
+                              <Receipt size={13} />
                             </button>
                             <button 
                               className="btn btn-outline btn-sm" 

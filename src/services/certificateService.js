@@ -58,10 +58,12 @@ export const certificateService = {
    * Get certificate by certificate ID
    */
   async getCertificateById(id) {
+    if (!id) return null;
+    const cleanId = String(id).trim();
     const { data, error } = await supabase
       .from('certificates')
       .select('*')
-      .eq('id', id)
+      .ilike('id', cleanId)
       .maybeSingle();
 
     if (error) return null;
@@ -72,10 +74,12 @@ export const certificateService = {
    * Get latest certificate by application ID
    */
   async getCertificateByAppId(appId) {
+    if (!appId) return null;
+    const cleanAppId = String(appId).trim();
     const { data, error } = await supabase
       .from('certificates')
       .select('*')
-      .eq('application_id', appId)
+      .ilike('application_id', cleanAppId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -88,10 +92,12 @@ export const certificateService = {
    * Get all certificates for an application (e.g. for multi-installment payouts)
    */
   async getCertificatesByAppId(appId) {
+    if (!appId) return [];
+    const cleanAppId = String(appId).trim();
     const { data, error } = await supabase
       .from('certificates')
       .select('*')
-      .eq('application_id', appId)
+      .ilike('application_id', cleanAppId)
       .order('created_at', { ascending: true });
 
     if (error) return [];
