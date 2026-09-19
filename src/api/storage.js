@@ -48,6 +48,8 @@ export function cleanStoragePath(bucket, path) {
   return cleaned;
 }
 
+const PRIVATE_BUCKETS = ['student-documents', 'certificates', 'exports', 'institution-documents', 'profile-photos'];
+
 /**
  * Get a secure signed URL for private buckets ('student-documents', 'certificates')
  * @param {string} bucket
@@ -66,7 +68,12 @@ export async function getSignedUrl(bucket, path, expiresInSeconds = 7200) {
 
   if (error) {
     console.warn(`Could not create signed URL for ${bucket}/${cleaned}:`, error.message);
-    // Fallback attempt with getPublicUrl
+    // Never fall back to getPublicUrl for private buckets.
+    // Calling getPublicUrl on private buckets returns: {"statusCode":"404","error":"Bucket not found","message":"Bucket not found","code":"NoSuchBucket"}
+    if (PRIVATE_BUCKETS.includes(bucket)) {
+      return '';
+    }
+    // Fallback attempt for public buckets only
     const pub = supabase.storage.from(bucket).getPublicUrl(cleaned);
     return pub?.data?.publicUrl || '';
   }
@@ -83,11 +90,10 @@ export async function getDocumentViewUrl(bucket = 'student-documents', path, exp
     return cleaned;
   }
 
-  // Private buckets require signed URLs
-  const privateBuckets = ['student-documents', 'certificates', 'exports', 'institution-documents', 'profile-photos'];
-  if (privateBuckets.includes(bucket)) {
+  // Private buckets require signed URLs exclusively
+  if (PRIVATE_BUCKETS.includes(bucket)) {
     const signed = await getSignedUrl(bucket, cleaned, expiresInSeconds);
-    if (signed) return signed;
+    return signed || '';
   }
 
   return getPublicUrl(bucket, cleaned);

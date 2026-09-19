@@ -162,16 +162,30 @@ export const ApplicationScrutinyModal = ({
     return () => { isMounted = false; };
   }, [docsState]);
 
-  const handleOpenPreview = (key, doc) => {
+  const handleOpenPreview = async (key, doc) => {
     const d = doc || docsState[key] || {};
-    const url = signedUrls[key] || (d.filePath?.startsWith('http') ? d.filePath : null);
+    let url = signedUrls[key] || (d.filePath?.startsWith('http') ? d.filePath : null);
     const def = STANDARD_DOC_DEFS.find(s => s.id === key);
     setZoomLevel(1);
     setRotation(0);
+
+    if (!url && (d.filePath || d.file)) {
+      const path = d.filePath || d.file;
+      const bucket = d.bucketName || 'student-documents';
+      try {
+        url = await getSignedUrl(bucket, path, 7200);
+        if (url) {
+          setSignedUrls(prev => ({ ...prev, [key]: url }));
+        }
+      } catch (err) {
+        console.warn('Preview signed URL resolution error:', err);
+      }
+    }
+
     setPreviewModalDoc({
       key,
       doc: d,
-      url,
+      url: url || null,
       nameEn: def?.nameEn || key.replace('_', ' ').toUpperCase(),
       nameHi: def?.nameHi || ''
     });
@@ -1508,12 +1522,34 @@ export const ApplicationScrutinyModal = ({
               position: 'relative'
             }}>
               {!previewModalDoc.url ? (
-                <div style={{ textAlign: 'center', color: '#94A3B8', padding: '2rem' }}>
-                  <Loader2 size={36} className="animate-spin" color="#38BDF8" style={{ margin: '0 auto 1rem' }} />
-                  <p style={{ fontWeight: 600 }}>Resolving secure signed document link...</p>
-                  <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.25rem' }}>
-                    Storage target: {previewModalDoc.doc?.filePath || previewModalDoc.doc?.file || 'N/A'}
+                <div style={{ textAlign: 'center', color: '#F1F5F9', padding: '2.5rem 1.5rem', maxWidth: '520px', margin: '0 auto' }}>
+                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                    <AlertTriangle size={32} color="#F87171" />
+                  </div>
+                  <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '0.5rem' }}>
+                    Document File Not Found in Cloud Storage
+                  </h4>
+                  <p style={{ fontSize: '0.85rem', color: '#94A3B8', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                    This document record exists in the database ({previewModalDoc.doc?.fileName || previewModalDoc.doc?.file || 'N/A'}), but no physical file exists at this path in the <code>{previewModalDoc.doc?.bucketName || 'student-documents'}</code> bucket. The applicant may have not completed upload or the file was not persisted.
                   </p>
+                  <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.78rem', color: '#CBD5E1', marginBottom: '1.5rem', textAlign: 'left' }}>
+                    <div><strong>Target File:</strong> {previewModalDoc.doc?.fileName || previewModalDoc.doc?.file || 'N/A'}</div>
+                    <div style={{ marginTop: '2px' }}><strong>Storage Path:</strong> {previewModalDoc.doc?.filePath || 'N/A'}</div>
+                    <div style={{ marginTop: '2px' }}><strong>Security Mode:</strong> Private Encrypted Bucket</div>
+                  </div>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{ backgroundColor: '#DC2626', color: '#FFFFFF', fontWeight: 700, padding: '0.5rem 1rem' }}
+                      onClick={() => {
+                        handleDocumentVerify(previewModalDoc.key, 'INVALID', 'Original document scan missing in storage. Please upload clear original copy.');
+                        setPreviewModalDoc(null);
+                      }}
+                    >
+                      Flag as Defective & Request Upload
+                    </button>
+                  )}
                 </div>
               ) : isImageFile(previewModalDoc.doc, previewModalDoc.url) ? (
                 <div style={{
