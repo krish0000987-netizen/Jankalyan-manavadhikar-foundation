@@ -1085,6 +1085,26 @@ export const AppProvider = ({ children }) => {
     return null;
   };
 
+  // Update Student Information by Admin
+  const updateStudentApplication = async (appId, updatedFields) => {
+    try {
+      const refreshed = await applicationService.updateStudentApplication(appId, updatedFields);
+      if (refreshed) {
+        setApplications(prev => prev.map(a => 
+          a.id.toLowerCase() === appId.toLowerCase() ? refreshed : a
+        ));
+        if (activeStudentApp?.id?.toLowerCase() === appId.toLowerCase()) {
+          setActiveStudentApp(refreshed);
+          localStorage.setItem('jmf_active_student_app', JSON.stringify(refreshed));
+        }
+        return refreshed;
+      }
+    } catch (err) {
+      console.error('Error in AppContext updateStudentApplication:', err);
+      throw err;
+    }
+  };
+
   // Explicit Role & Jurisdiction Switcher (For testing or demo selection)
   const switchRole = async (newRole, newJurisdiction = {}) => {
     setAuthRole(newRole);
@@ -1132,6 +1152,7 @@ export const AppProvider = ({ children }) => {
       submitNewApplication,
       updateApplicationStatus,
       updateStudentFeePayment,
+      updateStudentApplication,
       activeStudentApp,
       setActiveStudentApp,
       grievances,

@@ -1364,6 +1364,137 @@ export const applicationService = {
     return null;
   },
 
+  /**
+   * Update student application information by Admin
+   * Synchronizes changes across students, applications, academic_records, and bank_details
+   */
+  async updateStudentApplication(appId, updatedFields = {}) {
+    if (!appId) throw new Error('Application ID is required.');
+    const cleanId = String(appId).trim();
+
+    // 1. Fetch current application record to obtain student_id, district_id, etc.
+    const { data: currentApp, error: fetchErr } = await supabase
+      .from('applications')
+      .select('id, student_id, district_id, block_id, institution_id')
+      .ilike('id', cleanId)
+      .maybeSingle();
+
+    if (fetchErr) {
+      console.warn('Error fetching app for update:', fetchErr);
+    }
+
+    const studentId = currentApp?.student_id;
+
+    // 2. Update students table
+    if (studentId) {
+      const studentUpdates = { updated_at: new Date().toISOString() };
+      if (updatedFields.studentName !== undefined) studentUpdates.full_name = String(updatedFields.studentName).trim();
+      if (updatedFields.fatherName !== undefined) studentUpdates.father_name = String(updatedFields.fatherName).trim();
+      if (updatedFields.motherName !== undefined) studentUpdates.mother_name = String(updatedFields.motherName).trim();
+      if (updatedFields.mobile !== undefined) studentUpdates.mobile = String(updatedFields.mobile).trim();
+      if (updatedFields.email !== undefined) studentUpdates.email = String(updatedFields.email).trim();
+      if (updatedFields.gender !== undefined) studentUpdates.gender = updatedFields.gender;
+      if (updatedFields.dob !== undefined) studentUpdates.dob = updatedFields.dob;
+      if (updatedFields.category !== undefined) studentUpdates.category = updatedFields.category;
+      if (updatedFields.annualIncome !== undefined) {
+        const rawIncome = Number(String(updatedFields.annualIncome).replace(/[^0-9]/g, ''));
+        if (!isNaN(rawIncome) && rawIncome > 0) {
+          studentUpdates.annual_income = rawIncome;
+        }
+      }
+      if (updatedFields.samagraId !== undefined) studentUpdates.samagra_id = String(updatedFields.samagraId).trim();
+
+      const { error: studentErr } = await supabase
+        .from('students')
+        .update(studentUpdates)
+        .eq('id', studentId);
+
+      if (studentErr) {
+        console.warn('Students table update warning:', studentErr);
+      }
+    }
+
+    // 3. Update applications table
+    const appUpdates = { updated_at: new Date().toISOString() };
+    if (updatedFields.districtId) appUpdates.district_id = updatedFields.districtId;
+    if (updatedFields.blockId) appUpdates.block_id = updatedFields.blockId;
+    if (updatedFields.institutionId) appUpdates.institution_id = updatedFields.institutionId;
+
+    const { error: appErr } = await supabase
+      .from('applications')
+      .update(appUpdates)
+      .ilike('id', cleanId);
+
+    if (appErr) {
+      console.warn('Applications table update warning:', appErr);
+    }
+
+    // 4. Update or Insert academic_records
+    if (studentId && (updatedFields.course || updatedFields.institution || updatedFields.rollNumber || updatedFields.percentage)) {
+      const academicUpdates = {};
+      if (updatedFields.course !== undefined) academicUpdates.class_course = String(updatedFields.course).trim();
+      if (updatedFields.institution !== undefined) academicUpdates.institution_name = String(updatedFields.institution).trim();
+      if (updatedFields.institutionId) academicUpdates.institution_id = updatedFields.institutionId;
+      if (updatedFields.rollNumber !== undefined) academicUpdates.roll_number = String(updatedFields.rollNumber).trim();
+      if (updatedFields.percentage !== undefined) academicUpdates.prev_percentage = parseFloat(updatedFields.percentage) || null;
+
+      const { data: existingAc } = await supabase
+        .from('academic_records')
+        .select('id')
+        .eq('student_id', studentId)
+        .maybeSingle();
+
+      if (existingAc) {
+        await supabase.from('academic_records').update(academicUpdates).eq('id', existingAc.id);
+      } else {
+        await supabase.from('academic_records').insert({
+          student_id: studentId,
+          academic_year: '2026-27',
+          ...academicUpdates
+        });
+      }
+    }
+
+    // 5. Update or Insert bank_details
+    if (studentId && (updatedFields.bankName || updatedFields.accountNumber || updatedFields.ifsc || updatedFields.accountHolderName || updatedFields.branchName || updatedFields.isAadhaarSeeded !== undefined)) {
+      const bankUpdates = {};
+      if (updatedFields.bankName !== undefined) bankUpdates.bank_name = String(updatedFields.bankName).trim();
+      if (updatedFields.accountHolderName !== undefined) bankUpdates.account_holder_name = String(updatedFields.accountHolderName).trim();
+      if (updatedFields.ifsc !== undefined) bankUpdates.ifsc_code = String(updatedFields.ifsc).trim().toUpperCase();
+      if (updatedFields.branchName !== undefined) bankUpdates.branch_name = String(updatedFields.branchName).trim();
+      if (updatedFields.accountNumber !== undefined && String(updatedFields.accountNumber).trim()) {
+        const cleanAcc = String(updatedFields.accountNumber).trim();
+        bankUpdates.account_number_encrypted = cleanAcc;
+        bankUpdates.account_number_masked = cleanAcc.length >= 4 
+          ? `XXXX-XXXX-${cleanAcc.slice(-4)}` 
+          : cleanAcc;
+      }
+      if (updatedFields.isAadhaarSeeded !== undefined) {
+        bankUpdates.is_aadhaar_seeded = Boolean(updatedFields.isAadhaarSeeded);
+      }
+
+      const { data: existingBank } = await supabase
+        .from('bank_details')
+        .select('id')
+        .eq('student_id', studentId)
+        .maybeSingle();
+
+      if (existingBank) {
+        await supabase.from('bank_details').update(bankUpdates).eq('id', existingBank.id);
+      } else {
+        await supabase.from('bank_details').insert({
+          student_id: studentId,
+          account_type: 'Savings',
+          ...bankUpdates
+        });
+      }
+    }
+
+    // 6. Fetch fresh normalized application
+    const refreshedApp = await this.getApplicationById(cleanId);
+    return refreshedApp;
+  },
+
   formatStatus(status) {
     switch (status) {
       case 'SCHOLARSHIP_RELEASED': return 'Scholarship Released';

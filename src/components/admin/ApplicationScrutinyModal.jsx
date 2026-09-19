@@ -26,12 +26,14 @@ import {
   User,
   Image as ImageIcon,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Edit3
 } from 'lucide-react';
 import { supabase } from '../../api/supabase';
 import { getSignedUrl, downloadStorageFile, cleanStoragePath } from '../../api/storage';
 import { scrutinyService } from '../../services/scrutinyService';
 import { certificateService } from '../../services/certificateService';
+import { EditStudentModal } from './EditStudentModal';
 
 const STANDARD_DOC_DEFS = [
   { id: 'photo', nameEn: 'Passport-size Photograph', nameHi: 'पासपोर्ट आकार का फोटो', required: true, isImage: true },
@@ -44,7 +46,7 @@ const STANDARD_DOC_DEFS = [
 ];
 
 export const ApplicationScrutinyModal = ({ 
-  application, 
+  application: initialApplication, 
   onClose, 
   onStatusUpdated,
   onDocumentVerified,
@@ -53,11 +55,18 @@ export const ApplicationScrutinyModal = ({
   currentUser,
   readOnly = false
 }) => {
+  const [application, setApplication] = useState(initialApplication);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    setApplication(initialApplication);
+  }, [initialApplication]);
+
   const [activeTab, setActiveTab] = useState('dossier'); // 'dossier' | 'documents' | 'history' | 'payment'
   const [actionRemarks, setActionRemarks] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [certIssued, setCertIssued] = useState(false);
-  const [docsState, setDocsState] = useState(application?.documents || {});
+  const [docsState, setDocsState] = useState(initialApplication?.documents || {});
   const [signedUrls, setSignedUrls] = useState({});
   const [previewModalDoc, setPreviewModalDoc] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -410,12 +419,38 @@ export const ApplicationScrutinyModal = ({
             </h2>
           </div>
 
-          <button 
-            onClick={onClose}
-            style={{ color: '#94A3B8', fontSize: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setIsEditModalOpen(true)}
+              style={{
+                backgroundColor: '#F59E0B',
+                color: '#FFFFFF',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+              title="Edit student personal, academic or banking details"
+            >
+              <Edit3 size={14} />
+              <span>Edit Student Info</span>
+            </button>
+
+            <button 
+              onClick={onClose}
+              style={{ color: '#94A3B8', fontSize: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Dossier Tabs */}
@@ -549,10 +584,21 @@ export const ApplicationScrutinyModal = ({
               
               {/* Section 1: Personal & Identity */}
               <div style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ShieldCheck size={18} color="#1E40AF" />
-                  <span>Applicant Personal & Social Information</span>
-                </h4>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldCheck size={18} color="#1E40AF" />
+                    <span>Applicant Personal & Social Information</span>
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => setIsEditModalOpen(true)}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#B45309', borderColor: '#FDE68A', backgroundColor: '#FEF3C7', fontWeight: 700 }}
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit Personal Info</span>
+                  </button>
+                </div>
                 <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                   {/* Student Photo Card */}
                   <div style={{
@@ -641,10 +687,21 @@ export const ApplicationScrutinyModal = ({
 
               {/* Section 3: Bank Details for DBT Transfer */}
               <div style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CreditCard size={18} color="#16A34A" />
-                  <span>Direct Benefit Transfer (DBT) Banking Details</span>
-                </h4>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CreditCard size={18} color="#16A34A" />
+                    <span>Direct Benefit Transfer (DBT) Banking Details</span>
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => setIsEditModalOpen(true)}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#166534', borderColor: '#BBF7D0', backgroundColor: '#F0FDF4', fontWeight: 700 }}
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit Bank Details</span>
+                  </button>
+                </div>
                 <div className="grid-3" style={{ gap: '0.75rem', fontSize: '0.85rem' }}>
                   <div><strong>Bank Name:</strong> {application.bankName || 'State Bank of India'}</div>
                   <div>
@@ -1663,6 +1720,20 @@ export const ApplicationScrutinyModal = ({
 
           </div>
         </div>
+      )}
+
+      {/* Edit Student Info Modal */}
+      {isEditModalOpen && (
+        <EditStudentModal
+          application={application}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={(refreshedApp) => {
+            setApplication(refreshedApp);
+            if (onStatusUpdated) {
+              onStatusUpdated(refreshedApp.id, refreshedApp.status);
+            }
+          }}
+        />
       )}
     </div>
   );

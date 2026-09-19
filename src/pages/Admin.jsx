@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminTopNav } from '../components/admin/AdminTopNav';
 import { ApplicationScrutinyModal } from '../components/admin/ApplicationScrutinyModal';
+import { EditStudentModal } from '../components/admin/EditStudentModal';
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { getAllStates, getDistrictsByState, getBlocksByDistrict, findStateByDistrict } from '../data/indiaLocations';
 import { 
@@ -154,6 +155,7 @@ export const Admin = () => {
   // Scrutiny & View Modals
   const [activeModalApp, setActiveModalApp] = useState(null);
   const [activeViewApp, setActiveViewApp] = useState(null);
+  const [editingStudentApp, setEditingStudentApp] = useState(null);
 
   // Live MIS Summary
   const [misSummary, setMisSummary] = useState(null);
@@ -1428,6 +1430,16 @@ export const Admin = () => {
                               <span>View Form</span>
                             </button>
                             <button 
+                              type="button"
+                              className="btn btn-outline btn-sm" 
+                              onClick={() => setEditingStudentApp(app)}
+                              title={`Edit Student Information for ${app.studentName}`}
+                              style={{ borderColor: '#FDE68A', color: '#B45309', backgroundColor: '#FFFBEB' }}
+                            >
+                              <Edit3 size={13} />
+                              <span>Edit</span>
+                            </button>
+                            <button 
                               className="btn btn-outline btn-sm" 
                               onClick={() => window.open(`/receipt/${app.id}`, '_blank')}
                               title={`View / Print Fee Receipt for ${app.studentName}`}
@@ -1727,6 +1739,16 @@ export const Admin = () => {
                                 <button className="btn btn-primary btn-sm" onClick={() => setActiveModalApp(app)}>
                                   <Eye size={13} />
                                   <span>Scrutinize / Verify</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-sm"
+                                  onClick={() => setEditingStudentApp(app)}
+                                  title={`Edit Student Information for ${app.studentName}`}
+                                  style={{ borderColor: '#FDE68A', color: '#B45309', backgroundColor: '#FFFBEB' }}
+                                >
+                                  <Edit3 size={13} />
+                                  <span>Edit</span>
                                 </button>
                                 {app.status === 'Under Verification' && (
                                   <button 
@@ -4300,6 +4322,18 @@ export const Admin = () => {
             loadApplications();
           }}
           currentUser={{ ...authUser, role: authRole, jurisdiction }}
+        />
+      )}
+
+      {/* Edit Student Info Modal */}
+      {editingStudentApp && (
+        <EditStudentModal
+          application={editingStudentApp}
+          onClose={() => setEditingStudentApp(null)}
+          onSaved={(refreshedApp) => {
+            setEditingStudentApp(null);
+            loadApplications();
+          }}
         />
       )}
 
