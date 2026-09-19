@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { certificateService } from '../services/certificateService';
 import { supabase } from '../api/supabase';
-import { getPublicUrl } from '../api/storage';
+import { getPublicUrl, getDocumentViewUrl } from '../api/storage';
 import { QrCodeDisplay } from '../components/common/QrCodeDisplay';
 import { 
   Printer, 
@@ -86,11 +86,7 @@ export const CertificateView = ({ certId = '' }) => {
               );
               if (photoDoc?.file_path) {
                 const rawP = photoDoc.file_path;
-                if (rawP.startsWith('http://') || rawP.startsWith('https://') || rawP.startsWith('data:')) {
-                  resolvedPhotoUrl = rawP;
-                } else {
-                  resolvedPhotoUrl = getPublicUrl('student-documents', rawP);
-                }
+                resolvedPhotoUrl = await getDocumentViewUrl('student-documents', rawP, 7200);
               }
             }
           } catch (appErr) {
@@ -100,13 +96,9 @@ export const CertificateView = ({ certId = '' }) => {
 
         if (!resolvedPhotoUrl && activeStudentApp?.documents?.photo) {
           const p = activeStudentApp.documents.photo;
-          const pVal = p.file || p.url || p.filePath || (typeof p === 'string' ? p : '');
+          const pVal = p.filePath || p.file || p.url || (typeof p === 'string' ? p : '');
           if (pVal) {
-            if (pVal.startsWith('http') || pVal.startsWith('data:') || pVal.startsWith('/assets/')) {
-              resolvedPhotoUrl = pVal;
-            } else {
-              resolvedPhotoUrl = getPublicUrl('student-documents', pVal);
-            }
+            resolvedPhotoUrl = await getDocumentViewUrl('student-documents', pVal, 7200);
           }
         }
         setStudentPhoto(resolvedPhotoUrl);

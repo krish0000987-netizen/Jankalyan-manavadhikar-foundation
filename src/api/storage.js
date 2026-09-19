@@ -29,25 +29,103 @@ export function getPublicUrl(bucket, path) {
 }
 
 /**
+ * Clean path by stripping bucket prefix and leading slashes if present
+ */
+export function cleanStoragePath(bucket, path) {
+  if (!path) return '';
+  let cleaned = String(path).trim();
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://') || cleaned.startsWith('data:') || cleaned.startsWith('blob:')) {
+    return cleaned;
+  }
+  // Remove leading slash
+  if (cleaned.startsWith('/')) {
+    cleaned = cleaned.slice(1);
+  }
+  // If bucket prefix was included, e.g. "student-documents/JMF-..."
+  if (bucket && cleaned.startsWith(`${bucket}/`)) {
+    cleaned = cleaned.slice(bucket.length + 1);
+  }
+  return cleaned;
+}
+
+/**
  * Get a secure signed URL for private buckets ('student-documents', 'certificates')
  * @param {string} bucket
  * @param {string} path
- * @param {number} expiresInSeconds (default 1 hour)
+ * @param {number} expiresInSeconds (default 2 hours)
  */
-export async function getSignedUrl(bucket, path, expiresInSeconds = 3600) {
+export async function getSignedUrl(bucket, path, expiresInSeconds = 7200) {
   if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/assets/')) {
-    return path;
+  const cleaned = cleanStoragePath(bucket, path);
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://') || cleaned.startsWith('data:') || cleaned.startsWith('blob:') || cleaned.startsWith('/assets/')) {
+    return cleaned;
   }
   const { data, error } = await supabase.storage
     .from(bucket)
-    .createSignedUrl(path, expiresInSeconds);
+    .createSignedUrl(cleaned, expiresInSeconds);
 
   if (error) {
-    console.warn(`Could not create signed URL for ${bucket}/${path}:`, error.message);
-    return '';
+    console.warn(`Could not create signed URL for ${bucket}/${cleaned}:`, error.message);
+    // Fallback attempt with getPublicUrl
+    const pub = supabase.storage.from(bucket).getPublicUrl(cleaned);
+    return pub?.data?.publicUrl || '';
   }
   return data?.signedUrl || '';
+}
+
+/**
+ * Universal document URL resolver: returns a signed URL for private buckets or public URL for public ones
+ */
+export async function getDocumentViewUrl(bucket = 'student-documents', path, expiresInSeconds = 7200) {
+  if (!path) return '';
+  const cleaned = cleanStoragePath(bucket, path);
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://') || cleaned.startsWith('data:') || cleaned.startsWith('blob:') || cleaned.startsWith('/assets/')) {
+    return cleaned;
+  }
+
+  // Private buckets require signed URLs
+  const privateBuckets = ['student-documents', 'certificates', 'exports', 'institution-documents', 'profile-photos'];
+  if (privateBuckets.includes(bucket)) {
+    const signed = await getSignedUrl(bucket, cleaned, expiresInSeconds);
+    if (signed) return signed;
+  }
+
+  return getPublicUrl(bucket, cleaned);
+}
+
+/**
+ * Download a file from private or public Supabase storage
+ */
+export async function downloadStorageFile(bucket, path, fileName = 'document') {
+  if (!path) return;
+  const cleaned = cleanStoragePath(bucket, path);
+  try {
+    const { data: blob, error } = await supabase.storage
+      .from(bucket)
+      .download(cleaned);
+
+    if (error || !blob) {
+      // Fallback via signed URL fetch
+      const url = await getSignedUrl(bucket, cleaned);
+      if (url) {
+        window.open(url, '_blank');
+      }
+      return;
+    }
+
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = fileName || cleaned.split('/').pop() || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+  } catch (err) {
+    console.warn('Storage download error:', err);
+    const url = await getSignedUrl(bucket, cleaned);
+    if (url) window.open(url, '_blank');
+  }
 }
 
 /**

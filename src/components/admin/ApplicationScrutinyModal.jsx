@@ -16,10 +16,32 @@ import {
   ShieldCheck,
   Send,
   Printer,
-  ExternalLink
+  ExternalLink,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  RefreshCw,
+  Maximize2,
+  FileCheck,
+  User,
+  Image as ImageIcon,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
+import { supabase } from '../../api/supabase';
+import { getSignedUrl, downloadStorageFile, cleanStoragePath } from '../../api/storage';
 import { scrutinyService } from '../../services/scrutinyService';
 import { certificateService } from '../../services/certificateService';
+
+const STANDARD_DOC_DEFS = [
+  { id: 'photo', nameEn: 'Passport-size Photograph', nameHi: 'पासपोर्ट आकार का फोटो', required: true, isImage: true },
+  { id: 'aadhaar', nameEn: 'Aadhaar Card (UIDAI)', nameHi: 'आधार कार्ड (UIDAI)', required: true },
+  { id: 'marksheet', nameEn: 'Qualifying Marksheet', nameHi: 'पिछली परीक्षा की अंकसूची', required: true },
+  { id: 'bonafide', nameEn: 'Institutional Bonafide / Admission Slip', nameHi: 'संस्थान प्रवेश / बोनाफाइड प्रमाण पत्र', required: true },
+  { id: 'passbook', nameEn: 'Bank Passbook / Statement Copy', nameHi: 'बैंक पासबुक / खाता विवरण प्रति', required: true },
+  { id: 'income', nameEn: 'Income Certificate', nameHi: 'सक्षम आय प्रमाण पत्र', required: false },
+  { id: 'caste', nameEn: 'Caste / Category Certificate', nameHi: 'जाति / श्रेणी प्रमाण पत्र', required: false }
+];
 
 export const ApplicationScrutinyModal = ({ 
   application, 
@@ -34,19 +56,131 @@ export const ApplicationScrutinyModal = ({
   const [activeTab, setActiveTab] = useState('dossier'); // 'dossier' | 'documents' | 'history' | 'payment'
   const [actionRemarks, setActionRemarks] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState(null);
   const [certIssued, setCertIssued] = useState(false);
   const [docsState, setDocsState] = useState(application?.documents || {});
+  const [signedUrls, setSignedUrls] = useState({});
+  const [previewModalDoc, setPreviewModalDoc] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [fetchingDbDocs, setFetchingDbDocs] = useState(false);
   const [docFeedback, setDocFeedback] = useState(null);
   const [rejectingDocKey, setRejectingDocKey] = useState(null);
   const [rejectReasonInput, setRejectReasonInput] = useState('');
-  const [previewDoc, setPreviewDoc] = useState(null);
   const [appCertificates, setAppCertificates] = useState([]);
   const [txnCopied, setTxnCopied] = useState(false);
 
+  // Sync docsState when application changes
   useEffect(() => {
     setDocsState(application?.documents || {});
   }, [application]);
+
+  // Fetch fresh application_documents directly from Supabase to guarantee complete, real-time records
+  const loadLiveDocs = async () => {
+    if (!application?.id) return;
+    setFetchingDbDocs(true);
+    try {
+      const { data: dbDocs, error } = await supabase
+        .from('application_documents')
+        .select('*')
+        .eq('application_id', application.id);
+
+      if (!error && dbDocs && dbDocs.length > 0) {
+        const freshMap = {};
+        dbDocs.forEach(d => {
+          let docStatus = 'Uploaded';
+          if (d.verification_status === 'VALID' || d.verification_status === 'Verified') docStatus = 'Verified';
+          else if (d.verification_status === 'INVALID' || d.verification_status === 'Rejected') docStatus = 'Rejected';
+          else if (d.verification_status === 'CORRECTION_REQUIRED' || d.verification_status === 'Correction Requested') docStatus = 'Correction Requested';
+          else if (d.verification_status) docStatus = d.verification_status;
+
+          freshMap[d.document_type_id] = {
+            id: d.id,
+            status: docStatus,
+            rawStatus: d.verification_status,
+            file: d.file_name || d.file_path,
+            fileName: d.file_name,
+            filePath: d.file_path,
+            bucketName: d.bucket_name || 'student-documents',
+            mimeType: d.mime_type,
+            fileSizeKb: d.file_size_kb,
+            reason: d.rejection_reason || null,
+            uploadTimestamp: d.upload_timestamp
+          };
+        });
+
+        setDocsState(prev => ({
+          ...(application?.documents || {}),
+          ...prev,
+          ...freshMap
+        }));
+      }
+    } catch (err) {
+      console.warn('Scrutiny direct docs load error:', err);
+    } finally {
+      setFetchingDbDocs(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLiveDocs();
+  }, [application?.id]);
+
+  // Resolve signed URLs for all documents in docsState
+  useEffect(() => {
+    let isMounted = true;
+    async function resolveAllSignedUrls() {
+      if (!docsState) return;
+      const entries = Object.entries(docsState);
+      const newUrls = {};
+
+      for (const [key, doc] of entries) {
+        if (!doc) continue;
+        const targetPath = doc.filePath || doc.file || (typeof doc === 'string' ? doc : null);
+        if (!targetPath) continue;
+
+        if (targetPath.startsWith('http://') || targetPath.startsWith('https://') || targetPath.startsWith('data:') || targetPath.startsWith('blob:')) {
+          newUrls[key] = targetPath;
+          continue;
+        }
+
+        try {
+          const bucket = doc.bucketName || 'student-documents';
+          const signed = await getSignedUrl(bucket, targetPath, 7200);
+          if (signed && isMounted) {
+            newUrls[key] = signed;
+          }
+        } catch (e) {
+          console.warn(`Could not resolve signed URL for ${key}:`, e);
+        }
+      }
+
+      if (isMounted) {
+        setSignedUrls(prev => ({ ...prev, ...newUrls }));
+      }
+    }
+    resolveAllSignedUrls();
+    return () => { isMounted = false; };
+  }, [docsState]);
+
+  const handleOpenPreview = (key, doc) => {
+    const d = doc || docsState[key] || {};
+    const url = signedUrls[key] || (d.filePath?.startsWith('http') ? d.filePath : null);
+    const def = STANDARD_DOC_DEFS.find(s => s.id === key);
+    setZoomLevel(1);
+    setRotation(0);
+    setPreviewModalDoc({
+      key,
+      doc: d,
+      url,
+      nameEn: def?.nameEn || key.replace('_', ' ').toUpperCase(),
+      nameHi: def?.nameHi || ''
+    });
+  };
+
+  const isImageFile = (doc, url) => {
+    const str = `${doc?.fileName || ''} ${doc?.filePath || ''} ${doc?.file || ''} ${url || ''}`.toLowerCase();
+    return str.includes('.jpg') || str.includes('.jpeg') || str.includes('.png') || str.includes('.webp') || str.includes('image/');
+  };
 
   useEffect(() => {
     if (application?.id) {
@@ -401,20 +535,79 @@ export const ApplicationScrutinyModal = ({
               
               {/* Section 1: Personal & Identity */}
               <div style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ShieldCheck size={18} color="#1E40AF" />
                   <span>Applicant Personal & Social Information</span>
                 </h4>
-                <div className="grid-3" style={{ gap: '0.75rem', fontSize: '0.85rem' }}>
-                  <div><strong>Student Name:</strong> {application.studentName}</div>
-                  <div><strong>Father / Guardian:</strong> {application.fatherName || '-'}</div>
-                  <div><strong>Mobile:</strong> {application.mobile}</div>
-                  <div><strong>Email:</strong> {application.email || '-'}</div>
-                  <div><strong>Gender:</strong> {application.gender || 'Male'}</div>
-                  <div><strong>Social Category:</strong> <span className="badge badge-navy">{application.category}</span></div>
-                  <div><strong>Annual Family Income:</strong> {application.annualIncome || '₹1,00,000'}</div>
-                  <div><strong>District:</strong> {application.district}</div>
-                  <div><strong>Block:</strong> {application.block}</div>
+                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  {/* Student Photo Card */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    flexShrink: 0
+                  }}>
+                    <div 
+                      style={{
+                        width: '100px',
+                        height: '120px',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        backgroundColor: '#E2E8F0',
+                        border: '2px solid #CBD5E1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: signedUrls.photo ? 'pointer' : 'default',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                        position: 'relative'
+                      }}
+                      onClick={() => {
+                        if (signedUrls.photo || docsState.photo) {
+                          handleOpenPreview('photo', docsState.photo);
+                        }
+                      }}
+                      title={signedUrls.photo ? 'Click to inspect candidate photograph' : 'Candidate Photograph'}
+                    >
+                      {signedUrls.photo ? (
+                        <img 
+                          src={signedUrls.photo} 
+                          alt={application.studentName}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div style={{ textAlign: 'center', color: '#64748B', padding: '0.5rem' }}>
+                          <User size={32} color="#94A3B8" style={{ margin: '0 auto' }} />
+                          <div style={{ fontSize: '0.65rem', marginTop: '4px', fontWeight: 600 }}>No Photo</div>
+                        </div>
+                      )}
+                    </div>
+                    {signedUrls.photo && (
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        onClick={() => handleOpenPreview('photo', docsState.photo)}
+                      >
+                        <Eye size={11} />
+                        <span>Inspect</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Personal Details Grid */}
+                  <div className="grid-3" style={{ flex: 1, gap: '0.75rem', fontSize: '0.85rem' }}>
+                    <div><strong>Student Name:</strong> {application.studentName}</div>
+                    <div><strong>Father / Guardian:</strong> {application.fatherName || '-'}</div>
+                    <div><strong>Mobile:</strong> {application.mobile}</div>
+                    <div><strong>Email:</strong> {application.email || '-'}</div>
+                    <div><strong>Gender:</strong> {application.gender || 'Male'}</div>
+                    <div><strong>Social Category:</strong> <span className="badge badge-navy">{application.category}</span></div>
+                    <div><strong>Annual Family Income:</strong> {application.annualIncome || '₹1,00,000'}</div>
+                    <div><strong>District:</strong> {application.district}</div>
+                    <div><strong>Block:</strong> {application.block}</div>
+                  </div>
                 </div>
               </div>
 
@@ -543,16 +736,70 @@ export const ApplicationScrutinyModal = ({
           {/* TAB 2: DOCUMENTS */}
           {activeTab === 'documents' && (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              {/* Header with Stats & Reload */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
-                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A' }}>
-                    Applicant Uploaded Documents & Photographs Scrutiny
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FileCheck size={20} color="#1E40AF" />
+                    <span>Applicant Uploaded Documents & Photographs Scrutiny</span>
                   </h4>
-                  <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '2px' }}>
-                    Review candidate photo, marksheets, and identity proof. Click "Valid" to immediately approve without leaving this screen.
+                  <p style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '2px' }}>
+                    Inspect candidate original scans, marksheets, and identity proofs. Click "View Document" to inspect with high-res zoom & rotate.
                   </p>
                 </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={loadLiveDocs}
+                    disabled={fetchingDbDocs}
+                    style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    title="Reload live documents from database"
+                  >
+                    <RefreshCw size={13} className={fetchingDbDocs ? 'animate-spin' : ''} />
+                    <span>{fetchingDbDocs ? 'Refreshing...' : 'Refresh Records'}</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Status Summary Strip */}
+              {(() => {
+                const totalDefs = STANDARD_DOC_DEFS.length;
+                const uploadedCount = Object.values(docsState || {}).filter(d => Boolean(d.file || d.filePath)).length;
+                const verifiedCount = Object.values(docsState || {}).filter(d => d.status === 'Verified' || d.status === 'VALID').length;
+                const rejectedCount = Object.values(docsState || {}).filter(d => d.status === 'Rejected' || d.status === 'INVALID').length;
+                
+                return (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    backgroundColor: '#F1F5F9',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '10px',
+                    marginBottom: '1.25rem',
+                    fontSize: '0.8rem',
+                    flexWrap: 'wrap',
+                    border: '1px solid #E2E8F0'
+                  }}>
+                    <span style={{ fontWeight: 700, color: '#334155' }}>
+                      📋 Checklist Progress:
+                    </span>
+                    <span className="badge badge-navy">
+                      {uploadedCount} of {totalDefs} Uploaded
+                    </span>
+                    <span className="badge badge-green">
+                      {verifiedCount} Verified Valid
+                    </span>
+                    {rejectedCount > 0 && (
+                      <span className="badge badge-red">
+                        {rejectedCount} Defective / Rejected
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
 
               {docFeedback && (
                 <div style={{
@@ -573,149 +820,282 @@ export const ApplicationScrutinyModal = ({
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                {Object.entries(docsState || {}).map(([key, doc]) => {
-                  const isRejecting = rejectingDocKey === key;
-                  const isVerified = doc.status === 'Verified' || doc.status === 'VALID';
-                  const isRejected = doc.status === 'Rejected' || doc.status === 'INVALID';
+              {/* Document Cards List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                {(() => {
+                  // Build combined list of standard documents and any additional documents in docsState
+                  const combined = STANDARD_DOC_DEFS.map(def => {
+                    const doc = docsState[def.id] || docsState[def.id.toLowerCase()] || null;
+                    return {
+                      key: def.id,
+                      nameEn: def.nameEn,
+                      nameHi: def.nameHi,
+                      required: def.required,
+                      isImage: def.isImage,
+                      doc
+                    };
+                  });
 
-                  return (
-                    <div key={key} style={{
-                      backgroundColor: '#F8FAFC',
-                      borderRadius: '10px',
-                      border: `1.5px solid ${isVerified ? '#86EFAC' : isRejected ? '#FCA5A5' : '#E2E8F0'}`,
-                      padding: '1rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: 800, textTransform: 'capitalize', color: '#0F172A', fontSize: '0.95rem' }}>
-                              {key.replace('_', ' ')}
-                            </span>
-                            <span className={`badge ${
-                              isVerified ? 'badge-green' :
-                              isRejected ? 'badge-red' :
-                              doc.status === 'Correction Requested' || doc.status === 'CORRECTION_REQUIRED' ? 'badge-yellow' : 'badge-navy'
-                            }`} style={{ fontSize: '0.7rem' }}>
-                              {doc.status || 'UPLOADED'}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '3px' }}>
-                            File: <strong style={{ color: '#1E293B' }}>{doc.file || `${key}_document.pdf`}</strong>
-                          </div>
-                          {doc.reason && (
-                            <div style={{ fontSize: '0.78rem', color: '#DC2626', marginTop: '4px', fontWeight: 600 }}>
-                              Defect Remark: {doc.reason}
-                            </div>
-                          )}
-                        </div>
+                  // Add extra keys from docsState not present in STANDARD_DOC_DEFS
+                  Object.entries(docsState || {}).forEach(([k, v]) => {
+                    if (!STANDARD_DOC_DEFS.some(d => d.id === k)) {
+                      combined.push({
+                        key: k,
+                        nameEn: k.replace('_', ' ').toUpperCase(),
+                        nameHi: '',
+                        required: false,
+                        isImage: false,
+                        doc: v
+                      });
+                    }
+                  });
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {doc.filePath && (
-                            <a
-                              href={doc.filePath}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="btn btn-outline btn-sm"
-                              style={{ color: '#2563EB', borderColor: '#BFDBFE' }}
-                              title="Open original file in new tab"
-                            >
-                              <ExternalLink size={13} />
-                              <span>View File</span>
-                            </a>
-                          )}
+                  return combined.map(({ key, nameEn, nameHi, required, doc }) => {
+                    const isRejecting = rejectingDocKey === key;
+                    const hasUploaded = Boolean(doc && (doc.filePath || doc.file));
+                    const isVerified = doc && (doc.status === 'Verified' || doc.status === 'VALID');
+                    const isRejected = doc && (doc.status === 'Rejected' || doc.status === 'INVALID');
+                    const isCorrection = doc && (doc.status === 'Correction Requested' || doc.status === 'CORRECTION_REQUIRED');
+                    const fileUrl = signedUrls[key] || (doc?.filePath?.startsWith('http') ? doc.filePath : null);
+                    const isImage = isImageFile(doc, fileUrl);
 
-                          {!readOnly && (
-                            <>
-                              <button
-                                type="button"
-                                className="btn btn-sm"
+                    return (
+                      <div 
+                        key={key} 
+                        style={{
+                          backgroundColor: '#FFFFFF',
+                          borderRadius: '12px',
+                          border: `1.5px solid ${isVerified ? '#86EFAC' : isRejected ? '#FCA5A5' : hasUploaded ? '#CBD5E1' : '#E2E8F0'}`,
+                          padding: '1.1rem 1.25rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.85rem',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            
+                            {/* Document Thumbnail Preview for Images */}
+                            {hasUploaded && (
+                              <div 
                                 style={{
-                                  backgroundColor: isVerified ? '#16A34A' : '#FFFFFF',
-                                  color: isVerified ? '#FFFFFF' : '#16A34A',
-                                  border: '1.5px solid #16A34A',
-                                  fontWeight: 700
-                                }}
-                                onClick={() => handleDocumentVerify(key, 'VALID')}
-                              >
-                                <Check size={13} />
-                                <span>{isVerified ? 'Valid ✓' : 'Mark Valid'}</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                className="btn btn-sm"
-                                style={{
-                                  backgroundColor: isRejected ? '#DC2626' : '#FFFFFF',
-                                  color: isRejected ? '#FFFFFF' : '#DC2626',
-                                  border: '1.5px solid #DC2626',
-                                  fontWeight: 700
+                                  width: '56px',
+                                  height: '56px',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden',
+                                  backgroundColor: '#F1F5F9',
+                                  border: '1px solid #CBD5E1',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                  cursor: fileUrl ? 'pointer' : 'default',
+                                  position: 'relative'
                                 }}
                                 onClick={() => {
-                                  if (isRejecting) {
-                                    setRejectingDocKey(null);
-                                  } else {
-                                    setRejectingDocKey(key);
-                                    setRejectReasonInput(doc.reason || '');
-                                  }
+                                  if (fileUrl || hasUploaded) handleOpenPreview(key, doc);
                                 }}
+                                title={fileUrl ? 'Click to inspect document' : 'Uploaded document'}
                               >
-                                <X size={13} />
-                                <span>{isRejected ? 'Defective' : 'Reject'}</span>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                                {fileUrl && isImage ? (
+                                  <img 
+                                    src={fileUrl} 
+                                    alt={nameEn}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <FileText size={24} color="#2563EB" />
+                                )}
+                              </div>
+                            )}
 
-                      {/* Inline Rejection Reason Panel */}
-                      {isRejecting && (
-                        <div style={{
-                          backgroundColor: '#FEF2F2',
-                          border: '1px solid #FECACA',
-                          borderRadius: '8px',
-                          padding: '0.85rem',
-                          marginTop: '0.25rem'
-                        }}>
-                          <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#991B1B', display: 'block', marginBottom: '0.4rem' }}>
-                            Specify Reason for Rejection / Correction Request:
-                          </label>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <input
-                              type="text"
-                              className="form-control"
-                              style={{ fontSize: '0.85rem', height: '34px' }}
-                              placeholder="e.g. Blurry photo, mismatched marks, missing signature"
-                              value={rejectReasonInput}
-                              onChange={(e) => setRejectReasonInput(e.target.value)}
-                              autoFocus
-                            />
-                            <button
-                              type="button"
-                              className="btn btn-sm"
-                              style={{ backgroundColor: '#DC2626', color: '#FFFFFF', whiteSpace: 'nowrap' }}
-                              onClick={() => {
-                                handleDocumentVerify(key, 'INVALID', rejectReasonInput.trim() || 'Defective document copy');
-                              }}
-                            >
-                              Confirm Reject
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              onClick={() => setRejectingDocKey(null)}
-                            >
-                              Cancel
-                            </button>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.98rem' }}>
+                                  {nameEn}
+                                </span>
+                                {nameHi && (
+                                  <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                                    ({nameHi})
+                                  </span>
+                                )}
+                                <span className={`badge ${
+                                  !hasUploaded ? 'badge-navy' :
+                                  isVerified ? 'badge-green' :
+                                  isRejected ? 'badge-red' :
+                                  isCorrection ? 'badge-yellow' : 'badge-blue'
+                                }`} style={{ fontSize: '0.7rem' }}>
+                                  {!hasUploaded ? (required ? 'COMPULSORY • NOT UPLOADED' : 'OPTIONAL • NOT UPLOADED') : (doc.status || 'UPLOADED')}
+                                </span>
+                              </div>
+
+                              <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px' }}>
+                                {hasUploaded ? (
+                                  <>
+                                    File: <strong style={{ color: '#1E293B' }}>{doc.fileName || doc.file || `${key}_document`}</strong>
+                                    {doc.fileSizeKb && (
+                                      <span style={{ marginLeft: '0.5rem', color: '#94A3B8' }}>
+                                        ({doc.fileSizeKb} KB)
+                                      </span>
+                                    )}
+                                    {doc.uploadTimestamp && (
+                                      <span style={{ marginLeft: '0.5rem', color: '#94A3B8' }}>
+                                        • Uploaded: {new Date(doc.uploadTimestamp).toLocaleDateString('en-IN')}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>
+                                    No document file uploaded yet by student.
+                                  </span>
+                                )}
+                              </div>
+
+                              {doc?.reason && (
+                                <div style={{ fontSize: '0.8rem', color: '#DC2626', marginTop: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                  <AlertTriangle size={13} />
+                                  <span>Defect Remark: "{doc.reason}"</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                            {hasUploaded && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem' }}
+                                  onClick={() => handleOpenPreview(key, doc)}
+                                  title="Inspect document in high-res viewer with zoom and rotation"
+                                >
+                                  <Eye size={13} />
+                                  <span>View Document</span>
+                                </button>
+
+                                {fileUrl && (
+                                  <a
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn btn-outline btn-sm"
+                                    style={{ color: '#2563EB', borderColor: '#BFDBFE', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem' }}
+                                    title="Open file in separate browser tab"
+                                  >
+                                    <ExternalLink size={13} />
+                                    <span>New Tab</span>
+                                  </a>
+                                )}
+
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-sm"
+                                  style={{ color: '#16A34A', borderColor: '#BBF7D0', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem' }}
+                                  onClick={() => downloadStorageFile(doc.bucketName || 'student-documents', doc.filePath || doc.file, doc.fileName || doc.file)}
+                                  title="Download original file"
+                                >
+                                  <Download size={13} />
+                                  <span>Download</span>
+                                </button>
+                              </>
+                            )}
+
+                            {!readOnly && hasUploaded && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm"
+                                  style={{
+                                    backgroundColor: isVerified ? '#16A34A' : '#FFFFFF',
+                                    color: isVerified ? '#FFFFFF' : '#16A34A',
+                                    border: '1.5px solid #16A34A',
+                                    fontWeight: 700,
+                                    fontSize: '0.78rem'
+                                  }}
+                                  onClick={() => handleDocumentVerify(key, 'VALID')}
+                                  title="Mark document as valid"
+                                >
+                                  <Check size={13} />
+                                  <span>{isVerified ? 'Valid ✓' : 'Mark Valid'}</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="btn btn-sm"
+                                  style={{
+                                    backgroundColor: isRejected ? '#DC2626' : '#FFFFFF',
+                                    color: isRejected ? '#FFFFFF' : '#DC2626',
+                                    border: '1.5px solid #DC2626',
+                                    fontWeight: 700,
+                                    fontSize: '0.78rem'
+                                  }}
+                                  onClick={() => {
+                                    if (isRejecting) {
+                                      setRejectingDocKey(null);
+                                    } else {
+                                      setRejectingDocKey(key);
+                                      setRejectReasonInput(doc.reason || '');
+                                    }
+                                  }}
+                                  title="Reject document and request correction"
+                                >
+                                  <X size={13} />
+                                  <span>{isRejected ? 'Defective' : 'Reject'}</span>
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+
+                        {/* Inline Rejection Reason Panel */}
+                        {isRejecting && (
+                          <div style={{
+                            backgroundColor: '#FEF2F2',
+                            border: '1px solid #FECACA',
+                            borderRadius: '8px',
+                            padding: '0.85rem',
+                            marginTop: '0.25rem'
+                          }}>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#991B1B', display: 'block', marginBottom: '0.4rem' }}>
+                              Specify Reason for Rejection / Correction Request:
+                            </label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <input
+                                type="text"
+                                className="form-control"
+                                style={{ fontSize: '0.85rem', height: '34px' }}
+                                placeholder="e.g. Blurry photo, mismatched marks, missing signature or seal"
+                                value={rejectReasonInput}
+                                onChange={(e) => setRejectReasonInput(e.target.value)}
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                className="btn btn-sm"
+                                style={{ backgroundColor: '#DC2626', color: '#FFFFFF', whiteSpace: 'nowrap' }}
+                                onClick={() => {
+                                  handleDocumentVerify(key, 'INVALID', rejectReasonInput.trim() || 'Defective document copy');
+                                }}
+                              >
+                                Confirm Reject
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-sm"
+                                onClick={() => setRejectingDocKey(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}
@@ -974,6 +1354,280 @@ export const ApplicationScrutinyModal = ({
         </div>
 
       </div>
+
+      {/* Interactive Full Document Inspection Modal */}
+      {previewModalDoc && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.88)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1200,
+          padding: '1.25rem'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '16px',
+            maxWidth: '1000px',
+            width: '100%',
+            maxHeight: '94vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+            overflow: 'hidden'
+          }}>
+            {/* Viewer Header */}
+            <div style={{
+              padding: '1rem 1.5rem',
+              backgroundColor: '#0F172A',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid #1E293B',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#FEF08A' }}>
+                    {previewModalDoc.nameEn}
+                  </span>
+                  {previewModalDoc.nameHi && (
+                    <span style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
+                      ({previewModalDoc.nameHi})
+                    </span>
+                  )}
+                  <span className={`badge ${
+                    previewModalDoc.doc?.status === 'Verified' || previewModalDoc.doc?.status === 'VALID' ? 'badge-green' :
+                    previewModalDoc.doc?.status === 'Rejected' || previewModalDoc.doc?.status === 'INVALID' ? 'badge-red' :
+                    'badge-navy'
+                  }`} style={{ fontSize: '0.7rem' }}>
+                    {previewModalDoc.doc?.status || 'UPLOADED'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: '3px' }}>
+                  Candidate: <strong style={{ color: '#F1F5F9' }}>{application.studentName}</strong> • ID: <span style={{ fontFamily: 'monospace', color: '#38BDF8' }}>{application.id}</span> • File: <span style={{ color: '#CBD5E1' }}>{previewModalDoc.doc?.fileName || previewModalDoc.doc?.file || 'Document'}</span>
+                </div>
+              </div>
+
+              {/* Toolbar & Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {isImageFile(previewModalDoc.doc, previewModalDoc.url) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', backgroundColor: '#1E293B', padding: '0.25rem 0.5rem', borderRadius: '8px', border: '1px solid #334155' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.25))}
+                      className="btn btn-outline btn-sm"
+                      style={{ padding: '0.2rem 0.45rem', color: '#F8FAFC', borderColor: '#475569' }}
+                      title="Zoom In"
+                    >
+                      <ZoomIn size={14} />
+                    </button>
+                    <span style={{ fontSize: '0.75rem', color: '#CBD5E1', minWidth: '40px', textAlign: 'center', fontWeight: 700 }}>
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button 
+                      type="button" 
+                      onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.25))}
+                      className="btn btn-outline btn-sm"
+                      style={{ padding: '0.2rem 0.45rem', color: '#F8FAFC', borderColor: '#475569' }}
+                      title="Zoom Out"
+                    >
+                      <ZoomOut size={14} />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setRotation(prev => (prev + 90) % 360)}
+                      className="btn btn-outline btn-sm"
+                      style={{ padding: '0.2rem 0.45rem', color: '#F8FAFC', borderColor: '#475569' }}
+                      title="Rotate 90°"
+                    >
+                      <RotateCw size={14} />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => { setZoomLevel(1); setRotation(0); }}
+                      className="btn btn-outline btn-sm"
+                      style={{ padding: '0.2rem 0.45rem', color: '#F8FAFC', borderColor: '#475569', fontSize: '0.7rem' }}
+                      title="Reset"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                )}
+
+                {previewModalDoc.url && (
+                  <>
+                    <button 
+                      type="button" 
+                      onClick={() => window.open(previewModalDoc.url, '_blank')}
+                      className="btn btn-outline btn-sm"
+                      style={{ color: '#38BDF8', borderColor: '#0284C7', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
+                      title="Open full file in new browser window"
+                    >
+                      <ExternalLink size={13} />
+                      <span>New Tab</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => downloadStorageFile(previewModalDoc.doc?.bucketName || 'student-documents', previewModalDoc.doc?.filePath || previewModalDoc.doc?.file, previewModalDoc.doc?.fileName || previewModalDoc.doc?.file)}
+                      className="btn btn-outline btn-sm"
+                      style={{ color: '#4ADE80', borderColor: '#16A34A', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
+                      title="Download original file"
+                    >
+                      <Download size={13} />
+                      <span>Download</span>
+                    </button>
+                  </>
+                )}
+
+                <button 
+                  type="button" 
+                  onClick={() => setPreviewModalDoc(null)}
+                  style={{ color: '#94A3B8', fontSize: '1.4rem', background: 'none', border: 'none', cursor: 'pointer', marginLeft: '0.5rem', lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Viewer Content Area */}
+            <div style={{
+              flex: 1,
+              overflow: 'auto',
+              backgroundColor: '#0B1120',
+              padding: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '480px',
+              position: 'relative'
+            }}>
+              {!previewModalDoc.url ? (
+                <div style={{ textAlign: 'center', color: '#94A3B8', padding: '2rem' }}>
+                  <Loader2 size={36} className="animate-spin" color="#38BDF8" style={{ margin: '0 auto 1rem' }} />
+                  <p style={{ fontWeight: 600 }}>Resolving secure signed document link...</p>
+                  <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.25rem' }}>
+                    Storage target: {previewModalDoc.doc?.filePath || previewModalDoc.doc?.file || 'N/A'}
+                  </p>
+                </div>
+              ) : isImageFile(previewModalDoc.doc, previewModalDoc.url) ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  height: '100%',
+                  overflow: 'auto'
+                }}>
+                  <img 
+                    src={previewModalDoc.url}
+                    alt={previewModalDoc.nameEn}
+                    style={{
+                      transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                      transition: 'transform 0.15s ease',
+                      maxWidth: '100%',
+                      maxHeight: '68vh',
+                      objectFit: 'contain',
+                      borderRadius: '8px',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+                    }}
+                  />
+                </div>
+              ) : (
+                <iframe 
+                  src={previewModalDoc.url}
+                  title={previewModalDoc.nameEn}
+                  style={{
+                    width: '100%',
+                    height: '70vh',
+                    border: 'none',
+                    borderRadius: '8px',
+                    backgroundColor: '#FFFFFF'
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Viewer Action Footer */}
+            <div style={{
+              padding: '0.85rem 1.5rem',
+              backgroundColor: '#F8FAFC',
+              borderTop: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
+            }}>
+              <div style={{ fontSize: '0.825rem', color: '#64748B' }}>
+                Status: <strong style={{ color: '#0F172A' }}>{previewModalDoc.doc?.status || 'UPLOADED'}</strong>
+                {previewModalDoc.doc?.reason && (
+                  <span style={{ color: '#DC2626', marginLeft: '0.75rem', fontWeight: 600 }}>
+                    Remark: "{previewModalDoc.doc.reason}"
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {!readOnly && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{
+                        backgroundColor: '#16A34A',
+                        color: '#FFFFFF',
+                        border: '1.5px solid #16A34A',
+                        fontWeight: 700,
+                        fontSize: '0.8rem'
+                      }}
+                      onClick={() => handleDocumentVerify(previewModalDoc.key, 'VALID')}
+                    >
+                      <Check size={14} />
+                      <span>Mark Document Valid ✓</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{
+                        backgroundColor: '#DC2626',
+                        color: '#FFFFFF',
+                        border: '1.5px solid #DC2626',
+                        fontWeight: 700,
+                        fontSize: '0.8rem'
+                      }}
+                      onClick={() => {
+                        const reason = prompt('Specify rejection remark / defect reason for this document:', previewModalDoc.doc?.reason || 'Document copy is defective or illegible');
+                        if (reason !== null && reason.trim()) {
+                          handleDocumentVerify(previewModalDoc.key, 'INVALID', reason.trim());
+                        }
+                      }}
+                    >
+                      <X size={14} />
+                      <span>Reject Document</span>
+                    </button>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setPreviewModalDoc(null)}
+                >
+                  Close Viewer
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

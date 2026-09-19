@@ -278,7 +278,7 @@ export const applicationService = {
           institutions (id, name, code),
           districts (id, name),
           blocks (id, name),
-          application_documents (id, application_id, document_type_id, verification_status, rejection_reason, file_name),
+          application_documents (*),
           payments (id, amount, utr_number, payment_date, status, payment_method)
         `)
         .order('created_at', { ascending: false })
@@ -624,9 +624,13 @@ export const applicationService = {
         institutions (name),
         districts (name),
         application_documents (
+          id,
           document_type_id,
           verification_status,
-          rejection_reason
+          rejection_reason,
+          file_name,
+          file_path,
+          bucket_name
         ),
         payments (
           amount,
@@ -732,8 +736,12 @@ export const applicationService = {
       correctionRemarks: data.correction_remarks,
       verificationToken: data.verification_token,
       documents: (data.application_documents || []).map(d => ({
+        id: d.id,
         type: d.document_type_id,
         status: d.verification_status,
+        file: d.file_name || d.file_path,
+        filePath: d.file_path,
+        bucketName: d.bucket_name || 'student-documents',
         reason: d.rejection_reason
       }))
     };
@@ -1178,10 +1186,36 @@ export const applicationService = {
         status: docStatus,
         rawStatus: d.verification_status,
         file: d.file_name || d.file_path,
+        fileName: d.file_name,
         filePath: d.file_path,
+        bucketName: d.bucket_name || 'student-documents',
+        mimeType: d.mime_type || null,
+        fileSizeKb: d.file_size_kb || null,
+        uploadTimestamp: d.upload_timestamp || null,
         reason: d.rejection_reason || null
       };
     });
+
+    // Merge in existing documents if present in app.documents
+    if (app.documents && typeof app.documents === 'object') {
+      Object.entries(app.documents).forEach(([k, v]) => {
+        if (!docs[k] && v) {
+          docs[k] = {
+            id: v.id || `doc-${k}`,
+            status: v.status || 'Uploaded',
+            rawStatus: v.rawStatus || v.status,
+            file: v.file || v.fileName || v.filePath || `${k}_document.pdf`,
+            fileName: v.fileName || v.file || `${k}_document.pdf`,
+            filePath: v.filePath || v.file || null,
+            bucketName: v.bucketName || 'student-documents',
+            mimeType: v.mimeType || null,
+            fileSizeKb: v.fileSizeKb || null,
+            uploadTimestamp: v.uploadTimestamp || null,
+            reason: v.reason || null
+          };
+        }
+      });
+    }
 
     // Determine sanctioned grant amount
     let sanctionedAmount = 12000;
