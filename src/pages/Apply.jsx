@@ -97,7 +97,7 @@ export const Apply = () => {
       mobile: '',
       otp: '',
       otpSent: false,
-      otpVerified: false,
+      otpVerified: true,
       email: '',
       password: '',
       confirmPassword: '',
@@ -343,39 +343,23 @@ export const Apply = () => {
     }));
   };
 
-  // OTP Simulation
-  const handleSendOtp = () => {
-    if (!formData.mobile || formData.mobile.length < 10) {
-      setErrors(prev => ({ ...prev, mobile: lang === 'hi' ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें' : 'Please enter valid 10-digit mobile' }));
-      return;
-    }
-    setFormData(prev => ({ 
-      ...prev, 
-      otpSent: true, 
-      otp: '123456', 
-      otpVerified: true,
-      password: prev.password || '123456',
-      confirmPassword: prev.confirmPassword || '123456'
-    }));
-    setErrors(prev => ({ ...prev, mobile: null, otp: null }));
-  };
-
-  const handleVerifyOtp = () => {
-    setFormData(prev => ({ ...prev, otp: prev.otp || '123456', otpVerified: true }));
-    setErrors(prev => ({ ...prev, otp: null }));
-  };
-
   // Step Validation
   const validateCurrentStep = () => {
     const errs = {};
 
     if (currentStep === 1) {
       if (!isStudentLoggedIn) {
-        if (!formData.mobile || formData.mobile.length < 10) {
-          errs.mobile = lang === 'hi' ? 'मोबाइल नंबर आवश्यक है (10 अंक)' : 'Mobile number required (10 digits)';
+        const cleanMobile = (formData.mobile || '').replace(/\D/g, '');
+        if (!cleanMobile || cleanMobile.length !== 10) {
+          errs.mobile = lang === 'hi' ? 'कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें' : 'Please enter valid 10-digit mobile number';
         }
         if (!formData.password) {
-          setFormData(prev => ({ ...prev, password: 'password123', confirmPassword: 'password123', otpVerified: true }));
+          errs.password = lang === 'hi' ? 'पासवर्ड दर्ज करना आवश्यक है' : 'Password is required';
+        } else if (formData.password.length < 4) {
+          errs.password = lang === 'hi' ? 'पासवर्ड कम से कम 4 अक्षरों का होना चाहिए' : 'Password must be at least 4 characters';
+        }
+        if (!formData.confirmPassword) {
+          errs.confirmPassword = lang === 'hi' ? 'पासवर्ड की पुनः पुष्टि करें' : 'Please confirm password';
         } else if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
           errs.confirmPassword = lang === 'hi' ? 'पासवर्ड मेल नहीं खा रहा है' : 'Passwords do not match';
         }
@@ -1154,52 +1138,16 @@ export const Apply = () => {
 
                 <div className="form-group">
                   <label className="form-label required">{t.fieldMobile}</label>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <input 
-                      type="tel"
-                      className={`form-control ${errors.mobile ? 'error' : ''}`}
-                      placeholder={lang === 'hi' ? '10 अंकों का मोबाइल नंबर (उदा. 9826112233)' : '10-digit mobile number (e.g. 9826112233)'}
-                      maxLength={10}
-                      value={formData.mobile}
-                      onChange={(e) => handleInputChange('mobile', e.target.value)}
-                    />
-                    <button 
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={handleSendOtp}
-                    >
-                      {formData.otpSent ? t.btnResendOtp : t.btnSendOtp}
-                    </button>
-                  </div>
+                  <input 
+                    type="tel"
+                    className={`form-control ${errors.mobile ? 'error' : ''}`}
+                    placeholder={lang === 'hi' ? '10 अंकों का मोबाइल नंबर (उदा. 9826112233)' : '10-digit mobile number (e.g. 9826112233)'}
+                    maxLength={10}
+                    value={formData.mobile}
+                    onChange={(e) => handleInputChange('mobile', e.target.value.replace(/\D/g, ''))}
+                  />
                   {errors.mobile && <div className="form-error">{errors.mobile}</div>}
                 </div>
-
-                {formData.otpSent && (
-                  <div className="form-group" style={{ backgroundColor: '#EFF6FF', padding: '1.25rem', borderRadius: '12px', border: '1px solid #BFDBFE' }}>
-                    <label className="form-label required">{t.fieldOtp}</label>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                      <input 
-                        type="text"
-                        className={`form-control ${errors.otp ? 'error' : ''}`}
-                        placeholder={lang === 'hi' ? '6-अंकीय OTP दर्ज करें (उदा. 123456)' : 'Enter 6-digit OTP (e.g. 123456)'}
-                        maxLength={6}
-                        value={formData.otp}
-                        onChange={(e) => handleInputChange('otp', e.target.value)}
-                      />
-                      <button 
-                        className="btn btn-primary"
-                        type="button"
-                        onClick={handleVerifyOtp}
-                      >
-                        {formData.otpVerified ? 'Verified ✓' : 'Verify OTP'}
-                      </button>
-                    </div>
-                    <div className="form-hint" style={{ color: '#1E40AF', fontWeight: 600 }}>
-                      {t.otpHint}
-                    </div>
-                    {errors.otp && <div className="form-error">{errors.otp}</div>}
-                  </div>
-                )}
 
                 <div className="form-group">
                   <label className="form-label">{t.fieldEmail}</label>
