@@ -383,14 +383,15 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
           @media print {
             @page {
               size: A4 portrait;
-              margin: 6mm 6mm;
+              margin: 4mm 5mm !important;
             }
             html, body {
               background: #FFFFFF !important;
               color: #000000 !important;
-              height: auto !important;
+              height: 100% !important;
               margin: 0 !important;
               padding: 0 !important;
+              overflow: hidden !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
@@ -410,99 +411,106 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
               border: 1.5px solid #0B2B82 !important;
               box-shadow: none !important;
               border-radius: 4px !important;
-              margin: 0 !important;
-              max-height: 280mm !important;
+              margin: 0 auto !important;
+              max-height: 260mm !important;
+              box-sizing: border-box !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               page-break-after: avoid !important;
               break-after: avoid !important;
             }
             .receipt-header-band {
-              padding: 0.8rem 1.25rem !important;
+              padding: 0.55rem 0.95rem !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
             .receipt-logo-img {
-              width: 48px !important;
-              height: 48px !important;
+              width: 42px !important;
+              height: 42px !important;
             }
             .receipt-main-title {
-              font-size: 1.05rem !important;
+              font-size: 0.95rem !important;
             }
             .receipt-main-sub1 {
-              font-size: 0.68rem !important;
-              margin-top: 1px !important;
-            }
-            .receipt-main-sub2 {
               font-size: 0.62rem !important;
               margin-top: 1px !important;
             }
+            .receipt-main-sub2 {
+              font-size: 0.58rem !important;
+              margin-top: 1px !important;
+            }
             .receipt-status-pill {
-              font-size: 0.68rem !important;
-              padding: 0.2rem 0.6rem !important;
+              font-size: 0.65rem !important;
+              padding: 0.15rem 0.5rem !important;
             }
             .receipt-banner-strip {
-              padding: 0.35rem 1.25rem !important;
-              font-size: 0.72rem !important;
+              padding: 0.25rem 0.95rem !important;
+              font-size: 0.68rem !important;
             }
             .receipt-body-content {
-              padding: 0.75rem 1.25rem !important;
+              padding: 0.55rem 0.95rem !important;
             }
             .receipt-grid-cols {
               display: grid !important;
               grid-template-columns: 1fr 1fr !important;
-              gap: 0.65rem !important;
-              margin-bottom: 0.65rem !important;
+              gap: 0.5rem !important;
+              margin-bottom: 0.5rem !important;
             }
             .receipt-info-card {
-              padding: 0.5rem 0.75rem !important;
-              border-radius: 6px !important;
+              padding: 0.35rem 0.55rem !important;
+              border-radius: 4px !important;
             }
             .receipt-card-heading {
-              font-size: 0.68rem !important;
-              margin-bottom: 0.35rem !important;
+              font-size: 0.65rem !important;
+              margin-bottom: 0.25rem !important;
             }
             .receipt-card-text {
-              font-size: 0.72rem !important;
-              line-height: 1.35 !important;
-              gap: 0.2rem !important;
+              font-size: 0.66rem !important;
+              line-height: 1.25 !important;
+              gap: 0.15rem !important;
             }
             .receipt-table-section {
-              margin-bottom: 0.65rem !important;
+              margin-bottom: 0.5rem !important;
             }
             .receipt-table-section table {
-              font-size: 0.74rem !important;
+              font-size: 0.68rem !important;
             }
             .receipt-table-section th, .receipt-table-section td {
-              padding: 0.35rem 0.6rem !important;
+              padding: 0.25rem 0.45rem !important;
             }
             .receipt-words-text {
-              font-size: 0.68rem !important;
-              margin-top: 0.2rem !important;
+              font-size: 0.62rem !important;
+              margin-top: 0.15rem !important;
             }
             .receipt-footer-strip {
-              padding-top: 0.55rem !important;
-              gap: 0.75rem !important;
-              border-top: 1.5px solid #CBD5E1 !important;
+              padding-top: 0.45rem !important;
+              gap: 0.5rem !important;
+              border-top: 1px solid #CBD5E1 !important;
+              flex-wrap: nowrap !important;
             }
             .receipt-qr-wrapper {
-              padding: 3px !important;
+              padding: 2px !important;
+            }
+            .receipt-qr-wrapper svg, .receipt-qr-wrapper canvas {
+              width: 58px !important;
+              height: 58px !important;
             }
             .receipt-qr-text {
-              font-size: 0.65rem !important;
+              font-size: 0.62rem !important;
             }
             .receipt-seal-img {
-              width: 32px !important;
-              height: 32px !important;
+              width: 28px !important;
+              height: 28px !important;
+              margin: 0 auto 2px !important;
             }
             .receipt-authority-text {
-              font-size: 0.68rem !important;
+              font-size: 0.64rem !important;
             }
             .receipt-disclaimer-note {
-              margin-top: 0.45rem !important;
-              padding: 0.4rem 0.65rem !important;
-              font-size: 0.62rem !important;
-              line-height: 1.25 !important;
+              margin-top: 0.35rem !important;
+              padding: 0.3rem 0.5rem !important;
+              font-size: 0.58rem !important;
+              line-height: 1.2 !important;
             }
           }
         `}</style>
@@ -510,8 +518,8 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
         {/* Printable Official Payment Receipt Container */}
         <div className="printable-area animate-fade-in receipt-container" style={{
           backgroundColor: '#FFFFFF',
-          borderRadius: '14px',
-          boxShadow: '0 15px 45px rgba(0,0,0,0.08)',
+          borderRadius: '12px',
+          boxShadow: '0 10px 35px rgba(0,0,0,0.06)',
           border: '1px solid #CBD5E1',
           overflow: 'hidden'
         }}>
@@ -520,25 +528,25 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
           <div className="receipt-header-band" style={{
             background: 'linear-gradient(135deg, #0B2B82 0%, #1E40AF 100%)',
             color: '#FFFFFF',
-            padding: '2rem 2.5rem',
-            borderBottom: '4px solid #D97706'
+            padding: '1.25rem 1.75rem',
+            borderBottom: '3px solid #D97706'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <img 
                   src="/assets/logo.png" 
                   alt="JMF Logo" 
                   className="receipt-logo-img"
-                  style={{ width: '72px', height: '72px', objectFit: 'contain', backgroundColor: '#FFFFFF', padding: '4px', borderRadius: '10px' }} 
+                  style={{ width: '56px', height: '56px', objectFit: 'contain', backgroundColor: '#FFFFFF', padding: '3px', borderRadius: '8px' }} 
                 />
                 <div>
-                  <h1 className="receipt-main-title" style={{ fontSize: '1.35rem', fontWeight: 900, letterSpacing: '-0.01em', margin: 0, color: '#FFFFFF' }}>
+                  <h1 className="receipt-main-title" style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.01em', margin: 0, color: '#FFFFFF' }}>
                     JANKALYAN MANAVADHIKAR FOUNDATION
                   </h1>
-                  <div className="receipt-main-sub1" style={{ fontSize: '0.78rem', color: '#FCD34D', fontWeight: 700, marginTop: '2px' }}>
+                  <div className="receipt-main-sub1" style={{ fontSize: '0.74rem', color: '#FCD34D', fontWeight: 700, marginTop: '2px' }}>
                     जन कल्याण मानवाधिकार फाउंडेशन • Regd. under Section 8, Ministry of Corporate Affairs, Govt. of India
                   </div>
-                  <div className="receipt-main-sub2" style={{ fontSize: '0.72rem', color: '#E2E8F0', marginTop: '3px' }}>
+                  <div className="receipt-main-sub2" style={{ fontSize: '0.68rem', color: '#E2E8F0', marginTop: '2px' }}>
                     CIN: U85300MP2022NPL062548 • NITI Aayog Darpan: MP/2022/0329182 • ISO 9001:2015 Certified
                   </div>
                 </div>
@@ -548,19 +556,19 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
                 <div className="receipt-status-pill" style={{ 
                   backgroundColor: '#16A34A', 
                   color: '#FFFFFF', 
-                  padding: '0.35rem 0.85rem', 
+                  padding: '0.25rem 0.75rem', 
                   borderRadius: '20px', 
                   fontWeight: 800, 
-                  fontSize: '0.78rem',
+                  fontSize: '0.74rem',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
+                  gap: '0.3rem',
                   boxShadow: '0 2px 6px rgba(22, 163, 74, 0.4)'
                 }}>
-                  <CheckCircle2 size={14} />
+                  <CheckCircle2 size={13} />
                   <span>PAYMENT SUCCESSFUL</span>
                 </div>
-                <div className="receipt-no-text" style={{ fontSize: '0.75rem', color: '#E0E7FF', marginTop: '0.5rem', fontFamily: 'monospace' }}>
+                <div className="receipt-no-text" style={{ fontSize: '0.72rem', color: '#E0E7FF', marginTop: '0.35rem', fontFamily: 'monospace' }}>
                   {receiptNo}
                 </div>
               </div>
@@ -571,13 +579,13 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
           <div className="receipt-banner-strip" style={{
             backgroundColor: '#F8FAFC',
             borderBottom: '1px solid #E2E8F0',
-            padding: '0.85rem 2.5rem',
+            padding: '0.55rem 1.75rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '0.75rem',
-            fontSize: '0.82rem'
+            gap: '0.5rem',
+            fontSize: '0.78rem'
           }}>
             <div style={{ color: '#0F172A', fontWeight: 700 }}>
               OFFICIAL SCHOLARSHIP REGISTRATION FEE RECEIPT (SESSION 2026-27)
@@ -588,18 +596,18 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
           </div>
 
           {/* Body Content */}
-          <div className="receipt-body-content" style={{ padding: '2rem 2.5rem' }}>
+          <div className="receipt-body-content" style={{ padding: '1.25rem 1.75rem' }}>
             
             {/* Primary Details 2-Column Grid */}
-            <div className="receipt-grid-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="receipt-grid-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
               
               {/* Applicant Details */}
-              <div className="receipt-info-card" style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                <div className="receipt-card-heading" style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <User size={14} />
+              <div className="receipt-info-card" style={{ backgroundColor: '#F8FAFC', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <div className="receipt-card-heading" style={{ fontSize: '0.74rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <User size={13} />
                   <span>Applicant Information</span>
                 </div>
-                <div className="receipt-card-text" style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.85rem' }}>
+                <div className="receipt-card-text" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.82rem' }}>
                   <div><strong>Application ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0F172A' }}>{appId}</span></div>
                   <div><strong>Candidate Name:</strong> <span style={{ fontWeight: 700, color: '#0F172A' }}>{studentName}</span></div>
                   <div><strong>Father's Name:</strong> {fatherName}</div>
@@ -613,22 +621,22 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
               </div>
 
               {/* Transaction & Gateway Details */}
-              <div className="receipt-info-card receipt-txn-card" style={{ backgroundColor: '#F0FDF4', padding: '1.25rem', borderRadius: '10px', border: '1.5px solid #BBF7D0' }}>
-                <div className="receipt-card-heading" style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <CreditCard size={14} />
+              <div className="receipt-info-card receipt-txn-card" style={{ backgroundColor: '#F0FDF4', padding: '0.85rem 1rem', borderRadius: '8px', border: '1.5px solid #BBF7D0' }}>
+                <div className="receipt-card-heading" style={{ fontSize: '0.74rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <CreditCard size={13} />
                   <span>Payment & Transaction Summary</span>
                 </div>
-                <div className="receipt-card-text" style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.85rem' }}>
+                <div className="receipt-card-text" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.82rem' }}>
                   <div>
                     <strong>Transaction ID:</strong>{' '}
-                    <span style={{ fontFamily: 'monospace', fontWeight: 900, color: '#1E40AF', fontSize: '0.92rem', backgroundColor: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #CBD5E1' }}>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 900, color: '#1E40AF', fontSize: '0.88rem', backgroundColor: '#FFFFFF', padding: '2px 5px', borderRadius: '4px', border: '1px solid #CBD5E1' }}>
                       {rawTxnId}
                     </span>
                   </div>
                   <div><strong>Payment Gateway:</strong> Razorpay Standard Checkout</div>
                   <div><strong>Payment Mode:</strong> UPI / Online Net Banking / Cards</div>
                   <div><strong>Payment Date & Time:</strong> {new Date(feeDate).toLocaleString('en-IN')}</div>
-                  <div><strong>Payment Status:</strong> <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>PAID & SETTLED ✓</span></div>
+                  <div><strong>Payment Status:</strong> <span className="badge badge-green" style={{ fontSize: '0.72rem' }}>PAID & SETTLED ✓</span></div>
                   <div><strong>Security Protocol:</strong> 256-Bit SSL Secured Gateway</div>
                 </div>
               </div>
@@ -636,49 +644,49 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
             </div>
 
             {/* Itemized Fee Structure Table */}
-            <div className="receipt-table-section" style={{ marginBottom: '2rem' }}>
-              <table className="receipt-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+            <div className="receipt-table-section" style={{ marginBottom: '1.25rem' }}>
+              <table className="receipt-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#0B2B82', color: '#FFFFFF', textAlign: 'left' }}>
-                    <th style={{ padding: '0.75rem 1rem', borderRadius: '6px 0 0 0' }}>#</th>
-                    <th style={{ padding: '0.75rem 1rem' }}>Particulars / Description</th>
-                    <th style={{ padding: '0.75rem 1rem' }}>Category</th>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', borderRadius: '0 6px 0 0' }}>Amount (INR)</th>
+                    <th style={{ padding: '0.55rem 0.85rem', borderRadius: '6px 0 0 0' }}>#</th>
+                    <th style={{ padding: '0.55rem 0.85rem' }}>Particulars / Description</th>
+                    <th style={{ padding: '0.55rem 0.85rem' }}>Category</th>
+                    <th style={{ padding: '0.55rem 0.85rem', textAlign: 'right', borderRadius: '0 6px 0 0' }}>Amount (INR)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700 }}>1</td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
+                    <td style={{ padding: '0.6rem 0.85rem', fontWeight: 700 }}>1</td>
+                    <td style={{ padding: '0.6rem 0.85rem' }}>
                       <strong style={{ color: '#0F172A' }}>Scholarship Application & Processing Fee</strong>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '1px' }}>
                         Jankalyan Manavadhikar Foundation Scholarship Scheme 2026-27
                       </div>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: '#475569' }}>Academic Grant Docket</td>
-                    <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.95rem' }}>
+                    <td style={{ padding: '0.6rem 0.85rem', color: '#475569' }}>Academic Grant Docket</td>
+                    <td style={{ padding: '0.6rem 0.85rem', textAlign: 'right', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.9rem' }}>
                       ₹ {feeAmount.toFixed(2)}
                     </td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-                    <td colSpan={3} style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: '#475569' }}>
+                    <td colSpan={3} style={{ padding: '0.55rem 0.85rem', textAlign: 'right', fontWeight: 700, color: '#475569' }}>
                       Platform / Gateway Convenience Charge:
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: '#16A34A', fontFamily: 'monospace' }}>
+                    <td style={{ padding: '0.55rem 0.85rem', textAlign: 'right', fontWeight: 700, color: '#16A34A', fontFamily: 'monospace' }}>
                       ₹ 0.00 (Waived)
                     </td>
                   </tr>
                   <tr style={{ backgroundColor: '#EFF6FF', borderTop: '2px solid #BFDBFE' }}>
-                    <td colSpan={3} style={{ padding: '1rem', textAlign: 'right', fontWeight: 900, color: '#1E3A8A', fontSize: '1rem' }}>
+                    <td colSpan={3} style={{ padding: '0.75rem 0.85rem', textAlign: 'right', fontWeight: 900, color: '#1E3A8A', fontSize: '0.92rem' }}>
                       TOTAL AMOUNT RECEIVED:
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 900, color: '#1E40AF', fontSize: '1.15rem', fontFamily: 'monospace' }}>
+                    <td style={{ padding: '0.75rem 0.85rem', textAlign: 'right', fontWeight: 900, color: '#1E40AF', fontSize: '1.05rem', fontFamily: 'monospace' }}>
                       ₹ {feeAmount.toFixed(2)}
                     </td>
                   </tr>
                 </tbody>
               </table>
-              <div className="receipt-words-text" style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.5rem', fontStyle: 'italic' }}>
+              <div className="receipt-words-text" style={{ fontSize: '0.74rem', color: '#64748B', marginTop: '0.35rem', fontStyle: 'italic' }}>
                 Amount in Words: <strong>{getAmountInWords(feeAmount)}</strong>
               </div>
             </div>
@@ -688,42 +696,50 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderTop: '2px solid #E2E8F0',
-              paddingTop: '1.5rem',
-              flexWrap: 'wrap',
-              gap: '1.5rem'
+              borderTop: '1.5px solid #E2E8F0',
+              paddingTop: '1rem',
+              gap: '1rem'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div className="receipt-qr-wrapper" style={{ padding: '6px', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px' }}>
-                  <QrCodeDisplay value={verifyUrl} size={90} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
+                <div className="receipt-qr-wrapper" style={{ padding: '4px', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '6px', flexShrink: 0 }}>
+                  <QrCodeDisplay value={verifyUrl} size={68} />
                 </div>
-                <div>
-                  <div className="receipt-qr-text" style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div className="receipt-qr-text" style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A' }}>
                     Scan QR to Verify Receipt Online
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#64748B', marginTop: '1px' }}>
                     Official Digital Record • Tamper-proof
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#2563EB', marginTop: '2px', fontFamily: 'monospace' }}>
+                  <div style={{ 
+                    fontSize: '0.64rem', 
+                    color: '#2563EB', 
+                    marginTop: '2px', 
+                    fontFamily: 'monospace',
+                    maxWidth: '280px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }} title={verifyUrl}>
                     {verifyUrl}
                   </div>
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', minWidth: '200px' }}>
+              <div style={{ textAlign: 'center', flexShrink: 0 }}>
                 <img 
                   src="/assets/logo.png" 
                   alt="Seal" 
                   className="receipt-seal-img"
-                  style={{ width: '42px', height: '42px', opacity: 0.8, margin: '0 auto 4px', display: 'block' }} 
+                  style={{ width: '36px', height: '36px', opacity: 0.85, margin: '0 auto 3px', display: 'block' }} 
                 />
-                <div className="receipt-authority-text" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
+                <div className="receipt-authority-text" style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A' }}>
                   Finance & Accounts Wing
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                <div style={{ fontSize: '0.68rem', color: '#64748B' }}>
                   Jankalyan Manavadhikar Foundation
                 </div>
-                <div style={{ fontSize: '0.66rem', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
+                <div style={{ fontSize: '0.64rem', color: '#16A34A', fontWeight: 700, marginTop: '1px' }}>
                   [ Digitally Signed & Authenticated ]
                 </div>
               </div>
@@ -731,13 +747,13 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
 
             {/* Notes & Disclaimer */}
             <div className="receipt-disclaimer-note" style={{
-              marginTop: '1.5rem',
+              marginTop: '1rem',
               backgroundColor: '#F8FAFC',
-              borderRadius: '8px',
-              padding: '0.75rem 1rem',
-              fontSize: '0.72rem',
+              borderRadius: '6px',
+              padding: '0.55rem 0.85rem',
+              fontSize: '0.68rem',
               color: '#64748B',
-              lineHeight: 1.5,
+              lineHeight: 1.4,
               border: '1px solid #E2E8F0'
             }}>
               <strong>Note:</strong> This is an authentic, system-generated computer receipt issued by the Jan Kalyan Manavadhikar Foundation upon successful reconciliation with Razorpay Payment Gateway. Registration fee is non-refundable and applies exclusively toward candidate application evaluation and administrative scrutiny.
