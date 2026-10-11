@@ -1160,25 +1160,42 @@ input, select, textarea {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 6mm 6mm;
   }
-  body {
+  html, body {
     background: #FFFFFF !important;
     color: #000000 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  .site-header, .site-footer, .announcement-bar, .no-print {
+  .site-header, .site-footer, .announcement-bar, .no-print, .main-navbar, nav {
     display: none !important;
+  }
+  .section-py {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    background: transparent !important;
+  }
+  .container, .container-wide {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .printable-area, .printable-certificate {
     width: 100% !important;
     max-width: 100% !important;
-    padding: 2rem 1.75rem !important;
+    padding: 0 !important;
     margin: 0 auto !important;
     box-shadow: none !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }

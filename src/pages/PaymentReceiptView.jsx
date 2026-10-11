@@ -378,8 +378,136 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
           </div>
         </div>
 
+        {/* Embedded Print Styles for Guaranteed Single-Page A4 Receipt */}
+        <style>{`
+          @media print {
+            @page {
+              size: A4 portrait;
+              margin: 6mm 6mm;
+            }
+            html, body {
+              background: #FFFFFF !important;
+              color: #000000 !important;
+              height: auto !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .section-py {
+              padding: 0 !important;
+              margin: 0 !important;
+              min-height: auto !important;
+              background: transparent !important;
+            }
+            .container {
+              max-width: 100% !important;
+              width: 100% !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+            .receipt-container {
+              border: 1.5px solid #0B2B82 !important;
+              box-shadow: none !important;
+              border-radius: 4px !important;
+              margin: 0 !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
+            .receipt-header-band {
+              padding: 0.8rem 1.25rem !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .receipt-logo-img {
+              width: 48px !important;
+              height: 48px !important;
+            }
+            .receipt-main-title {
+              font-size: 1.05rem !important;
+            }
+            .receipt-main-sub1 {
+              font-size: 0.68rem !important;
+              margin-top: 1px !important;
+            }
+            .receipt-main-sub2 {
+              font-size: 0.62rem !important;
+              margin-top: 1px !important;
+            }
+            .receipt-status-pill {
+              font-size: 0.68rem !important;
+              padding: 0.2rem 0.6rem !important;
+            }
+            .receipt-banner-strip {
+              padding: 0.35rem 1.25rem !important;
+              font-size: 0.72rem !important;
+            }
+            .receipt-body-content {
+              padding: 0.75rem 1.25rem !important;
+            }
+            .receipt-grid-cols {
+              display: grid !important;
+              grid-template-columns: 1fr 1fr !important;
+              gap: 0.65rem !important;
+              margin-bottom: 0.65rem !important;
+            }
+            .receipt-info-card {
+              padding: 0.5rem 0.75rem !important;
+              border-radius: 6px !important;
+            }
+            .receipt-card-heading {
+              font-size: 0.68rem !important;
+              margin-bottom: 0.35rem !important;
+            }
+            .receipt-card-text {
+              font-size: 0.72rem !important;
+              line-height: 1.35 !important;
+              gap: 0.2rem !important;
+            }
+            .receipt-table-section {
+              margin-bottom: 0.65rem !important;
+            }
+            .receipt-table-section table {
+              font-size: 0.74rem !important;
+            }
+            .receipt-table-section th, .receipt-table-section td {
+              padding: 0.35rem 0.6rem !important;
+            }
+            .receipt-words-text {
+              font-size: 0.68rem !important;
+              margin-top: 0.2rem !important;
+            }
+            .receipt-footer-strip {
+              padding-top: 0.55rem !important;
+              gap: 0.75rem !important;
+              border-top: 1.5px solid #CBD5E1 !important;
+            }
+            .receipt-qr-wrapper {
+              padding: 3px !important;
+            }
+            .receipt-qr-text {
+              font-size: 0.65rem !important;
+            }
+            .receipt-seal-img {
+              width: 32px !important;
+              height: 32px !important;
+            }
+            .receipt-authority-text {
+              font-size: 0.68rem !important;
+            }
+            .receipt-disclaimer-note {
+              margin-top: 0.45rem !important;
+              padding: 0.4rem 0.65rem !important;
+              font-size: 0.62rem !important;
+              line-height: 1.25 !important;
+            }
+          }
+        `}</style>
+
         {/* Printable Official Payment Receipt Container */}
-        <div className="printable-area animate-fade-in" style={{
+        <div className="printable-area animate-fade-in receipt-container" style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '14px',
           boxShadow: '0 15px 45px rgba(0,0,0,0.08)',
@@ -388,7 +516,7 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
         }}>
           
           {/* Header Band */}
-          <div style={{
+          <div className="receipt-header-band" style={{
             background: 'linear-gradient(135deg, #0B2B82 0%, #1E40AF 100%)',
             color: '#FFFFFF',
             padding: '2rem 2.5rem',
@@ -399,23 +527,24 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
                 <img 
                   src="/assets/logo.png" 
                   alt="JMF Logo" 
+                  className="receipt-logo-img"
                   style={{ width: '72px', height: '72px', objectFit: 'contain', backgroundColor: '#FFFFFF', padding: '4px', borderRadius: '10px' }} 
                 />
                 <div>
-                  <h1 style={{ fontSize: '1.35rem', fontWeight: 900, letterSpacing: '-0.01em', margin: 0, color: '#FFFFFF' }}>
+                  <h1 className="receipt-main-title" style={{ fontSize: '1.35rem', fontWeight: 900, letterSpacing: '-0.01em', margin: 0, color: '#FFFFFF' }}>
                     JANKALYAN MANAVADHIKAR FOUNDATION
                   </h1>
-                  <div style={{ fontSize: '0.78rem', color: '#FCD34D', fontWeight: 700, marginTop: '2px' }}>
+                  <div className="receipt-main-sub1" style={{ fontSize: '0.78rem', color: '#FCD34D', fontWeight: 700, marginTop: '2px' }}>
                     जन कल्याण मानवाधिकार फाउंडेशन • Regd. under Section 8, Ministry of Corporate Affairs, Govt. of India
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#E2E8F0', marginTop: '3px' }}>
+                  <div className="receipt-main-sub2" style={{ fontSize: '0.72rem', color: '#E2E8F0', marginTop: '3px' }}>
                     CIN: U85300MP2022NPL062548 • NITI Aayog Darpan: MP/2022/0329182 • ISO 9001:2015 Certified
                   </div>
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ 
+                <div className="receipt-status-pill" style={{ 
                   backgroundColor: '#16A34A', 
                   color: '#FFFFFF', 
                   padding: '0.35rem 0.85rem', 
@@ -430,7 +559,7 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
                   <CheckCircle2 size={14} />
                   <span>PAYMENT SUCCESSFUL</span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#E0E7FF', marginTop: '0.5rem', fontFamily: 'monospace' }}>
+                <div className="receipt-no-text" style={{ fontSize: '0.75rem', color: '#E0E7FF', marginTop: '0.5rem', fontFamily: 'monospace' }}>
                   {receiptNo}
                 </div>
               </div>
@@ -438,7 +567,7 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
           </div>
 
           {/* Subheader Banner */}
-          <div style={{
+          <div className="receipt-banner-strip" style={{
             backgroundColor: '#F8FAFC',
             borderBottom: '1px solid #E2E8F0',
             padding: '0.85rem 2.5rem',
@@ -458,18 +587,18 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
           </div>
 
           {/* Body Content */}
-          <div style={{ padding: '2rem 2.5rem' }}>
+          <div className="receipt-body-content" style={{ padding: '2rem 2.5rem' }}>
             
             {/* Primary Details 2-Column Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="receipt-grid-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
               
               {/* Applicant Details */}
-              <div style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div className="receipt-info-card" style={{ backgroundColor: '#F8FAFC', padding: '1.25rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div className="receipt-card-heading" style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <User size={14} />
                   <span>Applicant Information</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.85rem' }}>
+                <div className="receipt-card-text" style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.85rem' }}>
                   <div><strong>Application ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#0F172A' }}>{appId}</span></div>
                   <div><strong>Candidate Name:</strong> <span style={{ fontWeight: 700, color: '#0F172A' }}>{studentName}</span></div>
                   <div><strong>Father's Name:</strong> {fatherName}</div>
@@ -483,12 +612,12 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
               </div>
 
               {/* Transaction & Gateway Details */}
-              <div style={{ backgroundColor: '#F0FDF4', padding: '1.25rem', borderRadius: '10px', border: '1.5px solid #BBF7D0' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div className="receipt-info-card receipt-txn-card" style={{ backgroundColor: '#F0FDF4', padding: '1.25rem', borderRadius: '10px', border: '1.5px solid #BBF7D0' }}>
+                <div className="receipt-card-heading" style={{ fontSize: '0.75rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <CreditCard size={14} />
                   <span>Payment & Transaction Summary</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.85rem' }}>
+                <div className="receipt-card-text" style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.85rem' }}>
                   <div>
                     <strong>Transaction ID:</strong>{' '}
                     <span style={{ fontFamily: 'monospace', fontWeight: 900, color: '#1E40AF', fontSize: '0.92rem', backgroundColor: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #CBD5E1' }}>
@@ -506,8 +635,8 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
             </div>
 
             {/* Itemized Fee Structure Table */}
-            <div style={{ marginBottom: '2rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+            <div className="receipt-table-section" style={{ marginBottom: '2rem' }}>
+              <table className="receipt-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#0B2B82', color: '#FFFFFF', textAlign: 'left' }}>
                     <th style={{ padding: '0.75rem 1rem', borderRadius: '6px 0 0 0' }}>#</th>
@@ -548,13 +677,13 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
                   </tr>
                 </tbody>
               </table>
-              <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.5rem', fontStyle: 'italic' }}>
+              <div className="receipt-words-text" style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.5rem', fontStyle: 'italic' }}>
                 Amount in Words: <strong>{getAmountInWords(feeAmount)}</strong>
               </div>
             </div>
 
             {/* Verification QR & Legal Seal Footer Strip */}
-            <div style={{
+            <div className="receipt-footer-strip" style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -564,11 +693,11 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
               gap: '1.5rem'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ padding: '6px', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px' }}>
+                <div className="receipt-qr-wrapper" style={{ padding: '6px', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px' }}>
                   <QrCodeDisplay value={verifyUrl} size={90} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A' }}>
+                  <div className="receipt-qr-text" style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0F172A' }}>
                     Scan QR to Verify Receipt Online
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '2px' }}>
@@ -584,9 +713,10 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
                 <img 
                   src="/assets/logo.png" 
                   alt="Seal" 
+                  className="receipt-seal-img"
                   style={{ width: '42px', height: '42px', opacity: 0.8, margin: '0 auto 4px', display: 'block' }} 
                 />
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
+                <div className="receipt-authority-text" style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
                   Finance & Accounts Wing
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
@@ -599,7 +729,7 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
             </div>
 
             {/* Notes & Disclaimer */}
-            <div style={{
+            <div className="receipt-disclaimer-note" style={{
               marginTop: '1.5rem',
               backgroundColor: '#F8FAFC',
               borderRadius: '8px',

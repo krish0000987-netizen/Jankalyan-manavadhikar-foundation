@@ -304,12 +304,59 @@ export const CertificateView = ({ certId = '' }) => {
                 }
               }
               @media print {
+                @page {
+                  size: A4 portrait;
+                  margin: 6mm 6mm;
+                }
+                .printable-certificate {
+                  padding: 1.25rem 1.75rem !important;
+                  border-width: 8px !important;
+                  box-shadow: none !important;
+                  margin: 0 !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  page-break-after: avoid !important;
+                  break-after: avoid !important;
+                }
                 .certificate-photo-box {
                   position: absolute !important;
-                  top: 26px !important;
-                  right: 28px !important;
+                  top: 18px !important;
+                  right: 20px !important;
+                  width: 90px !important;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
+                }
+                .cert-header {
+                  margin-bottom: 0.85rem !important;
+                }
+                .cert-header-img {
+                  height: 52px !important;
+                }
+                .cert-title-badge {
+                  margin-bottom: 0.85rem !important;
+                }
+                .cert-body-p {
+                  margin-bottom: 0.85rem !important;
+                  font-size: 0.88rem !important;
+                  line-height: 1.55 !important;
+                }
+                .cert-name-text {
+                  font-size: 1.55rem !important;
+                  margin-bottom: 0.4rem !important;
+                  padding: 0 1.25rem 0.2rem !important;
+                }
+                .cert-amount-callout {
+                  font-size: 1.35rem !important;
+                  padding: 0.3rem 1rem !important;
+                  margin: 0.3rem 0 0.45rem 0 !important;
+                }
+                .cert-footer-row {
+                  padding-top: 0.85rem !important;
+                  gap: 0.85rem !important;
+                }
+                .cert-seal-img {
+                  width: 75px !important;
+                  height: 75px !important;
                 }
               }
             `}</style>
@@ -392,11 +439,12 @@ export const CertificateView = ({ certId = '' }) => {
             <div style={{ position: 'relative', zIndex: 1 }}>
               
               {/* Top Header: Foundation Logo & Official Registration */}
-              <div style={{ textAlign: 'center', marginBottom: '1.75rem', maxWidth: '680px', margin: '0 auto 1.75rem' }}>
+              <div className="cert-header" style={{ textAlign: 'center', marginBottom: '1.75rem', maxWidth: '680px', margin: '0 auto 1.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '0.6rem' }}>
                   <img 
                     src="/assets/logo.png" 
                     alt="Jan Kalyan Manavadhikar Foundation Logo" 
+                    className="cert-header-img"
                     style={{ height: '78px', width: 'auto', objectFit: 'contain' }} 
                   />
                 </div>
@@ -446,7 +494,7 @@ export const CertificateView = ({ certId = '' }) => {
               </div>
 
               {/* Certificate Title Badge */}
-              <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+              <div className="cert-title-badge" style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
                 <div style={{
                   display: 'inline-block',
                   backgroundColor: '#0B2B82',
@@ -482,7 +530,7 @@ export const CertificateView = ({ certId = '' }) => {
               </div>
 
               {/* Certificate Award Body */}
-              <div style={{ 
+              <div className="cert-body-p" style={{ 
                 textAlign: 'center', 
                 maxWidth: '740px', 
                 margin: '0 auto 2rem', 
@@ -494,7 +542,7 @@ export const CertificateView = ({ certId = '' }) => {
                   This is to proudly certify that the student
                 </p>
                 
-                <div style={{ 
+                <div className="cert-name-text" style={{ 
                   fontSize: '2.15rem', 
                   fontWeight: 900, 
                   color: '#0B2B82', 
@@ -514,17 +562,17 @@ export const CertificateView = ({ certId = '' }) => {
                 </p>
 
                 {/* Amount Callout */}
-                <div style={{ 
+                <div className="cert-amount-callout" style={{ 
                   fontSize: '1.85rem', 
                   fontWeight: 900, 
                   color: '#16A34A', 
-                  backgroundColor: '#F0FDF4',
-                  border: '1.5px solid #86EFAC',
-                  borderRadius: '8px',
-                  padding: '0.5rem 1.5rem',
-                  display: 'inline-block',
-                  margin: '0.5rem 0 0.75rem 0',
-                  letterSpacing: '0.02em'
+                  backgroundColor: '#F0FDF4', 
+                  border: '1.5px solid #86EFAC', 
+                  borderRadius: '8px', 
+                  padding: '0.5rem 1.5rem', 
+                  display: 'inline-block', 
+                  margin: '0.5rem 0 0.75rem 0', 
+                  letterSpacing: '0.02em' 
                 }}>
                   ₹{parseFloat(cert.grant_amount || 12000).toLocaleString('en-IN')}/-
                   <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#15803D', marginLeft: '0.6rem' }}>
@@ -562,7 +610,7 @@ export const CertificateView = ({ certId = '' }) => {
               </div>
 
               {/* Bottom Authority Footer: Seal, QR Verification & President's Signature */}
-              <div style={{ 
+              <div className="cert-footer-row" style={{ 
                 display: 'grid', 
                 gridTemplateColumns: '1fr 140px 1fr', 
                 alignItems: 'flex-end', 
@@ -593,6 +641,7 @@ export const CertificateView = ({ certId = '' }) => {
                     <img 
                       src="/assets/foundation_seal.png" 
                       alt="Official Foundation Seal" 
+                      className="cert-seal-img"
                       style={{ 
                         width: '105px', 
                         height: '105px', 

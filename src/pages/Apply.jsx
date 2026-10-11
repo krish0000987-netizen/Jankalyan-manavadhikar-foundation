@@ -711,10 +711,63 @@ export const Apply = () => {
             CONFIRMATION SCREEN (Step 9) - Generated Application ID & Printable Receipt
             ==================================================================== */}
         {currentStep === 9 && submittedRecord ? (
-          <div className="card printable-area" style={{ maxWidth: '820px', margin: '0 auto', padding: '3rem 2.5rem', borderTop: '6px solid #16A34A' }}>
+          <div className="card printable-area apply-confirm-card" style={{ maxWidth: '820px', margin: '0 auto', padding: '3rem 2.5rem', borderTop: '6px solid #16A34A' }}>
             
+            {/* Scoped Print Styles for Single Page A4 fit */}
+            <style>{`
+              @media print {
+                @page {
+                  size: A4 portrait;
+                  margin: 6mm 6mm;
+                }
+                .apply-confirm-card {
+                  padding: 1rem 1.25rem !important;
+                  max-width: 100% !important;
+                  margin: 0 !important;
+                  border: 1.5px solid #16A34A !important;
+                  box-shadow: none !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                }
+                .apply-confirm-header {
+                  padding-bottom: 0.65rem !important;
+                  margin-bottom: 0.75rem !important;
+                }
+                .apply-confirm-header img {
+                  width: 48px !important;
+                  height: 48px !important;
+                }
+                .apply-confirm-header h2 {
+                  font-size: 1.05rem !important;
+                }
+                .apply-confirm-fee-box {
+                  padding: 0.5rem 0.85rem !important;
+                  margin-bottom: 0.75rem !important;
+                }
+                .apply-confirm-appid-box {
+                  padding: 0.65rem 0.85rem !important;
+                  margin-bottom: 0.75rem !important;
+                }
+                .apply-confirm-appid-box .app-id-val {
+                  font-size: 1.6rem !important;
+                  margin: 0.2rem 0 !important;
+                }
+                .apply-confirm-summary {
+                  margin-bottom: 0.75rem !important;
+                  gap: 0.75rem !important;
+                }
+                .apply-confirm-summary .grid-2 {
+                  gap: 0.3rem 0.75rem !important;
+                  font-size: 0.75rem !important;
+                }
+                .apply-confirm-qr {
+                  padding: 0.5rem !important;
+                }
+              }
+            `}</style>
+
             {/* Printable Institutional Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #E2E8F0', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+            <div className="apply-confirm-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #E2E8F0', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <img 
                   src="/assets/logo.png" 
@@ -769,7 +822,7 @@ export const Apply = () => {
             </div>
 
             {/* Official Razorpay Fee Payment Receipt Box */}
-            <div style={{
+            <div className="apply-confirm-fee-box" style={{
               backgroundColor: '#F0FDF4',
               border: '1.5px solid #86EFAC',
               borderRadius: '14px',
@@ -829,7 +882,7 @@ export const Apply = () => {
             </div>
 
             {/* Highlighted Application ID Box */}
-            <div style={{
+            <div className="apply-confirm-appid-box" style={{
               backgroundColor: '#EFF6FF',
               border: '2px dashed #93C5FD',
               borderRadius: '16px',
@@ -837,10 +890,10 @@ export const Apply = () => {
               textAlign: 'center',
               marginBottom: '2rem'
             }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div className="app-id-title" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {t.yourAppIdIs}
               </div>
-              <div style={{ fontSize: '2.25rem', fontWeight: 900, color: '#1E3A8A', margin: '0.4rem 0' }}>
+              <div className="app-id-val" style={{ fontSize: '2.25rem', fontWeight: 900, color: '#1E3A8A', margin: '0.4rem 0' }}>
                 {submittedRecord.id}
               </div>
               <div style={{ fontSize: '0.8rem', color: '#475569' }}>
@@ -851,7 +904,7 @@ export const Apply = () => {
             </div>
 
             {/* Applicant Summary Table & Verification QR */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1.5rem', alignItems: 'center', marginBottom: '2rem' }}>
+            <div className="apply-confirm-summary" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1.5rem', alignItems: 'center', marginBottom: '2rem' }}>
               <div>
                 <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.75rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.4rem' }}>
                   Applicant Official Record
@@ -870,7 +923,7 @@ export const Apply = () => {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+              <div className="apply-confirm-qr" style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                 <QrCodeDisplay value={`${window.location.origin}/verify/application/${submittedRecord.id}`} size={110} />
                 <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '0.4rem', fontWeight: 700 }}>
                   Scan to Verify Docket
