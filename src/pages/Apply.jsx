@@ -546,7 +546,7 @@ export const Apply = () => {
       <div className="container">
         
         {/* Wizard Header Banner */}
-        <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 2rem' }}>
+        <div className="no-print" style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 2rem' }}>
           <span className="badge badge-red" style={{ marginBottom: '0.75rem' }}>
             {lang === 'hi' ? 'सत्र 2026-27' : 'Academic Session 2026-27'}
           </span>
@@ -560,7 +560,7 @@ export const Apply = () => {
 
         {/* Logged-In Student Applicant Identity Card */}
         {isStudentLoggedIn ? (
-          <div style={{
+          <div className="no-print" style={{
             maxWidth: '860px',
             margin: '0 auto 2.25rem',
             background: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)',
@@ -674,7 +674,7 @@ export const Apply = () => {
             </div>
           </div>
         ) : (
-          <div style={{
+          <div className="no-print" style={{
             maxWidth: '860px',
             margin: '0 auto 2.25rem',
             backgroundColor: '#EFF6FF',
@@ -721,47 +721,50 @@ export const Apply = () => {
                   margin: 6mm 6mm;
                 }
                 .apply-confirm-card {
-                  padding: 1rem 1.25rem !important;
+                  padding: 0.75rem 1rem !important;
                   max-width: 100% !important;
                   margin: 0 !important;
                   border: 1.5px solid #16A34A !important;
                   box-shadow: none !important;
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
+                  page-break-after: avoid !important;
+                  break-after: avoid !important;
                 }
                 .apply-confirm-header {
-                  padding-bottom: 0.65rem !important;
-                  margin-bottom: 0.75rem !important;
+                  padding-bottom: 0.45rem !important;
+                  margin-bottom: 0.55rem !important;
                 }
                 .apply-confirm-header img {
-                  width: 48px !important;
-                  height: 48px !important;
+                  width: 44px !important;
+                  height: 44px !important;
                 }
                 .apply-confirm-header h2 {
-                  font-size: 1.05rem !important;
+                  font-size: 1rem !important;
                 }
                 .apply-confirm-fee-box {
-                  padding: 0.5rem 0.85rem !important;
-                  margin-bottom: 0.75rem !important;
+                  padding: 0.4rem 0.75rem !important;
+                  margin-bottom: 0.55rem !important;
                 }
                 .apply-confirm-appid-box {
-                  padding: 0.65rem 0.85rem !important;
-                  margin-bottom: 0.75rem !important;
+                  padding: 0.45rem 0.75rem !important;
+                  margin-bottom: 0.55rem !important;
                 }
                 .apply-confirm-appid-box .app-id-val {
-                  font-size: 1.6rem !important;
-                  margin: 0.2rem 0 !important;
+                  font-size: 1.4rem !important;
+                  margin: 0.15rem 0 !important;
                 }
                 .apply-confirm-summary {
-                  margin-bottom: 0.75rem !important;
-                  gap: 0.75rem !important;
+                  margin-bottom: 0.55rem !important;
+                  gap: 0.6rem !important;
                 }
                 .apply-confirm-summary .grid-2 {
-                  gap: 0.3rem 0.75rem !important;
-                  font-size: 0.75rem !important;
+                  gap: 0.2rem 0.6rem !important;
+                  font-size: 0.72rem !important;
+                  line-height: 1.3 !important;
                 }
                 .apply-confirm-qr {
-                  padding: 0.5rem !important;
+                  padding: 0.4rem !important;
                 }
               }
             `}</style>

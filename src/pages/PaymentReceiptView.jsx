@@ -411,6 +411,7 @@ export const PaymentReceiptView = ({ receiptId = '' }) => {
               box-shadow: none !important;
               border-radius: 4px !important;
               margin: 0 !important;
+              max-height: 280mm !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               page-break-after: avoid !important;
